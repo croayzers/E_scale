@@ -51,6 +51,13 @@ async function bootstrap() {
     SceneManager.drawCotas();
   });
 
+  // ── Sombras (sólo se aplican en ISO) ──
+  document.getElementById('btn-shadows').addEventListener('click', e => {
+    AppState.shadows = !AppState.shadows;
+    e.currentTarget.classList.toggle('active', AppState.shadows);
+    SceneManager.applyShadowState();
+  });
+
   // ── Limpiar ──
   document.getElementById('btn-clear').addEventListener('click', () => {
     if (AppState.items.length === 0) return;

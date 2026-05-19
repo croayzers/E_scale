@@ -11,6 +11,7 @@ export const AppState = {
   nextId: 1,
   camera: 'iso',         // 'iso' | 'top'
   showCotas: true,
+  shadows: true,         // toggle: solo se aplican en vista ISO
   inventoryCollapsed: false,
 
   plan: {

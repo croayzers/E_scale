@@ -8,14 +8,22 @@
    Cero cambios en el resto del proyecto.
    ───────────────────────────────────────────────────────── */
 
-import { createMesa }   from './mesa.js';
-import { createBuffet } from './buffet.js';
-import { createCarpa }  from './carpa.js';
+import { createMesa }       from './mesa.js';
+import { createBuffet }     from './buffet.js';
+import { createCarpa }      from './carpa.js';
+import { createArbusto }    from './arbusto.js';
+import { createArbol }      from './arbol.js';
+import { createCableLuces } from './cableLuces.js';
+import { createRoom }       from './room.js';
 
 const builders = {
-  mesa:   createMesa,
-  buffet: createBuffet,
-  carpa:  createCarpa,
+  mesa:       createMesa,
+  buffet:     createBuffet,
+  carpa:      createCarpa,
+  arbusto:    createArbusto,
+  arbol:      createArbol,
+  cableLuces: createCableLuces,
+  room:       createRoom,
 };
 
 export const ModelFactory = {

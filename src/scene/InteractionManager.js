@@ -134,7 +134,10 @@ function onPointerMove(e) {
   updateCursorReadout();
 
   if (rotating) {
-    const newRotY = rotating.startRotY + (e.clientX - rotating.anchorX) * 0.012;
+    // Snap angular a pasos de 15° (Math.PI / 12)
+    const STEP = Math.PI / 12;
+    let newRotY = rotating.startRotY + (e.clientX - rotating.anchorX) * 0.012;
+    newRotY = Math.round(newRotY / STEP) * STEP;
     rotating.lastX = e.clientX;
     rotating.lastY = e.clientY;
     SceneManager.rotateItem(rotating.id, newRotY);
@@ -323,6 +326,29 @@ function buildContextMenuHTML(item) {
             <input type="checkbox" data-action="carpa-toggle-cols" ${colsOn ? 'checked' : ''} data-keep-open="1"/>
             <span>Habilitar columnas internas</span>
           </label>
+        </div>
+        <div class="ctx-divider"></div>
+        <div data-action="duplicate" class="ctx-item"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar (+2m X)</div>
+        <div data-action="delete" class="ctx-item" style="color:#b91c1c"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Eliminar</div>
+      </div>
+    `;
+  }
+
+  // ── Fallback genérico para tipos sin menú propio ──
+  // (arbusto, arbol, cableLuces, room: propiedades editables en panel derecho)
+  const titleMap = {
+    arbusto:    { label: 'Arbusto',         color: '#3e7a3a' },
+    arbol:      { label: 'Árbol',           color: '#2f6a3f' },
+    cableLuces: { label: 'Cable con Luces', color: '#c89000' },
+    room:       { label: '4 Paredes',       color: 'var(--ink)' },
+  };
+  const meta = titleMap[item.type];
+  if (meta) {
+    return `
+      <div class="ctx-section">
+        <div class="ctx-label" style="color:${meta.color}">${meta.label} · ID ${item.id}</div>
+        <div class="text-[10.5px] px-2 py-1.5 mt-2 mb-1" style="color:var(--muted);background:rgba(10,10,11,0.04)">
+          Propiedades editables en el panel derecho.
         </div>
         <div class="ctx-divider"></div>
         <div data-action="duplicate" class="ctx-item"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar (+2m X)</div>

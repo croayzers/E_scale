@@ -208,6 +208,7 @@ function setCamera(mode) {
   if (_appState) {
     _appState.items.filter(i => i.type === 'carpa').forEach(c => rebuild(c));
   }
+  applyShadowState();
 }
 
 function spawn(item) {
@@ -317,26 +318,49 @@ function drawCotas() {
   if (!_appState?.showCotas) return;
 
   _appState.items.forEach(item => {
-    const isMesa  = item.type === 'mesa';
-    const isCarpa = item.type === 'carpa';
     let label, kind, yOffset;
 
-    if (isCarpa) {
-      label = `${item.dims.length.toFixed(1)}×${item.dims.width.toFixed(1)}m · ${(item.dims.length*item.dims.width).toFixed(0)}m²`;
-      kind = 'carpa';
-      yOffset = _appState.camera === 'top' ? 0.5 : 4.5;
-    } else if (isMesa) {
-      if (item.subtype === 'presi') {
-        label = `${item.dims.length.toFixed(1)}×${item.dims.width.toFixed(1)}m · ${item.chairs}p`;
-      } else {
-        label = `Ø ${item.dims.diameter.toFixed(2)}m · ${item.chairs}p`;
+    switch (item.type) {
+      case 'carpa':
+        label = `${item.dims.length.toFixed(1)}×${item.dims.width.toFixed(1)}m · ${(item.dims.length*item.dims.width).toFixed(0)}m²`;
+        kind = 'carpa';
+        yOffset = _appState.camera === 'top' ? 0.5 : 4.5;
+        break;
+      case 'mesa':
+        if (item.subtype === 'presi') {
+          label = `${item.dims.length.toFixed(1)}×${item.dims.width.toFixed(1)}m · ${item.chairs}p`;
+        } else {
+          label = `Ø ${item.dims.diameter.toFixed(2)}m · ${item.chairs}p`;
+        }
+        kind = 'mesa';
+        yOffset = 1.55;
+        break;
+      case 'arbusto':
+        label = `${item.dims.width.toFixed(1)}×${item.dims.height.toFixed(1)}m`;
+        kind = 'green';
+        yOffset = item.dims.height + 0.4;
+        break;
+      case 'arbol':
+        label = `H ${item.dims.height.toFixed(1)}m · Ø ${item.dims.crownWidth.toFixed(1)}m`;
+        kind = 'green';
+        yOffset = item.dims.height + 0.4;
+        break;
+      case 'cableLuces': {
+        const total = (item.count * item.spacing).toFixed(2);
+        label = `${item.count} luces · ${total}m`;
+        kind = 'lights';
+        yOffset = item.height + 0.4;
+        break;
       }
-      kind = 'mesa';
-      yOffset = 1.55;
-    } else {
-      label = `${item.dims.length.toFixed(2)}m · ${(item.subtype || '').toUpperCase()}`;
-      kind = 'buffet';
-      yOffset = 2.55;
+      case 'room':
+        label = `${item.dims.length.toFixed(1)}×${item.dims.width.toFixed(1)}×${item.dims.height.toFixed(1)}m`;
+        kind = 'room';
+        yOffset = item.dims.height + 0.4;
+        break;
+      default:
+        label = `${item.dims.length.toFixed(2)}m · ${(item.subtype || '').toUpperCase()}`;
+        kind = 'buffet';
+        yOffset = 2.55;
     }
 
     const sprite = makeTextSprite(label, kind);
@@ -370,11 +394,21 @@ function makeTextSprite(text, kind = 'mesa') {
   roundRect(ctx, 4, 4, canvas.width-8, canvas.height-8, r);
   ctx.stroke();
 
-  const labels = { mesa: '— MESA —', buffet: '— BUFFET —', carpa: '— CARPA —' };
+  const labels = {
+    mesa:   '— MESA —',
+    buffet: '— BUFFET —',
+    carpa:  '— CARPA —',
+    green:  '— VEGETACIÓN —',
+    lights: '— LUCES —',
+    room:   '— ESTRUCTURA —'
+  };
   const labelColors = {
     mesa:   'rgba(212,255,58,0.85)',
     buffet: 'rgba(212,255,58,0.85)',
     carpa:  'rgba(212,165,116,0.95)',
+    green:  'rgba(120,220,140,0.95)',
+    lights: 'rgba(255,210,90,0.95)',
+    room:   'rgba(220,220,220,0.95)'
   };
 
   ctx.font = '500 22px "JetBrains Mono", monospace';
@@ -454,6 +488,16 @@ function setControlsEnabled(enabled) {
   }
 }
 
+/* ─── Sombras: ON solo si flag activo Y cámara isométrica ─── */
+function applyShadowState() {
+  if (!_appState || !renderer) return;
+  const shouldRenderShadows = _appState.shadows === true && _appState.camera === 'iso';
+  renderer.shadowMap.enabled = shouldRenderShadows;
+  if (directionalLight) directionalLight.castShadow = shouldRenderShadows;
+  // Fuerza repintado de materiales (los standard reciben shadow info)
+  renderer.shadowMap.needsUpdate = true;
+}
+
 /* ─── API exportada ─── */
 export const SceneManager = {
   async init() {
@@ -466,6 +510,7 @@ export const SceneManager = {
   setCamera,
   setControlsEnabled,
   rebuildGrids,
+  applyShadowState,
   setPlanTexture, updatePlanSize, updatePlanOpacity,
   get scene() { return scene; },
   get renderer() { return renderer; },

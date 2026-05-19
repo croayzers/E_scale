@@ -23,11 +23,12 @@ export const ElementLibrary = {
   all() {
     const d = this.data;
     return [
-      ...(d.tables || []),
-      ...(d.bars   || []),
-      ...(d.stages || []),
-      ...(d.decor  || []),
-      ...(d.chairs || [])
+      ...(d.tables     || []),
+      ...(d.bars       || []),
+      ...(d.stages     || []),
+      ...(d.decor      || []),
+      ...(d.structures || []),
+      ...(d.chairs     || [])
     ];
   },
 
@@ -57,11 +58,12 @@ export const ElementLibrary = {
     host.innerHTML = '';
 
     const CATEGORIES = [
-      { key: 'tables', label: 'Mesas' },
-      { key: 'bars',   label: 'Buffets / Barras' },
-      { key: 'stages', label: 'Escenarios' },
-      { key: 'decor',  label: 'Carpas / Decoración' },
-      { key: 'chairs', label: 'Sillas' }
+      { key: 'tables',     label: 'Mesas' },
+      { key: 'bars',       label: 'Buffets / Barras' },
+      { key: 'stages',     label: 'Escenarios' },
+      { key: 'decor',      label: 'Carpas / Decoración' },
+      { key: 'structures', label: 'Estructuras' },
+      { key: 'chairs',     label: 'Sillas' }
     ];
 
     let totalRendered = 0;

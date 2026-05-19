@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "chairs": [],
+  "tables": [
+    {
+      "id": "table_standard_180",
+      "name": "Mesa",
+      "category": "tables",
+      "icon": "circle-dot",
+      "style": "primary",
+      "type": "mesa",
+      "subtype": "standard",
+      "dims": { "diameter": 1.8 },
+      "chairs": 8,
+      "defaultRotation": 0
+    },
+    {
+      "id": "table_presi_20x12",
+      "name": "Mesa Presidencial",
+      "category": "tables",
+      "icon": "armchair",
+      "style": "ghost",
+      "type": "mesa",
+      "subtype": "presi",
+      "dims": { "length": 2.0, "width": 1.2 },
+      "chairs": 10,
+      "endHead": true,
+      "endFoot": true,
+      "defaultRotation": 0
+    }
+  ],
+  "bars": [
+    {
+      "id": "buffet_arroces_360",
+      "name": "Buffet",
+      "category": "bars",
+      "icon": "rectangle-horizontal",
+      "style": "primary",
+      "type": "buffet",
+      "subtype": "arroces",
+      "dims": { "length": 3.6 },
+      "chairs": 0,
+      "defaultRotation": 0
+    }
+  ],
+  "stages": [],
+  "decor": [
+    {
+      "id": "tent_8x4",
+      "name": "Añadir Carpa",
+      "category": "decor",
+      "icon": "tent",
+      "style": "ghost",
+      "type": "carpa",
+      "dims": { "length": 8.0, "width": 4.0 },
+      "chairs": 0,
+      "posts": {
+        "enabled": true,
+        "diameter": 0.10,
+        "spacing": 2.0,
+        "height": 3.0
+      },
+      "columns": {
+        "enabled": false,
+        "rows": 1,
+        "cols": 2,
+        "diameter": 0.15
+      },
+      "defaultRotation": 0
+    }
+  ],
+  "structures": [
+    {
+      "id": "room_4walls_6x4",
+      "name": "4 Paredes",
+      "category": "structures",
+      "icon": "square",
+      "style": "ghost",
+      "type": "room",
+      "dims": { "length": 6.0, "width": 4.0, "height": 3.0, "thickness": 0.10 },
+      "color": "#ffffff",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "bush_15",
+      "name": "Arbusto",
+      "category": "structures",
+      "icon": "leaf",
+      "style": "ghost",
+      "type": "arbusto",
+      "dims": { "width": 1.5, "height": 1.0 },
+      "color": "#3e7a3a",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "tree_5m",
+      "name": "Árbol",
+      "category": "structures",
+      "icon": "trees",
+      "style": "ghost",
+      "type": "arbol",
+      "dims": { "height": 5.0, "crownWidth": 2.5 },
+      "crownColor": "#2f6a3f",
+      "trunkColor": "#5a3a1f",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "cable_lights_8",
+      "name": "Cable con Luces",
+      "category": "structures",
+      "icon": "lightbulb",
+      "style": "ghost",
+      "type": "cableLuces",
+      "height": 4.0,
+      "count": 8,
+      "spacing": 1.0,
+      "lightColor": "#ffd454",
+      "cableColor": "#1a1a1c",
+      "chairs": 0,
+      "defaultRotation": 0
+    }
+  ]
+}

@@ -89,6 +89,38 @@ function refresh() {
       `;
     }
   }
+
+  // Desglose estructuras
+  const STRUCT_TYPES = ['arbusto', 'arbol', 'cableLuces', 'room'];
+  const structCounts = {};
+  A.items.filter(i => STRUCT_TYPES.includes(i.type)).forEach(s => {
+    structCounts[s.type] = (structCounts[s.type] || 0) + 1;
+  });
+  const structContainer = document.getElementById('breakdown-structures');
+  if (structContainer) {
+    if (Object.keys(structCounts).length === 0) {
+      structContainer.innerHTML = `<div class="text-xs" style="color:var(--muted)">—</div>`;
+    } else {
+      const STRUCT_LABELS = {
+        arbusto:    'Arbustos',
+        arbol:      'Árboles',
+        cableLuces: 'Cables con luces',
+        room:       '4 Paredes'
+      };
+      const STRUCT_COLORS = {
+        arbusto:    'rgba(62,122,58,0.18)',
+        arbol:      'rgba(47,106,63,0.18)',
+        cableLuces: 'rgba(200,144,0,0.18)',
+        room:       'rgba(10,10,11,0.06)'
+      };
+      structContainer.innerHTML = Object.entries(structCounts).map(([t, n]) => `
+        <div class="flex items-center justify-between text-[11.5px]">
+          <span class="chip" style="background:${STRUCT_COLORS[t]}">${STRUCT_LABELS[t]}</span>
+          <span class="mono font-medium">${n}</span>
+        </div>
+      `).join('');
+    }
+  }
 }
 
 /* ─── Tooltip ─── */
@@ -116,6 +148,33 @@ function showTooltip(item) {
       <div class="text-[10.5px] opacity-70 mt-0.5">${postCount} postes · ${(item.dims.length*item.dims.width).toFixed(1)}m²</div>
       <div class="text-[10px] opacity-50 mt-1">ID #${item.id}</div>
     `;
+  } else if (item.type === 'arbusto') {
+    content.innerHTML = `
+      <div class="mb-1 opacity-70 text-[9.5px] tracking-widest uppercase" style="color:#3e7a3a">Arbusto</div>
+      <div class="text-sm">${item.dims.width.toFixed(1)} × ${item.dims.height.toFixed(1)}m</div>
+      <div class="text-[10px] opacity-50 mt-1">ID #${item.id}</div>
+    `;
+  } else if (item.type === 'arbol') {
+    content.innerHTML = `
+      <div class="mb-1 opacity-70 text-[9.5px] tracking-widest uppercase" style="color:#2f6a3f">Árbol</div>
+      <div class="text-sm">H ${item.dims.height.toFixed(1)}m · Ø copa ${item.dims.crownWidth.toFixed(1)}m</div>
+      <div class="text-[10px] opacity-50 mt-1">ID #${item.id}</div>
+    `;
+  } else if (item.type === 'cableLuces') {
+    const total = (item.count * item.spacing).toFixed(2);
+    content.innerHTML = `
+      <div class="mb-1 opacity-70 text-[9.5px] tracking-widest uppercase" style="color:#c89000">Cable con Luces</div>
+      <div class="text-sm">${item.count} luces · ${total}m</div>
+      <div class="text-[10.5px] opacity-70 mt-0.5">altura ${item.height}m · separación ${item.spacing}m</div>
+      <div class="text-[10px] opacity-50 mt-1">ID #${item.id}</div>
+    `;
+  } else if (item.type === 'room') {
+    content.innerHTML = `
+      <div class="mb-1 opacity-70 text-[9.5px] tracking-widest uppercase">4 Paredes</div>
+      <div class="text-sm">${item.dims.length.toFixed(1)} × ${item.dims.width.toFixed(1)} × ${item.dims.height.toFixed(1)}m</div>
+      <div class="text-[10.5px] opacity-70 mt-0.5">grosor ${(item.dims.thickness * 100).toFixed(0)}cm</div>
+      <div class="text-[10px] opacity-50 mt-1">ID #${item.id}</div>
+    `;
   } else {
     content.innerHTML = `
       <div class="mb-1 opacity-70 text-[9.5px] tracking-widest uppercase">Buffet · ${item.subtype || '—'}</div>
@@ -140,8 +199,12 @@ function updateTooltipPosition() {
   const mesh = S.meshes.get(item.id);
   if (!mesh) return;
 
-  const yHeight = item.type === 'mesa' ? 1.2
+  const yHeight = item.type === 'mesa'  ? 1.2
                 : item.type === 'carpa' ? (A.camera === 'top' ? 0.3 : 4.5)
+                : item.type === 'arbusto'    ? (item.dims.height || 1) + 0.4
+                : item.type === 'arbol'      ? (item.dims.height || 5) + 0.4
+                : item.type === 'cableLuces' ? (item.height || 4) + 0.4
+                : item.type === 'room'       ? (item.dims.height || 3) + 0.4
                 : 2.4;
   const vec = new THREE.Vector3(item.x, yHeight, item.z);
   vec.project(S.activeCam);
@@ -310,6 +373,197 @@ function showDetail(item) {
     });
 
     updateCarpaPostsCount(item);
+  } else if (item.type === 'arbusto') {
+    content.innerHTML = `
+      <div class="display-font text-2xl mb-1 leading-tight" style="color:#3e7a3a">Arbusto</div>
+      <div class="mono text-[10px] uppercase tracking-widest mb-4" style="color:var(--muted)">Vegetación · ID #${item.id}</div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Ancho (m)</span>
+          <input data-input="width" type="number" min="0.3" max="6" step="0.1" value="${item.dims.width}" class="input-field"/>
+        </label>
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Alto (m)</span>
+          <input data-input="height" type="number" min="0.3" max="6" step="0.1" value="${item.dims.height}" class="input-field"/>
+        </label>
+      </div>
+
+      <label class="block mb-3">
+        <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color</span>
+        <input data-input="color" type="color" value="${item.color}" class="input-field" style="padding:2px; height:36px"/>
+      </label>
+
+      <div class="space-y-2 text-[12px] mb-3">
+        <div class="flex justify-between"><span style="color:var(--muted)">Posición X</span><span class="mono">${item.x.toFixed(2)}m</span></div>
+        <div class="flex justify-between"><span style="color:var(--muted)">Posición Z</span><span class="mono">${item.z.toFixed(2)}m</span></div>
+      </div>
+
+      <div class="rule"></div>
+      <div class="flex gap-2">
+        <button data-act="dup" class="btn ghost flex-1 justify-center"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar</button>
+        <button data-act="del" class="btn danger ghost flex-1 justify-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Eliminar</button>
+      </div>
+    `;
+    wireSimpleInputs(panel, item, A, {
+      width:  v => ({ dims: { ...item.dims, width:  clampNum(v, 0.3, 6) } }),
+      height: v => ({ dims: { ...item.dims, height: clampNum(v, 0.3, 6) } }),
+      color:  v => ({ color: v }),
+    });
+
+  } else if (item.type === 'arbol') {
+    content.innerHTML = `
+      <div class="display-font text-2xl mb-1 leading-tight" style="color:#2f6a3f">Árbol</div>
+      <div class="mono text-[10px] uppercase tracking-widest mb-4" style="color:var(--muted)">Vegetación · ID #${item.id}</div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Altura (m)</span>
+          <input data-input="height" type="number" min="1" max="15" step="0.5" value="${item.dims.height}" class="input-field"/>
+        </label>
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Ancho copa (m)</span>
+          <input data-input="crownWidth" type="number" min="0.5" max="8" step="0.25" value="${item.dims.crownWidth}" class="input-field"/>
+        </label>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color copa</span>
+          <input data-input="crownColor" type="color" value="${item.crownColor}" class="input-field" style="padding:2px; height:36px"/>
+        </label>
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color tronco</span>
+          <input data-input="trunkColor" type="color" value="${item.trunkColor}" class="input-field" style="padding:2px; height:36px"/>
+        </label>
+      </div>
+
+      <div class="space-y-2 text-[12px] mb-3">
+        <div class="flex justify-between"><span style="color:var(--muted)">Posición X</span><span class="mono">${item.x.toFixed(2)}m</span></div>
+        <div class="flex justify-between"><span style="color:var(--muted)">Posición Z</span><span class="mono">${item.z.toFixed(2)}m</span></div>
+      </div>
+
+      <div class="rule"></div>
+      <div class="flex gap-2">
+        <button data-act="dup" class="btn ghost flex-1 justify-center"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar</button>
+        <button data-act="del" class="btn danger ghost flex-1 justify-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Eliminar</button>
+      </div>
+    `;
+    wireSimpleInputs(panel, item, A, {
+      height:     v => ({ dims: { ...item.dims, height:     clampNum(v, 1,   15) } }),
+      crownWidth: v => ({ dims: { ...item.dims, crownWidth: clampNum(v, 0.5, 8) } }),
+      crownColor: v => ({ crownColor: v }),
+      trunkColor: v => ({ trunkColor: v }),
+    });
+
+  } else if (item.type === 'cableLuces') {
+    const totalLength = (item.count ?? 8) * (item.spacing ?? 1.0);
+    content.innerHTML = `
+      <div class="display-font text-2xl mb-1 leading-tight" style="color:#c89000">Cable con Luces</div>
+      <div class="mono text-[10px] uppercase tracking-widest mb-4" style="color:var(--muted)">Iluminación · ID #${item.id}</div>
+
+      <label class="block mb-3">
+        <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Altura (m)</span>
+        <input data-input="height" type="number" min="2" max="10" step="0.25" value="${item.height}" class="input-field"/>
+      </label>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Nº luces</span>
+          <input data-input="count" type="number" min="2" max="60" step="1" value="${item.count}" class="input-field"/>
+        </label>
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Separación (m)</span>
+          <input data-input="spacing" type="number" min="0.2" max="5" step="0.1" value="${item.spacing}" class="input-field"/>
+        </label>
+      </div>
+
+      <div class="text-[10.5px] mb-3 px-2 py-1.5" style="color:var(--muted);background:rgba(10,10,11,0.04)">
+        Largo total: <span class="mono">${totalLength.toFixed(2)}m</span> (${item.count} × ${item.spacing}m)
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color luz</span>
+          <input data-input="lightColor" type="color" value="${item.lightColor}" class="input-field" style="padding:2px; height:36px"/>
+        </label>
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color cable</span>
+          <input data-input="cableColor" type="color" value="${item.cableColor}" class="input-field" style="padding:2px; height:36px"/>
+        </label>
+      </div>
+
+      <div class="space-y-2 text-[12px] mb-3">
+        <div class="flex justify-between"><span style="color:var(--muted)">Posición X</span><span class="mono">${item.x.toFixed(2)}m</span></div>
+        <div class="flex justify-between"><span style="color:var(--muted)">Posición Z</span><span class="mono">${item.z.toFixed(2)}m</span></div>
+      </div>
+
+      <div class="rule"></div>
+      <div class="flex gap-2">
+        <button data-act="dup" class="btn ghost flex-1 justify-center"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar</button>
+        <button data-act="del" class="btn danger ghost flex-1 justify-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Eliminar</button>
+      </div>
+    `;
+    wireSimpleInputs(panel, item, A, {
+      height:     v => ({ height:     clampNum(v, 2,    10) }),
+      count:      v => ({ count:      Math.round(clampNum(v, 2, 60)) }),
+      spacing:    v => ({ spacing:    clampNum(v, 0.2, 5) }),
+      lightColor: v => ({ lightColor: v }),
+      cableColor: v => ({ cableColor: v }),
+    });
+
+  } else if (item.type === 'room') {
+    content.innerHTML = `
+      <div class="display-font text-2xl mb-1 leading-tight">4 Paredes</div>
+      <div class="mono text-[10px] uppercase tracking-widest mb-4" style="color:var(--muted)">Estructura · ID #${item.id}</div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Largo X (m)</span>
+          <input data-input="length" type="number" min="1" max="50" step="0.25" value="${item.dims.length}" class="input-field"/>
+        </label>
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Ancho Z (m)</span>
+          <input data-input="width" type="number" min="1" max="50" step="0.25" value="${item.dims.width}" class="input-field"/>
+        </label>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Alto (m)</span>
+          <input data-input="height" type="number" min="1" max="10" step="0.1" value="${item.dims.height}" class="input-field"/>
+        </label>
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Grosor (m)</span>
+          <input data-input="thickness" type="number" min="0.04" max="0.5" step="0.01" value="${item.dims.thickness}" class="input-field"/>
+        </label>
+      </div>
+
+      <label class="block mb-3">
+        <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color paredes</span>
+        <input data-input="color" type="color" value="${item.color}" class="input-field" style="padding:2px; height:36px"/>
+      </label>
+
+      <div class="space-y-2 text-[12px] mb-3">
+        <div class="flex justify-between"><span style="color:var(--muted)">Posición X</span><span class="mono">${item.x.toFixed(2)}m</span></div>
+        <div class="flex justify-between"><span style="color:var(--muted)">Posición Z</span><span class="mono">${item.z.toFixed(2)}m</span></div>
+        <div class="flex justify-between"><span style="color:var(--muted)">Área</span><span class="mono">${(item.dims.length * item.dims.width).toFixed(1)} m²</span></div>
+      </div>
+
+      <div class="rule"></div>
+      <div class="flex gap-2">
+        <button data-act="dup" class="btn ghost flex-1 justify-center"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar</button>
+        <button data-act="del" class="btn danger ghost flex-1 justify-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Eliminar</button>
+      </div>
+    `;
+    wireSimpleInputs(panel, item, A, {
+      length:    v => ({ dims: { ...item.dims, length:    clampNum(v, 1,    50) } }),
+      width:     v => ({ dims: { ...item.dims, width:     clampNum(v, 1,    50) } }),
+      height:    v => ({ dims: { ...item.dims, height:    clampNum(v, 1,    10) } }),
+      thickness: v => ({ dims: { ...item.dims, thickness: clampNum(v, 0.04, 0.5) } }),
+      color:     v => ({ color: v }),
+    });
+
   } else {
     content.innerHTML = `
       <div class="display-font text-2xl mb-1 leading-tight">Buffet</div>
@@ -333,6 +587,33 @@ function showDetail(item) {
 
   panel.querySelector('[data-act="dup"]')?.addEventListener('click', () => A.duplicate(item.id));
   panel.querySelector('[data-act="del"]')?.addEventListener('click', () => A.remove(item.id));
+}
+
+/* ─── Helpers ─── */
+
+function clampNum(v, min, max) {
+  const n = parseFloat(v);
+  if (Number.isNaN(n)) return min;
+  return Math.max(min, Math.min(max, n));
+}
+
+/**
+ * Conecta inputs simples (data-input="key") a AppState.update().
+ * `recipes` mapea cada key a una función que recibe el valor crudo y
+ * devuelve el patch a aplicar al item. La rama lee el value adecuado
+ * según el tipo de input (color → string, number → parseFloat).
+ */
+function wireSimpleInputs(panel, item, A, recipes) {
+  Object.entries(recipes).forEach(([key, recipe]) => {
+    const el = panel.querySelector(`[data-input="${key}"]`);
+    if (!el) return;
+    const eventName = el.type === 'color' ? 'input' : 'change';
+    el.addEventListener(eventName, () => {
+      const raw = el.type === 'color' ? el.value : el.value;
+      const patch = recipe(raw);
+      A.update(item.id, patch, { skipDetailRebuild: el.type === 'color' });
+    });
+  });
 }
 
 function updateCarpaPostsCount(item) {
