@@ -1,0 +1,148 @@
+/* ═══════════ HEADER + DOCK estilo macOS ═══════════ */
+
+.glass-mac {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 0.5px solid rgba(0,0,0,0.08);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 8px 24px -8px rgba(0,0,0,0.18),
+    0 24px 48px -16px rgba(0,0,0,0.22);
+}
+
+/* ── Header chips ── */
+.hdr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 500;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 140ms;
+  white-space: nowrap;
+}
+.hdr-chip:hover { background: rgba(0,0,0,0.06); }
+
+.hdr-icon {
+  width: 30px; height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--ink);
+  transition: background 140ms;
+}
+.hdr-icon:hover { background: rgba(0,0,0,0.08); }
+
+.hdr-sep {
+  width: 1px; height: 18px;
+  background: rgba(0,0,0,0.12);
+  margin: 0 2px;
+}
+
+.hdr-segmented {
+  display: inline-flex;
+  background: rgba(0,0,0,0.06);
+  border-radius: 8px;
+  padding: 2px;
+}
+.hdr-seg {
+  width: 28px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--ink);
+  transition: all 140ms;
+}
+.hdr-seg.active {
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+/* ── Dock inferior ── */
+#dock-items button {
+  width: 44px; height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--ink);
+  position: relative;
+  transition: all 160ms cubic-bezier(0.2,0.8,0.2,1);
+}
+#dock-items button:hover {
+  background: rgba(0,0,0,0.06);
+  transform: translateY(-2px);
+}
+#dock-items button.active {
+  background: linear-gradient(180deg, #4a90ff, #2563eb);
+  color: white;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+}
+#dock-items button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px; left: 50%;
+  transform: translateX(-50%);
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+#dock-items .dock-sep {
+  width: 1px; height: 28px;
+  background: rgba(0,0,0,0.12);
+  margin: 0 6px;
+}
+
+/* ── Catálogo modal ── */
+#catalog-modal { animation: catalogIn 240ms cubic-bezier(0.2,0.8,0.2,1) both; }
+@keyframes catalogIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0)    scale(1);    }
+}
+
+.cat-card {
+  background: rgba(255,255,255,0.7);
+  border: 0.5px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  padding: 14px 10px 10px;
+  cursor: pointer;
+  transition: all 180ms cubic-bezier(0.2,0.8,0.2,1);
+  text-align: center;
+}
+.cat-card:hover {
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -8px rgba(0,0,0,0.2);
+  border-color: rgba(0,0,0,0.18);
+}
+.cat-card .cat-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.cat-card .cat-thumb svg { width: 70%; height: 70%; }
+.cat-card .cat-name {
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+/* Escondemos el sidebar viejo */
+#sidebar { display: none !important; }
+
+/* Empty hint se oculta cuando hay items */
+body.has-items #empty-hint { display: none; }

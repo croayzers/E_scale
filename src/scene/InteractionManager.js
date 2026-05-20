@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────
-   INTERACTION MANAGER — Raycaster, drag, rotación, menú click derecho
+   INTERACTION MANAGER — drag, rotación, menú, box-select, lock
    ───────────────────────────────────────────────────────── */
 
 import { AppState }     from '../core/AppState.js';
@@ -8,18 +8,18 @@ import { UIManager }    from '../ui/UIManager.js';
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
-let dragging = null;
+let dragging = null;          // { ids:[], offsets:{id:{x,z}} } o single legacy
 let mouseDown = false;
 let mouseDownPos = null;
 let mouseDownTime = 0;
+let boxSelecting = null;      // { startX, startY, additive }
 
-// Rotación con tecla R
 let rotating = null;
 let rKeyDown = false;
+let shiftDown = false;
 
 function init() {
   const canvas = document.getElementById('scene-canvas');
-
   canvas.addEventListener('pointerdown', onPointerDown);
   canvas.addEventListener('pointermove', onPointerMove);
   canvas.addEventListener('pointerup', onPointerUp);
@@ -31,8 +31,6 @@ function init() {
     const ctx = document.getElementById('context-menu');
     if (ctx && !ctx.contains(e.target)) ctx.classList.remove('visible');
   });
-
-  // Tracking del ratón para iniciar rotación al pulsar R
   document.addEventListener('mousemove', e => {
     window._lastMousePos = { x: e.clientX, y: e.clientY };
   });
@@ -48,9 +46,7 @@ function getIntersectedItem() {
   const meshArray = [];
   SceneManager.meshes.forEach((g) => {
     g.traverse(child => {
-      if (child.isMesh && child.userData.baseColor !== undefined) {
-        meshArray.push(child);
-      }
+      if (child.isMesh && child.userData.baseColor !== undefined) meshArray.push(child);
     });
   });
   const intersects = raycaster.intersectObjects(meshArray, false);
@@ -62,9 +58,7 @@ function getIntersectedItem() {
     return obj ? AppState.items.find(i => i.id === obj.userData.id) : null;
   };
 
-  // Prioridad: mesa/buffet por encima de carpas (contenedor grande)
-  let firstNonCarpa = null;
-  let firstCarpa = null;
+  let firstNonCarpa = null, firstCarpa = null;
   for (const hit of intersects) {
     const item = resolveItem(hit.object);
     if (!item) continue;
@@ -84,13 +78,45 @@ function getDragPoint() {
 
 function updateCursorReadout() {
   const p = getDragPoint();
-  if (p) {
-    document.getElementById('status-cursor').textContent =
-      `X: ${p.x.toFixed(2)}m · Z: ${p.z.toFixed(2)}m`;
-  }
+  if (p) document.getElementById('status-cursor').textContent =
+    `X: ${p.x.toFixed(2)}m · Z: ${p.z.toFixed(2)}m`;
 }
 
-/* ─── DOWN ─── */
+/* ─── Proyección item.x,z → pantalla (para box-select) ─── */
+function itemToScreen(item) {
+  const v = new THREE.Vector3(item.x, 0, item.z);
+  v.project(SceneManager.activeCam);
+  return {
+    x: (v.x * 0.5 + 0.5) * window.innerWidth,
+    y: (-v.y * 0.5 + 0.5) * window.innerHeight
+  };
+}
+
+/* ─── BOX SELECT overlay ─── */
+function ensureBoxOverlay() {
+  let el = document.getElementById('box-select');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'box-select';
+    el.style.cssText = 'position:fixed;border:1.5px dashed #d4ff3a;background:rgba(212,255,58,0.10);pointer-events:none;z-index:50;display:none';
+    document.body.appendChild(el);
+  }
+  return el;
+}
+function updateBoxOverlay(x1, y1, x2, y2) {
+  const el = ensureBoxOverlay();
+  const x = Math.min(x1, x2), y = Math.min(y1, y2);
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.width = Math.abs(x2 - x1) + 'px';
+  el.style.height = Math.abs(y2 - y1) + 'px';
+  el.style.display = 'block';
+}
+function hideBoxOverlay() {
+  const el = document.getElementById('box-select');
+  if (el) el.style.display = 'none';
+}
+
 function onPointerDown(e) {
   if (e.button !== 0) return;
   setPointer(e);
@@ -98,29 +124,45 @@ function onPointerDown(e) {
   mouseDownPos = { x: e.clientX, y: e.clientY };
   mouseDownTime = Date.now();
 
-  // Modo calibración (deferido — PlanManager llega en Entrega 2)
   if (AppState.calibration.active && window.PlanManager) {
     const point = getDragPoint();
-    if (!point) return;
-    window.PlanManager.handleCalibrationClick(point);
+    if (point) window.PlanManager.handleCalibrationClick(point);
     return;
   }
 
   const item = getIntersectedItem();
+
+  // Click en vacío + Shift → empezar box-select
+  if (!item && shiftDown) {
+    boxSelecting = { startX: e.clientX, startY: e.clientY, additive: true };
+    return;
+  }
+
   if (item) {
-    if (e.ctrlKey || e.metaKey) {
+    if (item.locked) {
+      // seleccionable pero no movible/duplicable
+      AppState.select(item.id, shiftDown);
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && !shiftDown) {
       AppState.duplicate(item.id);
       return;
     }
-    AppState.select(item.id);
+    AppState.select(item.id, shiftDown);
+
     const point = getDragPoint();
-    if (point) {
+    if (point && AppState.selectedIds.size > 0) {
       AppState.pushHistory();
-      dragging = {
-        id: item.id,
-        offsetX: item.x - point.x,
-        offsetZ: item.z - point.z
-      };
+      const ids = [...AppState.selectedIds].filter(id => {
+        const it = AppState.items.find(x => x.id === id);
+        return it && !it.locked;
+      });
+      const offsets = {};
+      ids.forEach(id => {
+        const it = AppState.items.find(x => x.id === id);
+        offsets[id] = { x: it.x - point.x, z: it.z - point.z };
+      });
+      dragging = { ids, offsets };
       SceneManager.setControlsEnabled(false);
     }
   } else {
@@ -128,18 +170,19 @@ function onPointerDown(e) {
   }
 }
 
-/* ─── MOVE ─── */
 function onPointerMove(e) {
   setPointer(e);
   updateCursorReadout();
 
+  if (boxSelecting) {
+    updateBoxOverlay(boxSelecting.startX, boxSelecting.startY, e.clientX, e.clientY);
+    return;
+  }
+
   if (rotating) {
-    // Snap angular a pasos de 15° (Math.PI / 12)
     const STEP = Math.PI / 12;
     let newRotY = rotating.startRotY + (e.clientX - rotating.anchorX) * 0.012;
     newRotY = Math.round(newRotY / STEP) * STEP;
-    rotating.lastX = e.clientX;
-    rotating.lastY = e.clientY;
     SceneManager.rotateItem(rotating.id, newRotY);
     return;
   }
@@ -147,20 +190,40 @@ function onPointerMove(e) {
   if (dragging) {
     const point = getDragPoint();
     if (!point) return;
-    let newX = point.x + dragging.offsetX;
-    let newZ = point.z + dragging.offsetZ;
-    if (AppState.snap.enabled) {
-      const s = AppState.snap.spacing;
-      newX = Math.round(newX / s) * s;
-      newZ = Math.round(newZ / s) * s;
-    }
-    SceneManager.moveItem(dragging.id, newX, newZ);
+    dragging.ids.forEach(id => {
+      const off = dragging.offsets[id];
+      let nx = point.x + off.x, nz = point.z + off.z;
+      if (AppState.snap.enabled) {
+        const s = AppState.snap.spacing;
+        nx = Math.round(nx / s) * s;
+        nz = Math.round(nz / s) * s;
+      }
+      SceneManager.moveItem(id, nx, nz);
+    });
   }
 }
 
-/* ─── UP ─── */
 function onPointerUp(e) {
   mouseDown = false;
+
+  if (boxSelecting) {
+    const x1 = Math.min(boxSelecting.startX, e.clientX);
+    const x2 = Math.max(boxSelecting.startX, e.clientX);
+    const y1 = Math.min(boxSelecting.startY, e.clientY);
+    const y2 = Math.max(boxSelecting.startY, e.clientY);
+    if (x2 - x1 > 4 && y2 - y1 > 4) {
+      const hits = [];
+      AppState.items.forEach(it => {
+        const p = itemToScreen(it);
+        if (p.x >= x1 && p.x <= x2 && p.y >= y1 && p.y <= y2) hits.push(it.id);
+      });
+      if (hits.length) AppState.selectMany(hits, boxSelecting.additive);
+    }
+    boxSelecting = null;
+    hideBoxOverlay();
+    return;
+  }
+
   if (dragging) {
     dragging = null;
     SceneManager.setControlsEnabled(true);
@@ -168,16 +231,12 @@ function onPointerUp(e) {
   }
 }
 
-/* ─── Click derecho ─── */
 function onContextMenu(e) {
   e.preventDefault();
   setPointer(e);
   const item = getIntersectedItem();
-  if (!item) {
-    hideContextMenu();
-    return;
-  }
-  AppState.select(item.id);
+  if (!item) { hideContextMenu(); return; }
+  if (AppState.selectedIds.size <= 1) AppState.select(item.id);
   showContextMenu(e.clientX, e.clientY, item);
 }
 
@@ -186,15 +245,10 @@ function showContextMenu(x, y, item) {
   if (!menu) return;
   menu.innerHTML = buildContextMenuHTML(item);
   menu.classList.add('visible');
-
   const w = menu.offsetWidth, h = menu.offsetHeight;
-  const px = Math.min(x, window.innerWidth - w - 10);
-  const py = Math.min(y, window.innerHeight - h - 10);
-  menu.style.left = px + 'px';
-  menu.style.top = py + 'px';
-
+  menu.style.left = Math.min(x, window.innerWidth - w - 10) + 'px';
+  menu.style.top = Math.min(y, window.innerHeight - h - 10) + 'px';
   if (window.lucide) lucide.createIcons();
-
   menu.querySelectorAll('[data-action]').forEach(el => {
     el.addEventListener('click', () => {
       handleContextAction(el.dataset.action, el.dataset.value, item.id);
@@ -209,9 +263,15 @@ function hideContextMenu() {
 }
 
 function buildContextMenuHTML(item) {
+  const lockItem = `
+    <div data-action="togglelock" class="ctx-item">
+      <i data-lucide="${item.locked ? 'lock' : 'unlock'}" class="w-3.5 h-3.5"></i>
+      ${item.locked ? 'Desbloquear' : 'Bloquear'}
+    </div>
+  `;
+
   if (item.type === 'mesa') {
     const isPresi = item.subtype === 'presi';
-
     const roundControls = !isPresi ? `
         <div class="mt-2">
           <div class="ctx-label">Sillas (4–12)</div>
@@ -228,34 +288,34 @@ function buildContextMenuHTML(item) {
             <div data-action="diameter" data-value="1.8" class="pill ${item.dims.diameter===1.8?'active':''}">1.8m</div>
             <div data-action="diameter" data-value="2.0" class="pill ${item.dims.diameter===2.0?'active':''}">2.0m</div>
           </div>
-        </div>
-    ` : '';
-
+        </div>` : '';
     const presiControls = isPresi ? `
         <div class="mt-2">
           <div class="ctx-label">Dimensiones</div>
-          <div class="text-[11px] mono px-2 py-1.5" style="background:rgba(10,10,11,0.04)">2.00m × 1.20m · ${item.chairs}p</div>
+          <div class="grid grid-cols-2 gap-1 mb-2">
+            <div data-action="presi-preset" data-value="2.0x1.2" class="pill ${item.dims.length===2.0&&item.dims.width===1.2?'active':''}">2.0×1.2</div>
+            <div data-action="presi-preset" data-value="2.5x1.2" class="pill ${item.dims.length===2.5&&item.dims.width===1.2?'active':''}">2.5×1.2</div>
+            <div data-action="presi-preset" data-value="3.0x1.5" class="pill ${item.dims.length===3.0&&item.dims.width===1.5?'active':''}">3.0×1.5</div>
+            <div data-action="presi-preset" data-value="4.0x1.5" class="pill ${item.dims.length===4.0&&item.dims.width===1.5?'active':''}">4.0×1.5</div>
+          </div>
+          <div class="text-[10.5px] mono px-2 py-1.5" style="background:rgba(10,10,11,0.04)">${item.dims.length.toFixed(2)}m × ${item.dims.width.toFixed(2)}m · ${item.chairs}p</div>
         </div>
         <div class="mt-3">
-          <div class="ctx-label">Sillas Extremos</div>
-          <div class="space-y-1">
-            <label class="flex items-center gap-2 text-[12px] cursor-pointer hover:bg-black/5 px-2 py-1.5">
-              <input type="checkbox" data-action="endhead" ${item.endHead !== false ? 'checked' : ''} data-keep-open="1"/>
-              <span>Cabecera (+X)</span>
-            </label>
-            <label class="flex items-center gap-2 text-[12px] cursor-pointer hover:bg-black/5 px-2 py-1.5">
-              <input type="checkbox" data-action="endfoot" ${item.endFoot !== false ? 'checked' : ''} data-keep-open="1"/>
-              <span>Pie (−X)</span>
-            </label>
-          </div>
-        </div>
-    ` : '';
+          <div class="ctx-label">Sillas extremos</div>
+          <label class="flex items-center gap-2 text-[12px] cursor-pointer hover:bg-black/5 px-2 py-1.5">
+            <input type="checkbox" data-action="endhead" ${item.endHead !== false ? 'checked' : ''} data-keep-open="1"/>
+            <span>Cabecera (+X)</span>
+          </label>
+          <label class="flex items-center gap-2 text-[12px] cursor-pointer hover:bg-black/5 px-2 py-1.5">
+            <input type="checkbox" data-action="endfoot" ${item.endFoot !== false ? 'checked' : ''} data-keep-open="1"/>
+            <span>Pie (−X)</span>
+          </label>
+        </div>` : '';
 
     return `
       <div class="ctx-section">
-        <div class="ctx-label">Mesa · ID ${item.id}</div>
-        ${roundControls}
-        ${presiControls}
+        <div class="ctx-label">Mesa · ID ${item.id}${item.locked ? ' · 🔒' : ''}</div>
+        ${roundControls}${presiControls}
         <div class="mt-3">
           <div class="ctx-label">Tipo</div>
           <div class="pill-group">
@@ -265,21 +325,20 @@ function buildContextMenuHTML(item) {
           </div>
         </div>
         <div class="ctx-divider"></div>
-        <div data-action="duplicate" class="ctx-item"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar (+2m X)</div>
+        ${lockItem}
+        <div data-action="duplicate" class="ctx-item"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar</div>
         <div data-action="delete" class="ctx-item" style="color:#b91c1c"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Eliminar</div>
-      </div>
-    `;
+      </div>`;
   }
 
   if (item.type === 'buffet') {
-    const categories = [
-      { v: 'arroces', l: 'Arroces' }, { v: 'feria', l: 'Feria' },
-      { v: 'quesos', l: 'Quesos' },   { v: 'italiano', l: 'Italiano' },
-      { v: 'huevos', l: 'Huevos' },   { v: 'jamon', l: 'Jamón' },
+    const cats = [
+      ['arroces','Arroces'],['feria','Feria'],['quesos','Quesos'],
+      ['italiano','Italiano'],['huevos','Huevos'],['jamon','Jamón']
     ];
     return `
       <div class="ctx-section">
-        <div class="ctx-label">Buffet · ID ${item.id}</div>
+        <div class="ctx-label">Buffet · ID ${item.id}${item.locked ? ' · 🔒' : ''}</div>
         <div class="mt-2">
           <div class="ctx-label">Longitud</div>
           <div class="pill-group">
@@ -291,14 +350,14 @@ function buildContextMenuHTML(item) {
         <div class="mt-3">
           <div class="ctx-label">Categoría</div>
           <div class="grid grid-cols-2 gap-1">
-            ${categories.map(c => `<div data-action="bufftype" data-value="${c.v}" class="pill ${item.subtype===c.v?'active':''}">${c.l}</div>`).join('')}
+            ${cats.map(([v,l]) => `<div data-action="bufftype" data-value="${v}" class="pill ${item.subtype===v?'active':''}">${l}</div>`).join('')}
           </div>
         </div>
         <div class="ctx-divider"></div>
-        <div data-action="duplicate" class="ctx-item"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar (+2m X)</div>
+        ${lockItem}
+        <div data-action="duplicate" class="ctx-item"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar</div>
         <div data-action="delete" class="ctx-item" style="color:#b91c1c"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Eliminar</div>
-      </div>
-    `;
+      </div>`;
   }
 
   if (item.type === 'carpa') {
@@ -306,36 +365,33 @@ function buildContextMenuHTML(item) {
     const colsOn  = item.columns?.enabled === true;
     return `
       <div class="ctx-section">
-        <div class="ctx-label" style="color:#6b4423">Carpa · ID ${item.id}</div>
+        <div class="ctx-label" style="color:#6b4423">Carpa · ID ${item.id}${item.locked ? ' · 🔒' : ''}</div>
         <div class="mt-2">
-          <div class="ctx-label">Dimensiones rápidas</div>
+          <div class="ctx-label">Dimensiones</div>
           <div class="pill-group">
-            <div data-action="carpa-preset" data-value="6x3" class="pill ${item.dims.length===6 && item.dims.width===3?'active':''}">6×3</div>
-            <div data-action="carpa-preset" data-value="8x4" class="pill ${item.dims.length===8 && item.dims.width===4?'active':''}">8×4</div>
-            <div data-action="carpa-preset" data-value="10x5" class="pill ${item.dims.length===10 && item.dims.width===5?'active':''}">10×5</div>
-            <div data-action="carpa-preset" data-value="12x6" class="pill ${item.dims.length===12 && item.dims.width===6?'active':''}">12×6</div>
+            <div data-action="carpa-preset" data-value="6x3" class="pill ${item.dims.length===6&&item.dims.width===3?'active':''}">6×3</div>
+            <div data-action="carpa-preset" data-value="8x4" class="pill ${item.dims.length===8&&item.dims.width===4?'active':''}">8×4</div>
+            <div data-action="carpa-preset" data-value="10x5" class="pill ${item.dims.length===10&&item.dims.width===5?'active':''}">10×5</div>
+            <div data-action="carpa-preset" data-value="12x6" class="pill ${item.dims.length===12&&item.dims.width===6?'active':''}">12×6</div>
           </div>
         </div>
         <div class="mt-3">
-          <div class="ctx-label">Estructura</div>
           <label class="flex items-center gap-2 text-[12px] cursor-pointer hover:bg-black/5 px-2 py-1.5">
-            <input type="checkbox" data-action="carpa-toggle-posts" ${postsOn ? 'checked' : ''} data-keep-open="1"/>
-            <span>Habilitar postes perimetrales</span>
+            <input type="checkbox" data-action="carpa-toggle-posts" ${postsOn?'checked':''} data-keep-open="1"/>
+            <span>Postes perimetrales</span>
           </label>
           <label class="flex items-center gap-2 text-[12px] cursor-pointer hover:bg-black/5 px-2 py-1.5">
-            <input type="checkbox" data-action="carpa-toggle-cols" ${colsOn ? 'checked' : ''} data-keep-open="1"/>
-            <span>Habilitar columnas internas</span>
+            <input type="checkbox" data-action="carpa-toggle-cols" ${colsOn?'checked':''} data-keep-open="1"/>
+            <span>Columnas internas</span>
           </label>
         </div>
         <div class="ctx-divider"></div>
-        <div data-action="duplicate" class="ctx-item"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar (+2m X)</div>
+        ${lockItem}
+        <div data-action="duplicate" class="ctx-item"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar</div>
         <div data-action="delete" class="ctx-item" style="color:#b91c1c"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Eliminar</div>
-      </div>
-    `;
+      </div>`;
   }
 
-  // ── Fallback genérico para tipos sin menú propio ──
-  // (arbusto, arbol, cableLuces, room: propiedades editables en panel derecho)
   const titleMap = {
     arbusto:    { label: 'Arbusto',         color: '#3e7a3a' },
     arbol:      { label: 'Árbol',           color: '#2f6a3f' },
@@ -346,15 +402,13 @@ function buildContextMenuHTML(item) {
   if (meta) {
     return `
       <div class="ctx-section">
-        <div class="ctx-label" style="color:${meta.color}">${meta.label} · ID ${item.id}</div>
-        <div class="text-[10.5px] px-2 py-1.5 mt-2 mb-1" style="color:var(--muted);background:rgba(10,10,11,0.04)">
-          Propiedades editables en el panel derecho.
-        </div>
+        <div class="ctx-label" style="color:${meta.color}">${meta.label} · ID ${item.id}${item.locked ? ' · 🔒' : ''}</div>
+        <div class="text-[10.5px] px-2 py-1.5 mt-2 mb-1" style="color:var(--muted);background:rgba(10,10,11,0.04)">Editable en panel derecho</div>
         <div class="ctx-divider"></div>
-        <div data-action="duplicate" class="ctx-item"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar (+2m X)</div>
+        ${lockItem}
+        <div data-action="duplicate" class="ctx-item"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar</div>
         <div data-action="delete" class="ctx-item" style="color:#b91c1c"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Eliminar</div>
-      </div>
-    `;
+      </div>`;
   }
 }
 
@@ -369,12 +423,14 @@ function refreshContextMenu(id) {
 function handleContextAction(action, value, id) {
   const item = AppState.items.find(i => i.id === id);
   if (!item) return;
-
   switch (action) {
+    case 'togglelock':
+      AppState.toggleLock(id);
+      refreshContextMenu(id);
+      break;
     case 'chairs': {
       const delta = parseInt(value, 10);
-      const newCount = Math.max(4, Math.min(12, item.chairs + delta));
-      AppState.update(id, { chairs: newCount });
+      AppState.update(id, { chairs: Math.max(4, Math.min(12, item.chairs + delta)) });
       refreshContextMenu(id);
       break;
     }
@@ -385,45 +441,39 @@ function handleContextAction(action, value, id) {
       const patch = { subtype: value };
       if (value === 'presi') {
         patch.dims = { length: 2.0, width: 1.2 };
-        patch.endHead = true;
-        patch.endFoot = true;
-        patch.chairs = 10;
+        patch.endHead = true; patch.endFoot = true; patch.chairs = 10;
       } else if (item.subtype === 'presi') {
-        patch.dims = { diameter: 1.8 };
-        patch.chairs = 8;
-        patch.endHead = undefined;
-        patch.endFoot = undefined;
+        patch.dims = { diameter: 1.8 }; patch.chairs = 8;
+        patch.endHead = undefined; patch.endFoot = undefined;
       }
       AppState.update(id, patch);
       refreshContextMenu(id);
       break;
     }
+    case 'presi-preset': {
+      const [L, W] = value.split('x').map(parseFloat);
+      AppState.update(id, { dims: { length: L, width: W } });
+      refreshContextMenu(id);
+      break;
+    }
     case 'endhead': {
       const newVal = !(item.endHead !== false);
-      const newCount = 8 + (newVal ? 1 : 0) + (item.endFoot !== false ? 1 : 0);
+      const newCount = 8 + (newVal?1:0) + (item.endFoot!==false?1:0);
       AppState.update(id, { endHead: newVal, chairs: newCount });
       refreshContextMenu(id);
       break;
     }
     case 'endfoot': {
       const newVal = !(item.endFoot !== false);
-      const newCount = 8 + (item.endHead !== false ? 1 : 0) + (newVal ? 1 : 0);
+      const newCount = 8 + (item.endHead!==false?1:0) + (newVal?1:0);
       AppState.update(id, { endFoot: newVal, chairs: newCount });
       refreshContextMenu(id);
       break;
     }
-    case 'length':
-      AppState.update(id, { dims: { ...item.dims, length: parseFloat(value) } });
-      break;
-    case 'bufftype':
-      AppState.update(id, { subtype: value });
-      break;
-    case 'duplicate':
-      AppState.duplicate(id);
-      break;
-    case 'delete':
-      AppState.remove(id);
-      break;
+    case 'length': AppState.update(id, { dims: { ...item.dims, length: parseFloat(value) } }); break;
+    case 'bufftype': AppState.update(id, { subtype: value }); break;
+    case 'duplicate': AppState.duplicate(id); break;
+    case 'delete': AppState.remove(id); break;
     case 'carpa-preset': {
       const [L, W] = value.split('x').map(parseFloat);
       AppState.update(id, { dims: { ...item.dims, length: L, width: W } });
@@ -431,15 +481,13 @@ function handleContextAction(action, value, id) {
       break;
     }
     case 'carpa-toggle-posts': {
-      const newVal = !(item.posts?.enabled !== false);
-      AppState.update(id, { posts: { ...item.posts, enabled: newVal } });
+      AppState.update(id, { posts: { ...item.posts, enabled: !(item.posts?.enabled !== false) } });
       refreshContextMenu(id);
       break;
     }
     case 'carpa-toggle-cols': {
-      const currentCols = item.columns || { enabled: false, rows: 1, cols: 2, diameter: 0.15 };
-      const newVal = !currentCols.enabled;
-      AppState.update(id, { columns: { ...currentCols, enabled: newVal } });
+      const cur = item.columns || { enabled:false, rows:1, cols:2, diameter:0.15 };
+      AppState.update(id, { columns: { ...cur, enabled: !cur.enabled } });
       refreshContextMenu(id);
       break;
     }
@@ -447,11 +495,14 @@ function handleContextAction(action, value, id) {
 }
 
 function onKeyDown(e) {
+  if (e.key === 'Shift') shiftDown = true;
   if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
 
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); AppState.undo(); return; }
+
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
     e.preventDefault();
-    AppState.undo();
+    AppState.selectMany(AppState.items.map(i => i.id));
     return;
   }
 
@@ -459,26 +510,22 @@ function onKeyDown(e) {
     rKeyDown = true;
     if (AppState.selectedId !== null) {
       const item = AppState.items.find(i => i.id === AppState.selectedId);
-      if (item) {
+      if (item && !item.locked) {
         AppState.pushHistory();
-        const lastMouse = window._lastMousePos || { x: window.innerWidth/2, y: window.innerHeight/2 };
-        rotating = {
-          id: item.id,
-          anchorX: lastMouse.x,
-          lastX: lastMouse.x,
-          lastY: lastMouse.y,
-          startRotY: item.rotY || 0
-        };
+        const m = window._lastMousePos || { x: window.innerWidth/2, y: window.innerHeight/2 };
+        rotating = { id: item.id, anchorX: m.x, lastX: m.x, lastY: m.y, startRotY: item.rotY || 0 };
         SceneManager.setControlsEnabled(false);
-        document.getElementById('status-mode').textContent = AppState.camera === 'iso'
-          ? 'ISO · ROTANDO…' : 'TOP · ROTANDO…';
+        document.getElementById('status-mode').textContent = AppState.camera === 'iso' ? 'ISO · ROTANDO…' : 'TOP · ROTANDO…';
       }
     }
     return;
   }
 
-  if ((e.key === 'Delete' || e.key === 'Backspace') && AppState.selectedId !== null) {
-    AppState.remove(AppState.selectedId);
+  if ((e.key === 'Delete' || e.key === 'Backspace') && AppState.selectedIds.size > 0) {
+    [...AppState.selectedIds].forEach(id => {
+      const it = AppState.items.find(i => i.id === id);
+      if (it && !it.locked) AppState.remove(id);
+    });
   }
 
   if (e.key === 'Escape') {
@@ -489,6 +536,7 @@ function onKeyDown(e) {
 }
 
 function onKeyUp(e) {
+  if (e.key === 'Shift') shiftDown = false;
   if (e.key.toLowerCase() === 'r') {
     rKeyDown = false;
     if (rotating) {
@@ -499,8 +547,7 @@ function onKeyUp(e) {
       }
       rotating = null;
       SceneManager.setControlsEnabled(true);
-      document.getElementById('status-mode').textContent =
-        AppState.camera === 'iso' ? 'ISO · 45°' : 'TOP · CENITAL';
+      document.getElementById('status-mode').textContent = AppState.camera === 'iso' ? 'ISO · 45°' : 'TOP · CENITAL';
     }
   }
 }

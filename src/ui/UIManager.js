@@ -175,6 +175,20 @@ function showTooltip(item) {
       <div class="text-[10.5px] opacity-70 mt-0.5">grosor ${(item.dims.thickness * 100).toFixed(0)}cm</div>
       <div class="text-[10px] opacity-50 mt-1">ID #${item.id}</div>
     `;
+  } else if (item.type === 'sillaCatering') {
+    content.innerHTML = `
+      <div class="mb-1 opacity-70 text-[9.5px] tracking-widest uppercase">Silla · ${item.subtype}</div>
+      <div class="text-sm">${(item.dims?.width ?? 0.44).toFixed(2)} × ${(item.dims?.depth ?? 0.44).toFixed(2)}m</div>
+      <div class="text-[10px] opacity-50 mt-1">ID #${item.id}</div>
+    `;
+  } else if (item.type === 'sillaLineal') {
+    const n = item.count ?? 6;
+    const span = (n - 1) * (item.gap ?? 0.55);
+    content.innerHTML = `
+      <div class="mb-1 opacity-70 text-[9.5px] tracking-widest uppercase">Lineal · ${item.subtype}</div>
+      <div class="text-sm">${n} sillas · ${span.toFixed(2)}m</div>
+      <div class="text-[10px] opacity-50 mt-1">ID #${item.id}</div>
+    `;
   } else {
     content.innerHTML = `
       <div class="mb-1 opacity-70 text-[9.5px] tracking-widest uppercase">Buffet · ${item.subtype || '—'}</div>
@@ -205,6 +219,8 @@ function updateTooltipPosition() {
                 : item.type === 'arbol'      ? (item.dims.height || 5) + 0.4
                 : item.type === 'cableLuces' ? (item.height || 4) + 0.4
                 : item.type === 'room'       ? (item.dims.height || 3) + 0.4
+                : item.type === 'sillaCatering' ? (item.dims?.totalHeight || 0.9) + 0.3
+                : item.type === 'sillaLineal'   ? (item.dims?.totalHeight || 0.9) + 0.3
                 : 2.4;
   const vec = new THREE.Vector3(item.x, yHeight, item.z);
   vec.project(S.activeCam);
@@ -564,6 +580,90 @@ function showDetail(item) {
       color:     v => ({ color: v }),
     });
 
+} else if (item.type === 'sillaCatering') {
+    content.innerHTML = `
+      <div class="display-font text-2xl mb-1 leading-tight">Silla</div>
+      <div class="mono text-[10px] uppercase tracking-widest mb-4" style="color:var(--muted)">${item.subtype} · ID #${item.id}</div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Ancho (m)</span>
+          <input data-input="width" type="number" min="0.3" max="0.8" step="0.01" value="${item.dims.width}" class="input-field"/>
+        </label>
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Fondo (m)</span>
+          <input data-input="depth" type="number" min="0.3" max="0.8" step="0.01" value="${item.dims.depth}" class="input-field"/>
+        </label>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Asiento (m)</span>
+          <input data-input="seatHeight" type="number" min="0.30" max="0.85" step="0.01" value="${item.dims.seatHeight}" class="input-field"/>
+        </label>
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Alto total (m)</span>
+          <input data-input="totalHeight" type="number" min="0.50" max="1.30" step="0.01" value="${item.dims.totalHeight}" class="input-field"/>
+        </label>
+      </div>
+
+      <label class="block mb-3">
+        <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color</span>
+        <input data-input="color" type="color" value="${item.color}" class="input-field" style="padding:2px;height:36px"/>
+      </label>
+
+      <div class="rule"></div>
+      <div class="flex gap-2">
+        <button data-act="dup" class="btn ghost flex-1 justify-center"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar</button>
+        <button data-act="del" class="btn danger ghost flex-1 justify-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Eliminar</button>
+      </div>
+    `;
+    wireSimpleInputs(panel, item, A, {
+      width:       v => ({ dims: { ...item.dims, width:       clampNum(v, 0.3, 0.8) } }),
+      depth:       v => ({ dims: { ...item.dims, depth:       clampNum(v, 0.3, 0.8) } }),
+      seatHeight:  v => ({ dims: { ...item.dims, seatHeight:  clampNum(v, 0.30, 0.85) } }),
+      totalHeight: v => ({ dims: { ...item.dims, totalHeight: clampNum(v, 0.50, 1.30) } }),
+      color:       v => ({ color: v }),
+    });
+
+  } else if (item.type === 'sillaLineal') {
+    const span = ((item.count - 1) * item.gap).toFixed(2);
+    content.innerHTML = `
+      <div class="display-font text-2xl mb-1 leading-tight">Lineal de sillas</div>
+      <div class="mono text-[10px] uppercase tracking-widest mb-4" style="color:var(--muted)">${item.subtype} · ID #${item.id}</div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Nº sillas</span>
+          <input data-input="count" type="number" min="2" max="40" step="1" value="${item.count}" class="input-field"/>
+        </label>
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Separación (m)</span>
+          <input data-input="gap" type="number" min="0.35" max="2" step="0.05" value="${item.gap}" class="input-field"/>
+        </label>
+      </div>
+
+      <div class="text-[10.5px] mb-3 px-2 py-1.5" style="color:var(--muted);background:rgba(10,10,11,0.04)">
+        Largo total: <span class="mono">${span}m</span>
+      </div>
+
+      <label class="block mb-3">
+        <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color</span>
+        <input data-input="color" type="color" value="${item.color}" class="input-field" style="padding:2px;height:36px"/>
+      </label>
+
+      <div class="rule"></div>
+      <div class="flex gap-2">
+        <button data-act="dup" class="btn ghost flex-1 justify-center"><i data-lucide="copy" class="w-3.5 h-3.5"></i>Duplicar</button>
+        <button data-act="del" class="btn danger ghost flex-1 justify-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Eliminar</button>
+      </div>
+    `;
+    wireSimpleInputs(panel, item, A, {
+      count: v => ({ count: Math.round(clampNum(v, 2, 40)), chairs: Math.round(clampNum(v, 2, 40)) }),
+      gap:   v => ({ gap:   clampNum(v, 0.35, 2) }),
+      color: v => ({ color: v }),
+    });
+
   } else {
     content.innerHTML = `
       <div class="display-font text-2xl mb-1 leading-tight">Buffet</div>
@@ -581,6 +681,7 @@ function showDetail(item) {
       </div>
     `;
   }
+  
 
   panel.style.display = 'block';
   if (window.lucide) lucide.createIcons();
@@ -634,6 +735,44 @@ function updateCarpaPostsCount(item) {
   }
 }
 
+function showMultiDetail(ids) {
+  const A = dynamic.AppState;
+  const panel = document.getElementById('detail-panel');
+  const content = document.getElementById('detail-content');
+  if (!panel || !content || !A) return;
+  const items = ids.map(id => A.items.find(i => i.id === id)).filter(Boolean);
+  const totalPax = items.reduce((s, i) => s + (i.chairs || 0), 0);
+  const lockedCount = items.filter(i => i.locked).length;
+
+  content.innerHTML = `
+    <div class="display-font text-2xl mb-1 leading-tight">${items.length} elementos</div>
+    <div class="mono text-[10px] uppercase tracking-widest mb-4" style="color:var(--muted)">Selección múltiple</div>
+    <div class="space-y-2 text-[12px] mb-3">
+      <div class="flex justify-between"><span style="color:var(--muted)">Pax suma</span><span class="mono">${totalPax}p</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">Bloqueados</span><span class="mono">${lockedCount}/${items.length}</span></div>
+    </div>
+    <div class="rule"></div>
+    <div class="space-y-2">
+      <button data-multi-act="lock-all" class="btn ghost w-full justify-center"><i data-lucide="lock" class="w-3.5 h-3.5"></i>Bloquear todos</button>
+      <button data-multi-act="unlock-all" class="btn ghost w-full justify-center"><i data-lucide="unlock" class="w-3.5 h-3.5"></i>Desbloquear todos</button>
+      <button data-multi-act="delete-all" class="btn danger ghost w-full justify-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Eliminar todos</button>
+    </div>
+  `;
+  panel.style.display = 'block';
+  if (window.lucide) lucide.createIcons();
+
+  panel.querySelector('[data-multi-act="lock-all"]')?.addEventListener('click', () => {
+    ids.forEach(id => { const it = A.items.find(i => i.id === id); if (it && !it.locked) A.toggleLock(id); });
+  });
+  panel.querySelector('[data-multi-act="unlock-all"]')?.addEventListener('click', () => {
+    ids.forEach(id => { const it = A.items.find(i => i.id === id); if (it && it.locked) A.toggleLock(id); });
+  });
+  panel.querySelector('[data-multi-act="delete-all"]')?.addEventListener('click', () => {
+    if (!confirm(`¿Eliminar ${ids.length} elementos?`)) return;
+    ids.forEach(id => { const it = A.items.find(i => i.id === id); if (it && !it.locked) A.remove(id); });
+  });
+}
+
 function hideDetail() {
   const p = document.getElementById('detail-panel');
   if (p) p.style.display = 'none';
@@ -653,7 +792,7 @@ export const UIManager = {
   async init() { await bindDeps(); },
   refresh,
   showTooltip, hideTooltip, updateTooltipPosition,
-  showDetail, hideDetail,
+  showDetail, showMultiDetail, hideDetail,
   refreshUndoBadge,
   updateCarpaPostsCount
 };

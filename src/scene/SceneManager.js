@@ -266,25 +266,22 @@ function rotateItem(id, rotY) {
 function highlightSelection() {
   if (!_appState) return;
   const sel = _appState.items.find(i => i.id === _appState.selectedId);
+  const selectedSet = _appState.selectedIds || new Set();
   meshes.forEach((g, id) => {
     const it = _appState.items.find(x => x.id === id);
     g.traverse(child => {
       if (child.isMesh && child.userData.baseColor !== undefined) {
-        const isSelected = id === _appState.selectedId;
+        const isSelected = selectedSet.has(id);
         const isSimilar = sel && sel.type === 'mesa' && it && it.type === 'mesa'
-                          && it.dims.diameter === sel.dims.diameter && id !== sel.id;
+                          && it.dims.diameter === sel.dims.diameter && !selectedSet.has(id);
         const isCarpa = it && it.type === 'carpa';
 
         if (isCarpa) {
           if (isSelected) {
-            if (child.material.opacity !== undefined) {
-              child.material.opacity = Math.min(1, (child.userData.baseOpacity || 1) * 1.5);
-            }
+            if (child.material.opacity !== undefined) child.material.opacity = Math.min(1, (child.userData.baseOpacity || 1) * 1.5);
             child.material.color.setHex(0x8b5a2b);
           } else {
-            if (child.material.opacity !== undefined && child.userData.baseOpacity) {
-              child.material.opacity = child.userData.baseOpacity;
-            }
+            if (child.material.opacity !== undefined && child.userData.baseOpacity) child.material.opacity = child.userData.baseOpacity;
             child.material.color.setHex(child.userData.baseColor);
           }
           return;
@@ -357,6 +354,19 @@ function drawCotas() {
         kind = 'room';
         yOffset = item.dims.height + 0.4;
         break;
+      case 'sillaCatering':
+        label = `Silla · ${item.subtype}`;
+        kind = 'mesa';
+        yOffset = (item.dims?.totalHeight ?? 0.9) + 0.3;
+        break;
+      case 'sillaLineal': {
+        const n = item.count ?? 6;
+        const span = (n - 1) * (item.gap ?? 0.55);
+        label = `${n} sillas · ${span.toFixed(2)}m`;
+        kind = 'mesa';
+        yOffset = (item.dims?.totalHeight ?? 0.9) + 0.3;
+        break;
+      }
       default:
         label = `${item.dims.length.toFixed(2)}m · ${(item.subtype || '').toUpperCase()}`;
         kind = 'buffet';
@@ -498,6 +508,16 @@ function applyShadowState() {
   renderer.shadowMap.needsUpdate = true;
 }
 
+function setZoomPercent(pct) {
+  const factor = pct / 100;
+  if (_appState.camera === 'iso') {
+    controlsIso.object.position.setLength(28 / factor);
+  } else {
+    orthoCam.zoom = factor;
+    orthoCam.updateProjectionMatrix();
+  }
+}
+
 /* ─── API exportada ─── */
 export const SceneManager = {
   async init() {
@@ -509,6 +529,7 @@ export const SceneManager = {
   drawCotas,
   setCamera,
   setControlsEnabled,
+  setZoomPercent,
   rebuildGrids,
   applyShadowState,
   setPlanTexture, updatePlanSize, updatePlanOpacity,

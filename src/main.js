@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   E-SCALE · Bootstrap principal
+   E-SCALE · Bootstrap principal — UI macOS
    ═══════════════════════════════════════════════════════════ */
 
 import { AppState }           from './core/AppState.js';
@@ -11,14 +11,15 @@ import { UIManager }          from './ui/UIManager.js';
 import { PlanManager }        from './io/PlanManager.js';
 import { CompanyManager }     from './io/CompanyManager.js';
 import { ExportManager }      from './io/ExportManager.js';
+import { Dock }               from './ui/Dock.js';
+import { CatalogModal }       from './ui/CatalogModal.js';
 
 async function bootstrap() {
   if (typeof THREE === 'undefined') {
-    document.body.innerHTML = '<pre style="padding:24px;color:#b91c1c">Error: Three.js no se cargó. Comprueba tu conexión y los script CDN.</pre>';
+    document.body.innerHTML = '<pre style="padding:24px;color:#b91c1c">Error: Three.js no se cargó.</pre>';
     return;
   }
 
-  // Bindeo de deps perezosas (UIManager ↔ AppState ↔ SceneManager)
   await UIManager.init();
   await SceneManager.init();
 
@@ -27,69 +28,107 @@ async function bootstrap() {
   PlanManager.init();
   CompanyManager.init();
   ExportManager.init();
+  CatalogModal.init();
+  Dock.init();
 
-  // ── Cargar biblioteca y renderizar botones ──
   await ElementLibrary.load();
-  ElementLibrary.renderAddButtons();
 
-  // ── Cámara ──
-  document.getElementById('cam-iso').addEventListener('click', () => {
+  // ── Cámara (header segmented) ──
+  const camIso = document.getElementById('cam-iso');
+  const camTop = document.getElementById('cam-top');
+  camIso?.addEventListener('click', () => {
     SceneManager.setCamera('iso');
-    document.getElementById('cam-iso').classList.add('active');
-    document.getElementById('cam-top').classList.remove('active');
+    camIso.classList.add('active');
+    camTop.classList.remove('active');
   });
-  document.getElementById('cam-top').addEventListener('click', () => {
+  camTop?.addEventListener('click', () => {
     SceneManager.setCamera('top');
-    document.getElementById('cam-top').classList.add('active');
-    document.getElementById('cam-iso').classList.remove('active');
+    camTop.classList.add('active');
+    camIso.classList.remove('active');
   });
 
-  // ── Cotas ──
-  document.getElementById('btn-cotas').addEventListener('click', e => {
-    AppState.showCotas = !AppState.showCotas;
-    e.currentTarget.classList.toggle('active', AppState.showCotas);
+  // ── Zoom slider ──
+  const zoomRange = document.getElementById('zoom-range');
+  const zoomPct   = document.getElementById('zoom-pct');
+  zoomRange?.addEventListener('input', () => {
+    const pct = parseInt(zoomRange.value, 10);
+    if (zoomPct) zoomPct.textContent = pct + '%';
+    SceneManager.setZoomPercent?.(pct);
+  });
+
+  // ── Stats en header ──
+  const refreshHeaderStats = () => {
+    const pax = AppState.items.reduce((s, i) => s + (i.chairs || 0), 0);
+    const area = AppState.items
+      .filter(i => i.type === 'carpa' || i.type === 'room')
+      .reduce((s, i) => s + (i.dims.length || 0) * (i.dims.width || 0), 0);
+    const elPax  = document.getElementById('hdr-pax');
+    const elArea = document.getElementById('hdr-area');
+    if (elPax)  elPax.textContent  = pax;
+    if (elArea) elArea.textContent = area.toFixed(0);
+
+    // Mostrar/ocultar empty-hint
+    document.body.classList.toggle('has-items', AppState.items.length > 0);
+  };
+  // Hook al refresh global
+  const _origRefresh = UIManager.refresh;
+  UIManager.refresh = function() {
+    _origRefresh.call(UIManager);
+    refreshHeaderStats();
+  };
+  refreshHeaderStats();
+
+  // ── Ajustes modal (⚙) ──
+  const settingsModal = document.getElementById('settings-modal');
+  document.getElementById('btn-settings')?.addEventListener('click', () => settingsModal.classList.add('visible'));
+  document.getElementById('settings-close')?.addEventListener('click', () => settingsModal.classList.remove('visible'));
+  document.getElementById('settings-done')?.addEventListener('click', () => settingsModal.classList.remove('visible'));
+
+  // Toggles dentro de ajustes
+  const snapToggle = document.getElementById('snap-toggle');
+  snapToggle.checked = AppState.snap.enabled;
+  snapToggle.addEventListener('change', () => {
+    AppState.snap.enabled = snapToggle.checked;
+    document.getElementById('status-snap').textContent = snapToggle.checked
+      ? `SNAP ${AppState.snap.spacing}m` : 'SNAP OFF';
+  });
+
+  const cotasToggle = document.getElementById('cotas-toggle');
+  cotasToggle.checked = AppState.showCotas;
+  cotasToggle.addEventListener('change', () => {
+    AppState.showCotas = cotasToggle.checked;
     SceneManager.drawCotas();
   });
 
-  // ── Sombras (sólo se aplican en ISO) ──
-  document.getElementById('btn-shadows').addEventListener('click', e => {
-    AppState.shadows = !AppState.shadows;
-    e.currentTarget.classList.toggle('active', AppState.shadows);
+  const shadowsToggle = document.getElementById('shadows-toggle');
+  shadowsToggle.checked = AppState.shadows;
+  shadowsToggle.addEventListener('change', () => {
+    AppState.shadows = shadowsToggle.checked;
     SceneManager.applyShadowState();
   });
 
-  // ── Limpiar ──
-  document.getElementById('btn-clear').addEventListener('click', () => {
+  // Acciones masivas
+  document.getElementById('lock-all-struct')?.addEventListener('click', () => {
+    const STRUCT = ['room', 'arbusto', 'arbol'];
+    AppState.items.filter(i => STRUCT.includes(i.type) && !i.locked).forEach(i => AppState.toggleLock(i.id));
+  });
+  document.getElementById('lock-all-light')?.addEventListener('click', () => {
+    AppState.items.filter(i => i.type === 'cableLuces' && !i.locked).forEach(i => AppState.toggleLock(i.id));
+  });
+  document.getElementById('unlock-all')?.addEventListener('click', () => {
+    AppState.items.filter(i => i.locked).forEach(i => AppState.toggleLock(i.id));
+  });
+  document.getElementById('btn-clear')?.addEventListener('click', () => {
     if (AppState.items.length === 0) return;
     if (confirm('¿Vaciar toda la escena?')) AppState.clear();
   });
 
-  // ── Iconos lucide ──
+  // Imprimir
+  document.getElementById('btn-print')?.addEventListener('click', () => window.print());
+
   if (window.lucide) lucide.createIcons();
 
-  // ── Escena de demostración ──
-  AppState._suppressHistory = true;
-  AppState.add({
-    type: 'mesa', subtype: 'standard',
-    dims: { diameter: 1.8 },
-    x: -3, z: 0, rotY: 0, chairs: 8
-  });
-  AppState.add({
-    type: 'mesa', subtype: 'napoleon',
-    dims: { diameter: 2.0 },
-    x: 3, z: 0, rotY: 0, chairs: 10
-  });
-  AppState.add({
-    type: 'buffet', subtype: 'arroces',
-    dims: { length: 3.6 },
-    x: 0, z: -5, rotY: 0, chairs: 0
-  });
-  AppState._suppressHistory = false;
-
-  SceneManager.drawCotas();
-  UIManager.refresh();
-
-  console.info('[E-scale] arranque completo · Entrega 2');
+  console.info('[E-scale] arranque OK · UI macOS');
 }
 
 window.addEventListener('load', bootstrap);

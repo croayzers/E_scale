@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>E-scale — Planificador 3D de Eventos</title>
+<title>E-scale</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -12,9 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
-  if (window.pdfjsLib) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
+  if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 </script>
 <script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.min.js"></script>
 
@@ -25,220 +23,102 @@
 <link rel="stylesheet" href="styles/base.css">
 <link rel="stylesheet" href="styles/layout.css">
 <link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/dock.css">
 </head>
 <body>
 
 <canvas id="scene-canvas"></canvas>
 
-<!-- ============================================
-     HEADER
-============================================ -->
-<header class="fixed top-0 left-0 right-0 z-30 px-6 py-4 flex items-center justify-between anim-in">
-  <div class="flex items-center gap-4">
-    <button id="btn-company" class="flex items-center gap-2 group">
-      <span class="display-font text-2xl font-medium leading-none">
-        <span id="brand-name">E-scale</span><span style="color:var(--muted)">.</span>
-      </span>
-      <i data-lucide="chevron-down" class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity"></i>
-    </button>
-    <img id="company-logo-preview" class="h-7 w-auto hidden" alt=""/>
-    <div class="hidden md:block h-6 w-px bg-black/15"></div>
-    <div class="hidden md:flex flex-col leading-tight">
-      <span class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">Sistema · 3D · v3.0</span>
-      <span class="text-[11px] mono">Planificador de eventos</span>
-    </div>
+<!-- ============ HEADER MAC ============ -->
+<header id="header-mac" class="fixed top-3 left-1/2 -translate-x-1/2 z-30 anim-in glass-mac flex items-center gap-2 px-2 py-1.5">
+  <!-- Logo / empresa -->
+  <button id="btn-company" class="hdr-chip" title="Datos de empresa">
+    <img id="company-logo-preview" class="h-5 w-5 rounded hidden" alt=""/>
+    <span id="brand-name" class="display-font text-[14px] font-medium">E-scale</span>
+  </button>
+
+  <div class="hdr-sep"></div>
+
+  <!-- Plano -->
+  <button id="btn-upload-plan" class="hdr-chip" title="Subir plano">
+    <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+    <span>Subir Plano</span>
+  </button>
+
+  <div class="hdr-sep"></div>
+
+  <!-- Cámara -->
+  <div class="hdr-segmented">
+    <button id="cam-iso" class="hdr-seg active" title="Isométrica"><i data-lucide="box" class="w-3.5 h-3.5"></i></button>
+    <button id="cam-top" class="hdr-seg" title="Cenital"><i data-lucide="square" class="w-3.5 h-3.5"></i></button>
   </div>
 
-  <!-- Selector cámara -->
-  <div class="glass flex items-center gap-1 p-1">
-    <button id="cam-iso" class="btn ghost active" style="border:none">
-      <i data-lucide="box" class="w-3.5 h-3.5"></i>
-      <span>Isométrica</span>
-    </button>
-    <button id="cam-top" class="btn ghost" style="border:none">
-      <i data-lucide="square" class="w-3.5 h-3.5"></i>
-      <span>Cenital</span>
-    </button>
+  <div class="hdr-sep"></div>
+
+  <!-- Zoom -->
+  <div class="hdr-chip" title="Zoom">
+    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+    <span id="zoom-pct" class="mono text-[11px]">100%</span>
+    <input id="zoom-range" type="range" min="40" max="180" step="5" value="100" style="width:80px;accent-color:var(--ink)"/>
   </div>
 
-  <div class="flex items-center gap-2">
-    <button id="btn-snap" class="icon-btn glass active" title="Snapping a rejilla (S)">
-      <i data-lucide="grid-3x3" class="w-4 h-4"></i>
-    </button>
-    <button id="btn-cotas" class="icon-btn glass active" title="Mostrar cotas">
-      <i data-lucide="ruler" class="w-4 h-4"></i>
-    </button>
-    <button id="btn-shadows" class="icon-btn glass active" title="Sombras (sólo ISO)">
-      <i data-lucide="sun" class="w-4 h-4"></i>
-    </button>
-    <button id="btn-upload-plan" class="icon-btn glass" title="Cargar plano AutoCAD">
-      <i data-lucide="image-up" class="w-4 h-4"></i>
-    </button>
-    <button id="btn-export" class="icon-btn glass" title="Exportar a PDF">
-      <i data-lucide="file-down" class="w-4 h-4"></i>
-    </button>
-    <button id="btn-clear" class="icon-btn glass" title="Limpiar escena">
-      <i data-lucide="trash-2" class="w-4 h-4"></i>
-    </button>
-    <input type="file" id="file-plan-img" accept="image/*" class="hidden"/>
-    <input type="file" id="file-plan-pdf" accept="application/pdf" class="hidden"/>
-    <input type="file" id="file-plan-dwg" accept=".dwg,.dxf,application/acad,image/vnd.dwg" class="hidden"/>
+  <div class="hdr-sep"></div>
+
+  <!-- Stats -->
+  <div class="hdr-chip" style="background:rgba(10,10,11,0.08)">
+    <span class="mono text-[10.5px] tracking-wider"><span id="hdr-pax">0</span> PAX</span>
+    <span style="color:var(--muted)">·</span>
+    <span class="mono text-[10.5px] tracking-wider"><span id="hdr-area">0</span> m²</span>
   </div>
+
+  <div class="hdr-sep"></div>
+
+  <!-- Export + ajustes a la derecha -->
+  <button id="btn-export" class="hdr-icon" title="Exportar PDF"><i data-lucide="file-down" class="w-3.5 h-3.5"></i></button>
+  <button id="btn-print" class="hdr-icon" title="Imprimir"><i data-lucide="printer" class="w-3.5 h-3.5"></i></button>
+  <button id="btn-settings" class="hdr-icon" title="Ajustes"><i data-lucide="settings" class="w-3.5 h-3.5"></i></button>
+
+  <input type="file" id="file-plan-img" accept="image/*" class="hidden"/>
+  <input type="file" id="file-plan-pdf" accept="application/pdf" class="hidden"/>
+  <input type="file" id="file-plan-dwg" accept=".dwg,.dxf" class="hidden"/>
 </header>
 
-<!-- ============================================
-     SIDEBAR IZQUIERDO
-============================================ -->
-<aside id="sidebar" class="fixed left-6 top-24 bottom-12 z-30 w-[320px] glass p-5 panel-scroll overflow-y-auto anim-in delay-1" style="border-radius:0">
+<!-- ============ MENSAJE CENTRAL ============ -->
+<div id="empty-hint" class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-center pointer-events-none anim-in">
+  <div class="w-16 h-16 mx-auto mb-3 flex items-center justify-center" style="background:var(--ink);color:var(--paper);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,0.25)">
+    <span class="display-font text-2xl font-medium">E</span>
+  </div>
+  <p class="text-sm" style="color:var(--muted)">Selecciona elementos del catálogo para comenzar</p>
+</div>
 
-  <!-- 01 AÑADIR -->
-  <section>
-    <div class="flex items-center justify-between mb-3">
-      <span class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">01 · Añadir</span>
-      <span class="mono text-[10px]" style="color:var(--muted)">Elementos</span>
+<!-- ============ DOCK INFERIOR ============ -->
+<div id="dock" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-30 glass-mac anim-in delay-1">
+  <div class="flex items-center gap-1 px-2 py-2" id="dock-items">
+    <!-- Botones generados por Dock.js -->
+  </div>
+</div>
+
+<!-- ============ MODAL CATÁLOGO ============ -->
+<div id="catalog-modal" class="fixed left-1/2 z-40 hidden" style="bottom:96px; transform:translateX(-50%); width:min(90vw, 720px)">
+  <div class="glass-mac p-5">
+    <div class="flex items-center justify-between mb-3 px-1">
+      <div class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">Catálogo</div>
+      <button id="catalog-close" class="hdr-icon" title="Cerrar"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
     </div>
-    <div id="add-buttons" class="space-y-2">
-      <div class="mono text-[10px] opacity-60">Cargando biblioteca…</div>
+    <div id="catalog-grid" class="grid grid-cols-4 gap-3">
+      <!-- Tarjetas generadas dinámicamente -->
     </div>
-  </section>
+  </div>
+</div>
 
-  <div class="rule"></div>
-
-  <!-- 02 INVENTARIO -->
-  <section id="inventory-section">
-    <div class="flex items-center justify-between mb-3">
-      <span class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">02 · Inventario</span>
-    </div>
-
-    <div class="grid grid-cols-2 gap-3 mb-4">
-      <div>
-        <div class="mono text-[9.5px] tracking-widest uppercase mb-1" style="color:var(--muted)">Pax Total</div>
-        <div class="stat-num" id="stat-pax">0</div>
-      </div>
-      <div>
-        <div class="mono text-[9.5px] tracking-widest uppercase mb-1" style="color:var(--muted)">Elementos</div>
-        <div class="stat-num" id="stat-elements">0</div>
-      </div>
-    </div>
-
-    <div class="mb-3">
-      <div class="mono text-[9.5px] tracking-widest uppercase mb-2" style="color:var(--muted)">Mesas · Por diámetro</div>
-      <div id="breakdown-mesas" class="space-y-1">
-        <div class="text-xs" style="color:var(--muted)">—</div>
-      </div>
-    </div>
-
-    <div>
-      <div class="mono text-[9.5px] tracking-widest uppercase mb-2" style="color:var(--muted)">Buffets · Por categoría</div>
-      <div id="breakdown-buffets" class="space-y-1">
-        <div class="text-xs" style="color:var(--muted)">—</div>
-      </div>
-    </div>
-
-    <div class="mt-3">
-      <div class="mono text-[9.5px] tracking-widest uppercase mb-2" style="color:var(--muted)">Carpas · Cobertura</div>
-      <div id="breakdown-carpas" class="space-y-1">
-        <div class="text-xs" style="color:var(--muted)">—</div>
-      </div>
-    </div>
-
-    <div class="mt-3">
-      <div class="mono text-[9.5px] tracking-widest uppercase mb-2" style="color:var(--muted)">Estructuras / Decoración</div>
-      <div id="breakdown-structures" class="space-y-1">
-        <div class="text-xs" style="color:var(--muted)">—</div>
-      </div>
-    </div>
-  </section>
-
-  <div class="rule"></div>
-
-  <!-- 03 PLANO BASE -->
-  <section>
-    <div class="flex items-center justify-between mb-3">
-      <span class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">03 · Plano Base</span>
-      <span id="plan-status" class="chip">Vacío</span>
-    </div>
-
-    <button id="btn-calibrate" class="btn ghost w-full justify-center mb-3">
-      <i data-lucide="ruler" class="w-4 h-4"></i>
-      Calibrar escala del plano
-    </button>
-
-    <div class="space-y-2">
-      <label class="block">
-        <span class="mono text-[10px] tracking-widest uppercase block mb-1" style="color:var(--muted)">Ancho (eje X · m)</span>
-        <input id="plan-width" type="number" min="1" max="200" step="0.5" value="30" class="input-field"/>
-      </label>
-      <label class="block">
-        <span class="mono text-[10px] tracking-widest uppercase block mb-1" style="color:var(--muted)">Largo (eje Z · m)</span>
-        <input id="plan-length" type="number" min="1" max="200" step="0.5" value="30" class="input-field"/>
-      </label>
-      <label class="block">
-        <span class="mono text-[10px] tracking-widest uppercase block mb-1" style="color:var(--muted)">Opacidad</span>
-        <input id="plan-opacity" type="range" min="0" max="1" step="0.05" value="0.7"/>
-      </label>
-    </div>
-  </section>
-
-  <div class="rule"></div>
-
-  <!-- 04 SNAP -->
-  <section>
-    <div class="flex items-center justify-between mb-3">
-      <span class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">04 · Snap</span>
-      <label class="flex items-center gap-2 cursor-pointer">
-        <input id="snap-toggle" type="checkbox" checked/>
-        <span class="text-[11px]" style="color:var(--muted)">Activo</span>
-      </label>
-    </div>
-
-    <label class="block">
-      <span class="mono text-[10px] tracking-widest uppercase block mb-1" style="color:var(--muted)">Paso de rejilla (m)</span>
-      <div class="flex gap-2 items-center">
-        <input id="snap-spacing" type="number" min="0.05" max="5" step="0.05" value="0.25" class="input-field flex-1"/>
-        <div class="pill-group" style="flex:0 0 auto">
-          <div data-snap-preset="0.1" class="pill">0.1</div>
-          <div data-snap-preset="0.25" class="pill active">0.25</div>
-          <div data-snap-preset="0.5" class="pill">0.5</div>
-          <div data-snap-preset="1" class="pill">1</div>
-        </div>
-      </div>
-    </label>
-    <div class="text-[10.5px] mt-2" style="color:var(--muted)">
-      Los objetos se alinearán al múltiplo más cercano al arrastrar.
-    </div>
-  </section>
-
-  <div class="rule"></div>
-
-  <!-- 05 ATAJOS -->
-  <section>
-    <div class="mono text-[10px] tracking-widest uppercase mb-3" style="color:var(--muted)">05 · Atajos</div>
-    <div class="space-y-1.5 text-[11px]">
-      <div class="flex justify-between"><span style="color:var(--muted)">Click izquierdo</span><span class="mono">Seleccionar</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Arrastrar</span><span class="mono">Mover</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Click derecho</span><span class="mono">Menú</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">R + Mover ratón</span><span class="mono">Rotar</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">S</span><span class="mono">Toggle snap</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Ctrl + Z</span><span class="mono">Deshacer <span id="undo-badge" class="opacity-50">(0/3)</span></span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Ctrl + Click</span><span class="mono">Duplicar</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Supr / Del</span><span class="mono">Eliminar</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Rueda</span><span class="mono">Zoom</span></div>
-    </div>
-  </section>
-
-</aside>
-
-<!-- PANEL DERECHO · DETALLES -->
-<aside id="detail-panel" class="fixed right-6 top-24 z-30 w-[280px] glass p-5 anim-in delay-2 panel-scroll" style="display:none; max-height:calc(100vh - 110px); overflow-y:auto">
+<!-- ============ PANEL DERECHO · DETALLES ============ -->
+<aside id="detail-panel" class="fixed right-4 top-20 z-30 w-[280px] glass p-5 anim-in delay-2 panel-scroll" style="display:none; max-height:calc(100vh - 200px); overflow-y:auto">
   <div class="mono text-[10px] tracking-widest uppercase mb-3" style="color:var(--muted)">Selección Activa</div>
   <div id="detail-content"></div>
 </aside>
 
 <!-- TOOLTIP -->
-<div id="tooltip" class="glass-dark px-4 py-3 mono text-xs leading-tight">
-  <div id="tooltip-content"></div>
-</div>
+<div id="tooltip" class="glass-dark px-4 py-3 mono text-xs leading-tight"><div id="tooltip-content"></div></div>
 
 <!-- CONTEXT MENU -->
 <div id="context-menu" class="glass"></div>
@@ -258,203 +138,193 @@
   <span id="status-cursor">X: 0.00m · Z: 0.00m</span>
   <span style="color:var(--muted)">|</span>
   <span id="status-snap">SNAP 0.25m</span>
-  <span style="color:var(--muted)">|</span>
-  <span class="display-font italic">listo</span>
 </div>
 
-<!-- ============================================
-     MODAL · Diálogo genérico (usado por calibración)
-============================================ -->
-<div id="modal" class="modal-bg">
-  <div class="glass p-8 max-w-md w-full mx-6" style="border-radius:0">
-    <div class="mono text-[10px] tracking-widest uppercase mb-2" style="color:var(--muted)">Diálogo</div>
-    <h3 id="modal-title" class="display-font text-2xl mb-3 leading-tight">¿Cuánto mide?</h3>
-    <p id="modal-desc" class="text-sm mb-5" style="color:var(--muted)">Introduce la distancia real medida sobre el plano.</p>
-    <input id="modal-input" type="number" step="0.01" min="0.01" class="input-field mb-5" placeholder="ej. 5.50"/>
-    <div class="flex gap-2 justify-end">
-      <button id="modal-cancel" class="btn ghost">Cancelar</button>
-      <button id="modal-confirm" class="btn primary">
-        <i data-lucide="check" class="w-4 h-4"></i>
-        Aplicar escala
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ============================================
-     MODAL · Datos de Empresa
-============================================ -->
-<div id="company-modal" class="modal-bg">
-  <div class="glass p-8 max-w-lg w-full mx-6" style="border-radius:0">
+<!-- ============ MODAL AJUSTES ⚙ ============ -->
+<div id="settings-modal" class="modal-bg">
+  <div class="glass p-7 max-w-2xl w-full mx-6" style="border-radius:14px">
     <div class="flex items-start justify-between mb-5">
       <div>
         <div class="mono text-[10px] tracking-widest uppercase mb-1" style="color:var(--muted)">Configuración</div>
-        <h3 class="display-font text-3xl leading-tight">Datos de empresa</h3>
+        <h3 class="display-font text-3xl leading-tight">Ajustes</h3>
       </div>
-      <button id="company-close" class="icon-btn" title="Cerrar">
-        <i data-lucide="x" class="w-4 h-4"></i>
-      </button>
+      <button id="settings-close" class="icon-btn" title="Cerrar"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
 
-    <p class="text-sm mb-5" style="color:var(--muted)">
-      Estos datos aparecerán en la cabecera y pie del PDF exportado.
-    </p>
+    <div class="grid grid-cols-2 gap-6">
+      <!-- Visual -->
+      <section>
+        <div class="mono text-[10px] tracking-widest uppercase mb-3" style="color:var(--muted)">Visual</div>
+        <label class="flex items-center justify-between mb-3 cursor-pointer">
+          <span class="text-[13px]">Snap a rejilla</span>
+          <input id="snap-toggle" type="checkbox" checked/>
+        </label>
+        <label class="flex items-center justify-between mb-3 cursor-pointer">
+          <span class="text-[13px]">Cotas visibles</span>
+          <input id="cotas-toggle" type="checkbox" checked/>
+        </label>
+        <label class="flex items-center justify-between mb-3 cursor-pointer">
+          <span class="text-[13px]">Sombras (solo ISO)</span>
+          <input id="shadows-toggle" type="checkbox" checked/>
+        </label>
+        <label class="block mb-3">
+          <span class="mono text-[10px] uppercase tracking-widest block mb-1" style="color:var(--muted)">Paso de rejilla (m)</span>
+          <input id="snap-spacing" type="number" min="0.05" max="5" step="0.05" value="0.25" class="input-field"/>
+        </label>
+      </section>
 
-    <label class="block mb-4">
-      <span class="mono text-[10px] uppercase tracking-widest block mb-1" style="color:var(--muted)">Nombre de empresa</span>
-      <input id="company-name" type="text" placeholder="Nombre de tu empresa" class="input-field"/>
-    </label>
+      <!-- Plano -->
+      <section>
+        <div class="mono text-[10px] tracking-widest uppercase mb-3" style="color:var(--muted)">Plano base</div>
+        <button id="btn-calibrate" class="btn ghost w-full justify-center mb-3">
+          <i data-lucide="ruler" class="w-4 h-4"></i>
+          Calibrar escala
+        </button>
+        <label class="block mb-2">
+          <span class="mono text-[10px] uppercase tracking-widest block mb-1" style="color:var(--muted)">Ancho X (m)</span>
+          <input id="plan-width" type="number" min="1" max="200" step="0.5" value="30" class="input-field"/>
+        </label>
+        <label class="block mb-2">
+          <span class="mono text-[10px] uppercase tracking-widest block mb-1" style="color:var(--muted)">Largo Z (m)</span>
+          <input id="plan-length" type="number" min="1" max="200" step="0.5" value="30" class="input-field"/>
+        </label>
+        <label class="block">
+          <span class="mono text-[10px] uppercase tracking-widest block mb-1" style="color:var(--muted)">Opacidad</span>
+          <input id="plan-opacity" type="range" min="0" max="1" step="0.05" value="0.7"/>
+        </label>
+      </section>
 
-    <label class="block mb-4">
-      <span class="mono text-[10px] uppercase tracking-widest block mb-1" style="color:var(--muted)">Mail receptor</span>
-      <input id="company-email" type="email" placeholder="contacto@empresa.com" class="input-field"/>
-    </label>
-
-    <div class="mb-5">
-      <span class="mono text-[10px] uppercase tracking-widest block mb-2" style="color:var(--muted)">Logo de empresa</span>
-      <div class="grid gap-4 items-center" style="grid-template-columns: 120px 1fr">
-        <div class="aspect-square border border-black/15 flex items-center justify-center relative" style="background:rgba(255,255,255,0.5)">
-          <img id="company-logo-thumb-img" class="max-w-full max-h-full p-2 hidden" alt="logo"/>
-          <span id="company-logo-empty" class="mono text-[10px] uppercase tracking-widest" style="color:var(--muted)">Sin logo</span>
+      <!-- Empresa -->
+      <section class="col-span-2">
+        <div class="mono text-[10px] tracking-widest uppercase mb-3" style="color:var(--muted)">Empresa</div>
+        <div class="grid grid-cols-3 gap-3">
+          <label class="block">
+            <span class="mono text-[10px] uppercase tracking-widest block mb-1" style="color:var(--muted)">Nombre</span>
+            <input id="company-name" type="text" class="input-field"/>
+          </label>
+          <label class="block">
+            <span class="mono text-[10px] uppercase tracking-widest block mb-1" style="color:var(--muted)">Mail</span>
+            <input id="company-email" type="email" class="input-field"/>
+          </label>
+          <div>
+            <span class="mono text-[10px] uppercase tracking-widest block mb-1" style="color:var(--muted)">Logo</span>
+            <div class="flex gap-2 items-center">
+              <div class="w-10 h-10 border border-black/15 flex items-center justify-center" style="background:rgba(255,255,255,0.5)">
+                <img id="company-logo-thumb-img" class="max-w-full max-h-full p-1 hidden" alt="logo"/>
+                <span id="company-logo-empty" class="mono text-[8px] uppercase" style="color:var(--muted)">—</span>
+              </div>
+              <button id="company-logo-load" class="btn ghost flex-1 justify-center" style="padding:6px 10px">
+                <i data-lucide="upload" class="w-3 h-3"></i>
+                <span id="company-logo-label" class="text-[10px]">Cargar</span>
+              </button>
+              <button id="company-logo-clear" class="icon-btn hidden" style="width:32px;height:32px"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+            </div>
+            <input type="file" id="company-logo-input" accept="image/*" class="hidden"/>
+          </div>
         </div>
-        <div class="space-y-2">
-          <button id="company-logo-load" class="btn primary w-full justify-center">
-            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-            <span id="company-logo-label">Cargar logo</span>
-          </button>
-          <button id="company-logo-clear" class="btn ghost w-full justify-center hidden">
-            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            Quitar logo
-          </button>
-          <div class="text-[10px]" style="color:var(--muted)">PNG, JPG · max 1 MB</div>
+      </section>
+
+      <!-- Acciones -->
+      <section class="col-span-2">
+        <div class="mono text-[10px] tracking-widest uppercase mb-3" style="color:var(--muted)">Bloqueos masivos · Acciones</div>
+        <div class="flex gap-2 flex-wrap">
+          <button id="lock-all-struct" class="btn ghost"><i data-lucide="lock" class="w-3.5 h-3.5"></i>Bloquear estructuras</button>
+          <button id="lock-all-light" class="btn ghost"><i data-lucide="lock" class="w-3.5 h-3.5"></i>Bloquear iluminación</button>
+          <button id="unlock-all" class="btn ghost"><i data-lucide="unlock" class="w-3.5 h-3.5"></i>Desbloquear todo</button>
+          <button id="btn-clear" class="btn ghost" style="color:#b91c1c"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Vaciar escena</button>
         </div>
-      </div>
-      <input type="file" id="company-logo-input" accept="image/*" class="hidden"/>
+      </section>
     </div>
 
-    <div class="rule"></div>
-    <div class="flex justify-end gap-2">
-      <button id="company-cancel" class="btn ghost">Cancelar</button>
-      <button id="company-save" class="btn primary">
-        <i data-lucide="check" class="w-3.5 h-3.5"></i>
-        Guardar
-      </button>
+    <div class="rule mt-5"></div>
+    <div class="flex justify-between items-center">
+      <div class="text-[10px]" style="color:var(--muted)">Los cambios se aplican al instante.</div>
+      <button id="settings-done" class="btn primary">Listo</button>
     </div>
   </div>
 </div>
 
-<!-- ============================================
-     MODAL · Selector formato plano
-============================================ -->
-<div id="plan-format-modal" class="modal-bg">
-  <div class="glass p-8 max-w-2xl w-full mx-6" style="border-radius:0">
-    <div class="mono text-[10px] tracking-widest uppercase mb-2" style="color:var(--muted)">Cargar Plano Base</div>
-    <h3 class="display-font text-3xl mb-2 leading-tight">Elige el formato</h3>
-    <p class="text-sm mb-6" style="color:var(--muted)">Selecciona el tipo de archivo del plano de tu recinto.</p>
+<!-- Modal calibración -->
+<div id="modal" class="modal-bg">
+  <div class="glass p-8 max-w-md w-full mx-6" style="border-radius:14px">
+    <div class="mono text-[10px] tracking-widest uppercase mb-2" style="color:var(--muted)">Diálogo</div>
+    <h3 id="modal-title" class="display-font text-2xl mb-3 leading-tight">¿Cuánto mide?</h3>
+    <p id="modal-desc" class="text-sm mb-5" style="color:var(--muted)">Distancia real en metros.</p>
+    <input id="modal-input" type="number" step="0.01" min="0.01" class="input-field mb-5" placeholder="ej. 5.50"/>
+    <div class="flex gap-2 justify-end">
+      <button id="modal-cancel" class="btn ghost">Cancelar</button>
+      <button id="modal-confirm" class="btn primary"><i data-lucide="check" class="w-4 h-4"></i>Aplicar</button>
+    </div>
+  </div>
+</div>
 
-    <div class="grid grid-cols-3 gap-3 mb-6">
+<!-- Modal datos empresa (legacy, no usado) -->
+<div id="company-modal" class="modal-bg"><div></div></div>
+
+<!-- Modal formato plano -->
+<div id="plan-format-modal" class="modal-bg">
+  <div class="glass p-8 max-w-2xl w-full mx-6" style="border-radius:14px">
+    <div class="mono text-[10px] tracking-widest uppercase mb-2" style="color:var(--muted)">Cargar plano</div>
+    <h3 class="display-font text-3xl mb-2 leading-tight">Elige el formato</h3>
+    <div class="grid grid-cols-3 gap-3 my-6">
       <button id="plan-fmt-img" class="p-5 text-left border border-black/15 hover:border-black hover:bg-black hover:text-white transition-all">
         <i data-lucide="image" class="w-7 h-7 mb-3"></i>
         <div class="display-font text-xl mb-1">Imagen</div>
-        <div class="mono text-[10px] uppercase tracking-widest opacity-70 mb-2">PNG · JPG · WEBP</div>
-        <div class="text-[10.5px] opacity-70 leading-relaxed">Captura o exportación rasterizada del plano.</div>
+        <div class="text-[10.5px] opacity-70">PNG · JPG · WEBP</div>
       </button>
-
       <button id="plan-fmt-pdf" class="p-5 text-left border border-black/15 hover:border-black hover:bg-black hover:text-white transition-all">
         <i data-lucide="file-text" class="w-7 h-7 mb-3"></i>
         <div class="display-font text-xl mb-1">PDF</div>
-        <div class="mono text-[10px] uppercase tracking-widest opacity-70 mb-2">Documento</div>
-        <div class="text-[10.5px] opacity-70 leading-relaxed">Plano exportado desde AutoCAD u otro CAD. Se rasteriza la página 1.</div>
+        <div class="text-[10.5px] opacity-70">Página 1 rasterizada</div>
       </button>
-
       <button id="plan-fmt-dwg" class="p-5 text-left border border-black/15 hover:border-black hover:bg-black hover:text-white transition-all">
         <i data-lucide="layers" class="w-7 h-7 mb-3"></i>
-        <div class="display-font text-xl mb-1">DXF / DWG</div>
-        <div class="mono text-[10px] uppercase tracking-widest opacity-70 mb-2">AutoCAD vectorial</div>
-        <div class="text-[10.5px] opacity-70 leading-relaxed">DXF se lee vectorialmente con dimensiones reales.</div>
+        <div class="display-font text-xl mb-1">DXF/DWG</div>
+        <div class="text-[10.5px] opacity-70">Vectorial AutoCAD</div>
       </button>
     </div>
-
-    <div class="flex justify-end">
-      <button id="plan-fmt-cancel" class="btn ghost">Cancelar</button>
-    </div>
+    <div class="flex justify-end"><button id="plan-fmt-cancel" class="btn ghost">Cancelar</button></div>
   </div>
 </div>
 
-<!-- ============================================
-     MODAL · Aviso DWG
-============================================ -->
+<!-- Modal aviso DWG -->
 <div id="dwg-info-modal" class="modal-bg">
-  <div class="glass p-8 max-w-lg w-full mx-6" style="border-radius:0">
-    <div class="mono text-[10px] tracking-widest uppercase mb-2" style="color:var(--muted)">DXF · DWG · Carga vectorial</div>
+  <div class="glass p-8 max-w-lg w-full mx-6" style="border-radius:14px">
+    <div class="mono text-[10px] tracking-widest uppercase mb-2" style="color:var(--muted)">DXF · DWG</div>
     <h3 class="display-font text-2xl mb-3 leading-tight">E-scale lee DXF vectorialmente</h3>
-    <p class="text-sm mb-4" style="color:var(--muted)">
-      Si tu archivo es <span class="mono">.dxf</span> (formato intercambiable de AutoCAD), E-scale lo parsea
-      directamente y extrae las dimensiones reales del recinto. Si tu archivo es <span class="mono">.dwg</span>
-      (binario propietario), conviértelo primero a DXF.
-    </p>
-
-    <div class="space-y-2 mb-5">
-      <div class="text-[12.5px] p-3" style="background:rgba(212,255,58,0.18)">
-        <strong class="mono text-[10.5px] uppercase tracking-wider">Recomendado: DXF</strong><br>
-        <span style="color:var(--muted)">E-scale lo lee vectorialmente y auto-calcula dimensiones.</span>
-      </div>
-      <div class="text-[12.5px] p-3" style="background:rgba(10,10,11,0.04)">
-        <strong class="mono text-[10.5px] uppercase tracking-wider">Desde AutoCAD</strong><br>
-        <span style="color:var(--muted)">Archivo → Guardar como → DXF (ASCII)</span>
-      </div>
-      <div class="text-[12.5px] p-3" style="background:rgba(10,10,11,0.04)">
-        <strong class="mono text-[10.5px] uppercase tracking-wider">Online (gratuito)</strong><br>
-        <a href="https://cloudconvert.com/dwg-to-dxf" target="_blank" rel="noopener" class="underline">CloudConvert DWG → DXF</a>
-      </div>
-    </div>
-
-    <div class="flex justify-end gap-2">
-      <button id="dwg-info-close" class="btn primary">Continuar y elegir archivo</button>
-    </div>
+    <p class="text-sm mb-4" style="color:var(--muted)">Si tu archivo es .dwg, conviértelo primero a DXF (Archivo → Guardar como, o CloudConvert).</p>
+    <div class="flex justify-end"><button id="dwg-info-close" class="btn primary">Continuar</button></div>
   </div>
 </div>
 
-<!-- ============================================
-     MODAL · Selector exportación
-============================================ -->
+<!-- Modal exportar -->
 <div id="export-modal" class="modal-bg">
-  <div class="glass p-8 max-w-lg w-full mx-6" style="border-radius:0">
+  <div class="glass p-8 max-w-lg w-full mx-6" style="border-radius:14px">
     <div class="mono text-[10px] tracking-widest uppercase mb-2" style="color:var(--muted)">Exportar</div>
-    <h3 class="display-font text-3xl mb-2 leading-tight">Elige el tipo de salida</h3>
-    <p class="text-sm mb-6" style="color:var(--muted)">Genera un PDF con tu plano de evento.</p>
-
-    <div class="grid grid-cols-2 gap-4 mb-6">
+    <h3 class="display-font text-3xl mb-2 leading-tight">Elige el tipo</h3>
+    <div class="grid grid-cols-2 gap-4 my-6">
       <button id="export-choice-plano" class="p-5 text-left border border-black/15 hover:border-black hover:bg-black hover:text-white transition-all">
         <i data-lucide="square-dashed-mouse-pointer" class="w-7 h-7 mb-3"></i>
         <div class="display-font text-xl mb-1">Plano</div>
-        <div class="mono text-[10px] uppercase tracking-widest opacity-70">2D · Vista cenital</div>
-        <div class="text-[11px] mt-2 opacity-70">Cámara superior. Selecciona el área a capturar.</div>
+        <div class="text-[11px] opacity-70">2D cenital, selecciona área</div>
       </button>
       <button id="export-choice-3d" class="p-5 text-left border border-black/15 hover:border-black hover:bg-black hover:text-white transition-all">
         <i data-lucide="box" class="w-7 h-7 mb-3"></i>
         <div class="display-font text-xl mb-1">3D</div>
-        <div class="mono text-[10px] uppercase tracking-widest opacity-70">Vista isométrica</div>
-        <div class="text-[11px] mt-2 opacity-70">Captura la escena tal cual la ves.</div>
+        <div class="text-[11px] opacity-70">Vista isométrica actual</div>
       </button>
     </div>
-
-    <div class="flex justify-end">
-      <button id="export-cancel" class="btn ghost">Cancelar</button>
-    </div>
+    <div class="flex justify-end"><button id="export-cancel" class="btn ghost">Cancelar</button></div>
   </div>
 </div>
 
-<!-- ============================================
-     OVERLAY · Selección área cenital
-============================================ -->
+<!-- Overlay área cenital -->
 <div id="area-overlay" class="fixed inset-0 z-[90] hidden" style="cursor:crosshair">
   <div class="glass-dark px-5 py-3 fixed top-6 left-1/2 -translate-x-1/2 flex items-center gap-3">
     <span class="blink-dot"></span>
-    <span class="mono text-[11px] tracking-widest uppercase">Arrastra para seleccionar el área · <span id="area-help">Click y arrastra</span></span>
-    <button id="area-cancel" class="ml-2 text-[10px] underline opacity-70 hover:opacity-100">Cancelar (Esc)</button>
+    <span class="mono text-[11px] tracking-widest uppercase">Arrastra · <span id="area-help">Click y arrastra</span></span>
+    <button id="area-cancel" class="ml-2 text-[10px] underline opacity-70">Cancelar (Esc)</button>
   </div>
-
   <svg id="area-svg" class="absolute inset-0 w-full h-full pointer-events-none">
     <defs>
       <mask id="hole-mask">
@@ -465,13 +335,26 @@
     <rect width="100%" height="100%" fill="rgba(10,10,11,0.55)" mask="url(#hole-mask)"/>
     <rect id="select-rect" x="0" y="0" width="0" height="0" fill="none" stroke="#d4ff3a" stroke-width="2" stroke-dasharray="6 4"/>
   </svg>
-
   <div id="area-dims" class="glass-dark px-3 py-2 mono text-[11px] absolute pointer-events-none" style="display:none"></div>
 </div>
 
-<!-- ============================================
-     APLICACIÓN (ES Modules)
-============================================ -->
+<!-- Elementos legacy ocultos (compatibilidad con código existente) -->
+<div class="hidden">
+  <div id="add-buttons"></div>
+  <input id="snap-toggle-old" type="checkbox" checked/>
+  <span id="plan-status"></span>
+  <span id="stat-pax"></span>
+  <span id="stat-elements"></span>
+  <div id="breakdown-mesas"></div>
+  <div id="breakdown-buffets"></div>
+  <div id="breakdown-carpas"></div>
+  <div id="breakdown-structures"></div>
+  <span id="undo-badge"></span>
+  <button id="btn-snap"></button>
+  <button id="btn-cotas"></button>
+  <button id="btn-shadows"></button>
+</div>
+
 <script type="module" src="src/main.js"></script>
 </body>
 </html>

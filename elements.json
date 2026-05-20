@@ -1,6 +1,77 @@
 {
   "version": 1,
-  "chairs": [],
+  "chairs": [
+    {
+      "id": "silla_plegable",
+      "name": "Plegable plástico",
+      "category": "chairs",
+      "type": "sillaCatering",
+      "subtype": "plegable",
+      "dims": { "width": 0.44, "depth": 0.44, "seatHeight": 0.45, "totalHeight": 0.85 },
+      "color": "#f5f3ee",
+      "chairs": 1,
+      "defaultRotation": 0
+    },
+    {
+      "id": "silla_chiavari",
+      "name": "Chiavari",
+      "category": "chairs",
+      "type": "sillaCatering",
+      "subtype": "chiavari",
+      "dims": { "width": 0.40, "depth": 0.42, "seatHeight": 0.46, "totalHeight": 0.92 },
+      "color": "#c9a55a",
+      "chairs": 1,
+      "defaultRotation": 0
+    },
+    {
+      "id": "silla_tiffany",
+      "name": "Tiffany",
+      "category": "chairs",
+      "type": "sillaCatering",
+      "subtype": "tiffany",
+      "dims": { "width": 0.40, "depth": 0.42, "seatHeight": 0.46, "totalHeight": 0.92 },
+      "color": "#d4c89a",
+      "chairs": 1,
+      "defaultRotation": 0
+    },
+    {
+      "id": "silla_tolix",
+      "name": "Tolix",
+      "category": "chairs",
+      "type": "sillaCatering",
+      "subtype": "tolix",
+      "dims": { "width": 0.42, "depth": 0.42, "seatHeight": 0.45, "totalHeight": 0.84 },
+      "color": "#3a4d5c",
+      "chairs": 1,
+      "defaultRotation": 0
+    },
+    {
+      "id": "silla_lineal_chiavari",
+      "name": "Lineal · Chiavari",
+      "category": "chairs",
+      "type": "sillaLineal",
+      "subtype": "chiavari",
+      "count": 6,
+      "gap": 0.55,
+      "dims": { "width": 0.40, "depth": 0.42, "seatHeight": 0.46, "totalHeight": 0.92 },
+      "color": "#c9a55a",
+      "chairs": 6,
+      "defaultRotation": 0
+    },
+    {
+      "id": "silla_lineal_plegable",
+      "name": "Lineal · Plegable",
+      "category": "chairs",
+      "type": "sillaLineal",
+      "subtype": "plegable",
+      "count": 6,
+      "gap": 0.50,
+      "dims": { "width": 0.44, "depth": 0.44, "seatHeight": 0.45, "totalHeight": 0.85 },
+      "color": "#f5f3ee",
+      "chairs": 6,
+      "defaultRotation": 0
+    }
+  ],
   "tables": [
     {
       "id": "table_standard_180",

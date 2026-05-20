@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────
-   APP STATE — Estado Centralizado (single source of truth)
+   APP STATE — Estado Centralizado
    ───────────────────────────────────────────────────────── */
 
 import { SceneManager } from '../scene/SceneManager.js';
@@ -7,11 +7,12 @@ import { UIManager } from '../ui/UIManager.js';
 
 export const AppState = {
   items: [],
-  selectedId: null,
+  selectedId: null,           // último seleccionado (compat)
+  selectedIds: new Set(),     // multiselección
   nextId: 1,
-  camera: 'iso',         // 'iso' | 'top'
+  camera: 'iso',
   showCotas: true,
-  shadows: true,         // toggle: solo se aplican en vista ISO
+  shadows: true,
   inventoryCollapsed: false,
 
   plan: {
@@ -23,18 +24,10 @@ export const AppState = {
   },
   calibration: { active: false, p1: null, p2: null },
 
-  company: {
-    name: '',
-    email: '',
-    logo: null,
-  },
+  company: { name: '', email: '', logo: null },
 
-  snap: {
-    enabled: true,
-    spacing: 0.25,
-  },
+  snap: { enabled: true, spacing: 0.25 },
 
-  // ── Historial Undo (máximo 3 pasos) ──
   history: [],
   HISTORY_LIMIT: 3,
   _suppressHistory: false,
@@ -44,7 +37,8 @@ export const AppState = {
     const snapshot = {
       items: JSON.parse(JSON.stringify(this.items)),
       nextId: this.nextId,
-      selectedId: this.selectedId
+      selectedId: this.selectedId,
+      selectedIds: [...this.selectedIds]
     };
     this.history.push(snapshot);
     if (this.history.length > this.HISTORY_LIMIT) this.history.shift();
@@ -54,27 +48,32 @@ export const AppState = {
   undo() {
     if (this.history.length === 0) return;
     const snapshot = this.history.pop();
-
     this._suppressHistory = true;
     [...this.items].forEach(i => SceneManager.removeItem(i.id));
     this.items = snapshot.items;
     this.nextId = snapshot.nextId;
     this.selectedId = snapshot.selectedId;
+    this.selectedIds = new Set(snapshot.selectedIds || []);
     this.items.forEach(i => SceneManager.spawn(i));
     SceneManager.highlightSelection();
     SceneManager.drawCotas();
     UIManager.refresh();
     UIManager.refreshUndoBadge?.();
-    if (this.selectedId !== null) {
+    if (this.selectedIds.size === 1) {
       const it = this.items.find(i => i.id === this.selectedId);
       if (it) UIManager.showDetail?.(it); else UIManager.hideDetail?.();
-    } else UIManager.hideDetail?.();
+    } else if (this.selectedIds.size > 1) {
+      UIManager.showMultiDetail?.([...this.selectedIds]);
+    } else {
+      UIManager.hideDetail?.();
+    }
     this._suppressHistory = false;
   },
 
   add(item) {
     this.pushHistory();
     item.id = this.nextId++;
+    if (item.locked === undefined) item.locked = false;
     this.items.push(item);
     SceneManager.spawn(item);
     UIManager.refresh();
@@ -87,7 +86,11 @@ export const AppState = {
     this.pushHistory();
     SceneManager.removeItem(id);
     this.items.splice(idx, 1);
-    if (this.selectedId === id) this.deselect();
+    this.selectedIds.delete(id);
+    if (this.selectedId === id) {
+      this.selectedId = this.selectedIds.size ? [...this.selectedIds].pop() : null;
+    }
+    if (this.selectedIds.size === 0) UIManager.hideDetail?.();
     UIManager.refresh();
   },
 
@@ -98,7 +101,9 @@ export const AppState = {
     Object.assign(item, patch);
     SceneManager.rebuild(item);
     UIManager.refresh();
-    if (this.selectedId === id && !opts.skipDetailRebuild) UIManager.showDetail?.(item);
+    if (this.selectedId === id && this.selectedIds.size === 1 && !opts.skipDetailRebuild) {
+      UIManager.showDetail?.(item);
+    }
     if (item.type === 'carpa' && UIManager.updateCarpaPostsCount) {
       UIManager.updateCarpaPostsCount(item);
     }
@@ -110,21 +115,58 @@ export const AppState = {
     const clone = JSON.parse(JSON.stringify(item));
     delete clone.id;
     clone.x = item.x + 2;
+    clone.locked = false;
     this.add(clone);
   },
 
-  select(id) {
-    this.selectedId = id;
+  select(id, additive = false) {
+    if (!additive) this.selectedIds.clear();
+    if (this.selectedIds.has(id)) {
+      this.selectedIds.delete(id);
+    } else {
+      this.selectedIds.add(id);
+    }
+    this.selectedId = this.selectedIds.size ? [...this.selectedIds].pop() : null;
     SceneManager.highlightSelection();
-    const item = this.items.find(i => i.id === id);
-    if (item) UIManager.showDetail?.(item);
+    if (this.selectedIds.size === 1) {
+      const item = this.items.find(i => i.id === this.selectedId);
+      if (item) UIManager.showDetail?.(item);
+    } else if (this.selectedIds.size > 1) {
+      UIManager.showMultiDetail?.([...this.selectedIds]);
+    } else {
+      UIManager.hideDetail?.();
+    }
+  },
+
+  selectMany(ids, additive = false) {
+    if (!additive) this.selectedIds.clear();
+    ids.forEach(id => this.selectedIds.add(id));
+    this.selectedId = this.selectedIds.size ? [...this.selectedIds].pop() : null;
+    SceneManager.highlightSelection();
+    if (this.selectedIds.size === 1) {
+      const item = this.items.find(i => i.id === this.selectedId);
+      if (item) UIManager.showDetail?.(item);
+    } else if (this.selectedIds.size > 1) {
+      UIManager.showMultiDetail?.([...this.selectedIds]);
+    }
   },
 
   deselect() {
+    this.selectedIds.clear();
     this.selectedId = null;
     SceneManager.highlightSelection();
     UIManager.hideDetail?.();
     UIManager.hideTooltip?.();
+  },
+
+  toggleLock(id) {
+    const item = this.items.find(i => i.id === id);
+    if (!item) return;
+    item.locked = !item.locked;
+    UIManager.refresh();
+    if (this.selectedIds.size === 1 && this.selectedId === id) {
+      UIManager.showDetail?.(item);
+    }
   },
 
   clear() {
@@ -135,5 +177,4 @@ export const AppState = {
   }
 };
 
-// Exponer en window para debugging desde consola (opcional)
 window.AppState = AppState;

@@ -1,29 +1,26 @@
 /* ─────────────────────────────────────────────────────────
    MODEL FACTORY — Registry { type → builder }
-   ────────────────────────────────────────────────────────
-   Para añadir un nuevo tipo de elemento:
-     1. crea src/models/MIELEMENTO.js exportando `createMiElemento(item)`
-     2. impórtalo aquí
-     3. añádelo al objeto `builders` con su `type`
-   Cero cambios en el resto del proyecto.
    ───────────────────────────────────────────────────────── */
-
-import { createMesa }       from './mesa.js';
-import { createBuffet }     from './buffet.js';
-import { createCarpa }      from './carpa.js';
-import { createArbusto }    from './arbusto.js';
-import { createArbol }      from './arbol.js';
-import { createCableLuces } from './cableLuces.js';
-import { createRoom }       from './room.js';
+import { createMesa }           from './mesa.js';
+import { createBuffet }         from './buffet.js';
+import { createCarpa }          from './carpa.js';
+import { createArbusto }        from './arbusto.js';
+import { createArbol }          from './arbol.js';
+import { createCableLuces }     from './cableLuces.js';
+import { createRoom }           from './room.js';
+import { createSillaCatering }  from './sillaCatering.js';
+import { createSillaLineal }    from './sillaLineal.js';
 
 const builders = {
-  mesa:       createMesa,
-  buffet:     createBuffet,
-  carpa:      createCarpa,
-  arbusto:    createArbusto,
-  arbol:      createArbol,
-  cableLuces: createCableLuces,
-  room:       createRoom,
+  mesa:           createMesa,
+  buffet:         createBuffet,
+  carpa:          createCarpa,
+  arbusto:        createArbusto,
+  arbol:          createArbol,
+  cableLuces:     createCableLuces,
+  room:           createRoom,
+  sillaCatering:  createSillaCatering,
+  sillaLineal:    createSillaLineal,
 };
 
 export const ModelFactory = {
