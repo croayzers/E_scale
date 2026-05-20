@@ -4,6 +4,7 @@
 
 import { AppState }       from '../core/AppState.js';
 import { ElementLibrary } from '../core/ElementLibrary.js';
+import { SceneManager }   from '../scene/SceneManager.js';
 
 let currentCategory = null;
 
@@ -45,7 +46,14 @@ function open(categoryKey) {
       card.addEventListener('click', () => {
         const def = items.find(d => d.id === card.dataset.elementId);
         if (def) {
-          AppState.add(ElementLibrary.toItem(def));
+          const item = ElementLibrary.toItem(def);
+          // Colocar en centro visible de la cámara
+          const target = SceneManager.activeCam?.position ? 
+            SceneManager.activeControls?.target || new THREE.Vector3(0,0,0) : 
+            new THREE.Vector3(0,0,0);
+          item.x = target.x + (Math.random() - 0.5) * 2;
+          item.z = target.z + (Math.random() - 0.5) * 2;
+          AppState.add(item);
           document.body.classList.add('has-items');
           close();
         }

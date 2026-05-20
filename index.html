@@ -131,11 +131,20 @@
   <!-- Export -->
 
   <button id="btn-export" class="hdr-icon" title="Exportar PDF"><i data-lucide="file-down" class="w-3.5 h-3.5"></i></button>
-  <button id="btn-print" class="hdr-icon" title="Imprimir"><i data-lucide="printer" class="w-3.5 h-3.5"></i></button>
 
   <div class="hdr-sep"></div>
 
   <!-- Ajustes -->
+  <!-- Plantillas (E4c) -->
+  <button id="btn-save-template" class="hdr-icon" title="Guardar plantilla">
+    <i data-lucide="save" class="w-3.5 h-3.5"></i>
+  </button>
+  <button id="btn-load-template" class="hdr-icon" title="Cargar plantilla">
+    <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
+  </button>
+  <div class="hdr-sep"></div>
+  
+   <!-- Ajustes -->
   <button id="btn-settings" class="hdr-icon" title="Ajustes"><i data-lucide="settings" class="w-3.5 h-3.5"></i></button>
 
   <div class="hdr-sep"></div>
@@ -192,6 +201,60 @@
 <aside id="detail-panel" class="fixed right-4 top-20 z-30 w-[280px] glass p-5 anim-in delay-2 panel-scroll" style="display:none; max-height:calc(100vh - 200px); overflow-y:auto">
   <div class="mono text-[10px] tracking-widest uppercase mb-3" style="color:var(--muted)">Selección Activa</div>
   <div id="detail-content"></div>
+</aside>
+
+<!-- ============ PANEL IZQUIERDO · GUÍA PLANO ============ -->
+<aside id="plan-guide" class="plan-guide glass-mac anim-in hidden">
+  <div class="plan-guide-head">
+    <div>
+      <div class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">Plano insertado</div>
+      <div class="display-font text-2xl leading-tight">Preparar el evento</div>
+    </div>
+    <button id="plan-guide-close" class="hdr-icon" title="Ocultar guía"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+  </div>
+
+  <div id="plan-guide-next" class="plan-guide-next">
+    <span class="blink-dot"></span>
+    <span id="plan-guide-next-text">Empieza midiendo una referencia real del plano.</span>
+  </div>
+
+  <div class="plan-guide-steps">
+    <section id="guide-step-calibrate" class="plan-step" data-state="active">
+      <div class="plan-step-index">1</div>
+      <div class="plan-step-body">
+        <div class="plan-step-title">Medir plano</div>
+        <p>Usa una referencia conocida, por ejemplo una puerta de 2 m: click en un extremo, click en el otro y escribe la medida real.</p>
+        <button id="guide-calibrate-btn" class="btn primary plan-step-action"><i data-lucide="ruler" class="w-3.5 h-3.5"></i>Medir plano</button>
+      </div>
+    </section>
+
+    <section id="guide-step-area" class="plan-step" data-state="waiting">
+      <div class="plan-step-index">2</div>
+      <div class="plan-step-body">
+        <div class="plan-step-title">Definir área</div>
+        <p>Indica el ancho y largo de la zona que ocupará el evento en los campos Área de la barra superior.</p>
+        <button id="guide-area-btn" class="btn ghost plan-step-action"><i data-lucide="square-dashed" class="w-3.5 h-3.5"></i>Editar área</button>
+      </div>
+    </section>
+
+    <section id="guide-step-move" class="plan-step" data-state="waiting">
+      <div class="plan-step-index">3</div>
+      <div class="plan-step-body">
+        <div class="plan-step-title">Mover área</div>
+        <p>Desplaza el rectángulo del evento encima del plano. Cuando esté colocado, pulsa Listo.</p>
+        <button id="guide-move-btn" class="btn ghost plan-step-action"><i data-lucide="move" class="w-3.5 h-3.5"></i>Mover plano</button>
+      </div>
+    </section>
+
+    <section id="guide-step-catalog" class="plan-step" data-state="waiting">
+      <div class="plan-step-index">4</div>
+      <div class="plan-step-body">
+        <div class="plan-step-title">Colocar objetos</div>
+        <p>Abre una categoría en la barra inferior y añade mesas, sillas, carpas y el resto del montaje.</p>
+        <button id="guide-catalog-btn" class="btn ghost plan-step-action"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i>Ver catálogo</button>
+      </div>
+    </section>
+  </div>
 </aside>
 
 <!-- TOOLTIP -->
@@ -481,7 +544,7 @@
   <button id="btn-shadows"></button>
 </div>
 
-<script type="module" src="src/main.js"></script>
+<input id="file-template" type="file" accept=".json,.escale.json" class="hidden"/>
 <!-- ============ PANEL INVENTARIO ============ -->
 <div id="inventory-panel" style="display:none;position:fixed;top:72px;right:16px;bottom:80px;width:320px;z-index:35;overflow-y:auto;border-radius:14px;">
   <div class="glass-mac p-5 h-full flex flex-col">
@@ -526,5 +589,9 @@
     </button>
   </div>
 </div>
+
+<input id="file-template" type="file" accept=".json,.escale.json" class="hidden"/>
+<script type="module" src="src/main.js"></script>
+
 </body>
 </html>

@@ -525,15 +525,16 @@ function setPlanTexture(texture) {
     map: texture,
     transparent: true,
     opacity: _appState.plan.opacity,
-    side: THREE.FrontSide,
+    side: THREE.DoubleSide,
     depthWrite: false,
+    depthTest: true,
     polygonOffset: true,
-    polygonOffsetFactor: -1,
-    polygonOffsetUnits: -1,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4,
   });
   planMesh = new THREE.Mesh(geo, mat);
   planMesh.rotation.x = -Math.PI / 2;
-  planMesh.position.y = 0.006;
+  planMesh.position.y = 0.005;
   planMesh.renderOrder = 1;
   planMesh.receiveShadow = false;
   scene.add(planMesh);
@@ -667,6 +668,7 @@ export const SceneManager = {
   get scene() { return scene; },
   get renderer() { return renderer; },
   get activeCam() { return activeCam; },
+  get activeControls() { return activeControls; },
   get meshes() { return meshes; },
   get dragPlane() { return dragPlane; }
 };

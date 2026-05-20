@@ -13,13 +13,19 @@ import { CompanyManager }     from './io/CompanyManager.js';
 import { ExportManager }      from './io/ExportManager.js';
 import { Dock }               from './ui/Dock.js';
 import { CatalogModal }       from './ui/CatalogModal.js';
-import { InventoryPanel } from './ui/InventoryPanel.js';
+import { TemplateManager } from './io/TemplateManager.js';
 
 async function bootstrap() {
   if (typeof THREE === 'undefined') {
     document.body.innerHTML = '<pre style="padding:24px;color:#b91c1c">Error: Three.js no se cargó.</pre>';
     return;
   }
+  const InventoryPanel = await import('./ui/InventoryPanel.js')
+    .then(module => module.InventoryPanel)
+    .catch(error => {
+      console.warn('[E-scale] Inventario no disponible:', error);
+      return { refresh() {} };
+    });
 
   await UIManager.init();
   await SceneManager.init();
@@ -30,7 +36,9 @@ async function bootstrap() {
   CompanyManager.init();
   ExportManager.init();
   CatalogModal.init();
-Dock.init();
+  Dock.init();
+  TemplateManager.init();
+
   await ElementLibrary.load();
 
   // ── Cámara (header segmented) ──
@@ -150,6 +158,7 @@ Dock.init();
     document.getElementById('scene-canvas').style.cursor = '';
     document.getElementById('plan-move-banner').style.display = 'none';
     SceneManager.setControlsEnabled(true);
+    markPlanMovedComplete();
   });
 
 btnLockPlan?.addEventListener('click', () => {
@@ -178,6 +187,50 @@ btnLockPlan?.addEventListener('click', () => {
     areaDefined: false,
     planMoved: false,
   };
+  let planGuideDismissed = false;
+
+  function setGuideStep(id, state) {
+    const el = document.getElementById(id);
+    if (el) el.dataset.state = state;
+  }
+
+  function pulseGuideTarget(...targets) {
+    targets.filter(Boolean).forEach(target => {
+      target.classList.remove('guide-pulse');
+      void target.offsetWidth;
+      target.classList.add('guide-pulse');
+      setTimeout(() => target.classList.remove('guide-pulse'), 1800);
+    });
+  }
+
+  function updatePlanGuide() {
+    const guide = document.getElementById('plan-guide');
+    if (!guide) return;
+
+    guide.classList.toggle('hidden', !steps.planLoaded || planGuideDismissed);
+    setGuideStep('guide-step-calibrate', steps.calibrated ? 'done' : 'active');
+    setGuideStep('guide-step-area', steps.areaDefined ? 'done' : steps.calibrated ? 'active' : 'waiting');
+    setGuideStep('guide-step-move', steps.planMoved ? 'done' : steps.areaDefined ? 'active' : 'waiting');
+    setGuideStep('guide-step-catalog', steps.planMoved ? 'active' : 'waiting');
+
+    const nextText = document.getElementById('plan-guide-next-text');
+    if (nextText) {
+      nextText.textContent = !steps.calibrated
+        ? 'Pulsa la regla, marca dos puntos conocidos y escribe su medida real.'
+        : !steps.areaDefined
+          ? 'Revisa el ancho y largo del área que ocupará el evento.'
+          : !steps.planMoved
+            ? 'Mueve el área del evento sobre el plano y confirma con Listo.'
+            : 'Ya puedes colocar objetos desde la barra inferior.';
+    }
+
+    const btnArea = document.getElementById('guide-area-btn');
+    const btnMove = document.getElementById('guide-move-btn');
+    const btnCatalog = document.getElementById('guide-catalog-btn');
+    if (btnArea) btnArea.disabled = !steps.calibrated;
+    if (btnMove) btnMove.disabled = !steps.calibrated;
+    if (btnCatalog) btnCatalog.disabled = !steps.planMoved;
+  }
 
   function updateStepDots() {
     // Punto 1: medir plano → se activa cuando se carga el plano
@@ -187,6 +240,14 @@ btnLockPlan?.addEventListener('click', () => {
     if (d1) d1.style.display = steps.planLoaded && !steps.calibrated ? 'block' : 'none';
     if (d2) d2.style.display = steps.calibrated && !steps.areaDefined ? 'block' : 'none';
     if (d3) d3.style.display = steps.areaDefined && !steps.planMoved ? 'block' : 'none';
+    updatePlanGuide();
+  }
+
+  function markPlanMovedComplete() {
+    if (!steps.planLoaded || !steps.calibrated) return;
+    steps.areaDefined = true;
+    steps.planMoved = true;
+    updateStepDots();
   }
 
   // Hook: plano cargado
@@ -194,12 +255,14 @@ btnLockPlan?.addEventListener('click', () => {
   SceneManager.setPlanTexture = function(tex) {
     _origSetPlanTexture(tex);
     steps.planLoaded = true;
+    steps.calibrated = false;
+    steps.areaDefined = false;
+    steps.planMoved = false;
+    planGuideDismissed = false;
     updateStepDots();
   };
 
-  // Hook: calibración completada
-  const _origCancelCal = window.PlanManager?.cancelCalibration;
-  document.getElementById('modal-confirm')?.addEventListener('click', () => {
+  document.addEventListener('escale:plan-calibrated', () => {
     steps.calibrated = true;
     updateStepDots();
   });
@@ -208,12 +271,28 @@ btnLockPlan?.addEventListener('click', () => {
   canvasW?.addEventListener('change', () => { steps.areaDefined = true; updateStepDots(); });
   canvasL?.addEventListener('change', () => { steps.areaDefined = true; updateStepDots(); });
 
-  // Hook: plano movido
-  document.getElementById('btn-move-plan')?.addEventListener('click', () => {
-    if (SceneManager.isPlanMoving()) {
-      steps.planMoved = true;
-      updateStepDots();
-    }
+  document.getElementById('plan-guide-close')?.addEventListener('click', () => {
+    planGuideDismissed = true;
+    updateStepDots();
+  });
+  document.getElementById('guide-calibrate-btn')?.addEventListener('click', () => {
+    document.getElementById('btn-calibrate')?.click();
+  });
+  document.getElementById('guide-area-btn')?.addEventListener('click', () => {
+    steps.areaDefined = true;
+    updateStepDots();
+    canvasW?.focus();
+    pulseGuideTarget(canvasW, canvasL);
+  });
+  document.getElementById('guide-move-btn')?.addEventListener('click', () => {
+    steps.areaDefined = true;
+    updateStepDots();
+    document.getElementById('btn-move-plan')?.click();
+  });
+  document.getElementById('guide-catalog-btn')?.addEventListener('click', () => {
+    const firstDockButton = document.querySelector('#dock-items button');
+    pulseGuideTarget(document.getElementById('dock'));
+    firstDockButton?.click();
   });
 
   // Acciones masivas
@@ -238,6 +317,11 @@ btnLockPlan?.addEventListener('click', () => {
   if (window.lucide) lucide.createIcons();
 
 // ── Bienvenida ──
+// ── Inventario (refs tempranas) ──
+  const invPanel = document.getElementById('inventory-panel');
+  const btnInv   = document.getElementById('btn-inventory');
+
+  // ── Bienvenida ──
   const welcomeModal = document.getElementById('welcome-modal');
 
   document.getElementById('welcome-plano')?.addEventListener('click', () => {
@@ -246,14 +330,6 @@ btnLockPlan?.addEventListener('click', () => {
     document.getElementById('cam-top')?.classList.add('active');
     document.getElementById('cam-iso')?.classList.remove('active');
     document.getElementById('btn-upload-plan')?.click();
-    invPanel.style.display = 'block';
-    btnInv?.classList.add('active');
-    InventoryPanel.refresh();
-  });
-
-  document.getElementById('welcome-plantilla')?.addEventListener('click', () => {
-    welcomeModal.style.display = 'none';
-    alert('Próximamente: carga de plantillas guardadas.');
     invPanel.style.display = 'block';
     btnInv?.classList.add('active');
     InventoryPanel.refresh();
@@ -268,9 +344,7 @@ btnLockPlan?.addEventListener('click', () => {
 
   if (window.lucide) lucide.createIcons();
 
-// ── Inventario ──
-  const invPanel = document.getElementById('inventory-panel');
-  const btnInv   = document.getElementById('btn-inventory');
+  // ── Inventario ──
   btnInv?.addEventListener('click', () => {
     const open = invPanel.style.display === 'block';
     invPanel.style.display = open ? 'none' : 'block';

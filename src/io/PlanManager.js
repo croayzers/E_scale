@@ -442,6 +442,7 @@ function applyScale(sceneDist, realMeters) {
   document.getElementById('plan-width').value = AppState.plan.widthM.toFixed(2);
   document.getElementById('plan-length').value = AppState.plan.lengthM.toFixed(2);
   SceneManager.updatePlanSize();
+  document.dispatchEvent(new CustomEvent('escale:plan-calibrated'));
   cancelCalibration();
 }
 
