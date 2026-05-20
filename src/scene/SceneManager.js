@@ -133,6 +133,7 @@ function init() {
     xMat
   );
   axesGroup.add(xLine);
+  axesGroup.visible = false;
   scene.add(axesGroup);
   axes = axesGroup;
 

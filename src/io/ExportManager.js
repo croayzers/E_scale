@@ -10,6 +10,34 @@ let areaSelecting = false;
 let areaStart = null;
 let areaEnd = null;
 
+function parseColor(value, fallback) {
+  const raw = String(value || '').trim();
+  const hex = raw.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    const full = hex[1].length === 3
+      ? hex[1].split('').map(ch => ch + ch).join('')
+      : hex[1];
+    return [
+      parseInt(full.slice(0, 2), 16),
+      parseInt(full.slice(2, 4), 16),
+      parseInt(full.slice(4, 6), 16)
+    ];
+  }
+
+  const rgb = raw.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+  if (rgb) {
+    const parts = rgb.slice(1).map(Number);
+    if (parts.every(n => n >= 0 && n <= 255)) return parts;
+  }
+
+  return fallback;
+}
+
+function setPdfColor(pdf, rgb, mode = 'text') {
+  if (mode === 'draw') pdf.setDrawColor(rgb[0], rgb[1], rgb[2]);
+  else pdf.setTextColor(rgb[0], rgb[1], rgb[2]);
+}
+
 function init() {
   document.getElementById('btn-export')?.addEventListener('click', openModal);
   document.getElementById('export-cancel')?.addEventListener('click', closeModal);
@@ -189,11 +217,14 @@ function buildPDF(imgDataURL, modeLabel) {
   const PAGE_W = 297, PAGE_H = 210, MARGIN = 12;
   const company   = AppState.company;
   const eventName = document.getElementById('inventory-event-name')?.value || '';
+  const brandPrimary = parseColor(company.colorPrimary, [0, 0, 0]);
+  const brandSecondary = parseColor(company.colorSecondary, [120, 120, 120]);
 
   // ═══ CABECERA ═══
   let headX = MARGIN;
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(20);
+  setPdfColor(pdf, brandPrimary);
   pdf.text('E-scale', headX, MARGIN + 6);
   headX += pdf.getTextWidth('E-scale') + 5;
 
@@ -214,7 +245,7 @@ function buildPDF(imgDataURL, modeLabel) {
   if (company.name) {
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(13);
-    pdf.setTextColor(60);
+    setPdfColor(pdf, brandPrimary);
     pdf.text(company.name, headX, MARGIN + 6);
   }
 
@@ -233,7 +264,7 @@ function buildPDF(imgDataURL, modeLabel) {
   pdf.text(dateStr, PAGE_W - MARGIN, MARGIN + 6, { align: 'right' });
   if (company.email) pdf.text(company.email, PAGE_W - MARGIN, MARGIN + 11, { align: 'right' });
 
-  pdf.setDrawColor(0); pdf.setLineWidth(0.3);
+  setPdfColor(pdf, brandPrimary, 'draw'); pdf.setLineWidth(0.3);
   pdf.line(MARGIN, MARGIN + 14, PAGE_W - MARGIN, MARGIN + 14);
 
   // ═══ COLUMNA INVENTARIO (derecha) ═══
@@ -242,16 +273,16 @@ function buildPDF(imgDataURL, modeLabel) {
 
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(7.5);
-  pdf.setTextColor(0);
+  setPdfColor(pdf, brandPrimary);
   pdf.text('INVENTARIO', INV_X, iy); iy += 3;
-  pdf.setDrawColor(180); pdf.setLineWidth(0.2);
+  setPdfColor(pdf, brandSecondary, 'draw'); pdf.setLineWidth(0.2);
   pdf.line(INV_X, iy, PAGE_W - MARGIN, iy); iy += 4;
 
   // PAX total grande
   const totalPax = AppState.items.reduce((s, i) => s + (i.chairs || 0), 0);
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(26);
-  pdf.setTextColor(0);
+  setPdfColor(pdf, brandPrimary);
   pdf.text(String(totalPax), INV_X, iy + 8);
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(7);
@@ -268,9 +299,9 @@ function buildPDF(imgDataURL, modeLabel) {
     // Cabecera categoría
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(6.5);
-    pdf.setTextColor(120);
+    setPdfColor(pdf, brandSecondary);
     pdf.text(group.label.toUpperCase(), INV_X, iy);
-    pdf.setDrawColor(200); pdf.setLineWidth(0.1);
+    setPdfColor(pdf, brandSecondary, 'draw'); pdf.setLineWidth(0.1);
     pdf.line(INV_X, iy + 0.8, PAGE_W - MARGIN, iy + 0.8);
     iy += 4;
 
@@ -278,7 +309,7 @@ function buildPDF(imgDataURL, modeLabel) {
       if (iy > PAGE_H - 20) return; // evitar overflow
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(7);
-      pdf.setTextColor(0);
+      setPdfColor(pdf, brandPrimary);
       pdf.text(`${line.count}×`, INV_X, iy);
       // Label truncado si es muy largo
       const maxW = 44;
@@ -287,9 +318,9 @@ function buildPDF(imgDataURL, modeLabel) {
       if (lbl !== line.label) lbl += '…';
       pdf.text(lbl, INV_X + 6, iy);
       if (line.pax > 0) {
-        pdf.setTextColor(120);
+        setPdfColor(pdf, brandSecondary);
         pdf.text(`${line.pax}p`, PAGE_W - MARGIN, iy, { align: 'right' });
-        pdf.setTextColor(0);
+        setPdfColor(pdf, brandPrimary);
       }
       iy += 3.8;
     });
@@ -298,14 +329,14 @@ function buildPDF(imgDataURL, modeLabel) {
 
   // Total elementos
   iy += 1;
-  pdf.setDrawColor(0); pdf.setLineWidth(0.2);
+  setPdfColor(pdf, brandPrimary, 'draw'); pdf.setLineWidth(0.2);
   pdf.line(INV_X, iy, PAGE_W - MARGIN, iy); iy += 3.5;
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(7);
-  pdf.setTextColor(0);
+  setPdfColor(pdf, brandPrimary);
   pdf.text(`Total elementos: ${AppState.items.length}`, INV_X, iy); iy += 4;
   pdf.text('Precio total:', INV_X, iy);
-  pdf.setTextColor(120);
+  setPdfColor(pdf, brandSecondary);
   pdf.text('—', PAGE_W - MARGIN, iy, { align: 'right' });
 
   // Nota precio
@@ -338,12 +369,12 @@ function buildPDF(imgDataURL, modeLabel) {
     const drawX = imgArea.x + (imgArea.w - drawW) / 2;
     const drawY = imgArea.y + (imgArea.h - drawH) / 2;
 
-    pdf.setDrawColor(0); pdf.setLineWidth(0.2);
+    setPdfColor(pdf, brandPrimary, 'draw'); pdf.setLineWidth(0.2);
     pdf.rect(drawX - 1, drawY - 1, drawW + 2, drawH + 2);
     pdf.addImage(imgDataURL, 'PNG', drawX, drawY, drawW, drawH);
 
     // Pie de página
-    pdf.setFontSize(7); pdf.setTextColor(120);
+    pdf.setFontSize(7); setPdfColor(pdf, brandSecondary);
     const leftFoot = company.name
       ? `E-scale · ${company.name}${company.email ? ' · ' + company.email : ''}`
       : 'E-scale · planificador 3D · v3.0';

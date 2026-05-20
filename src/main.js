@@ -242,21 +242,28 @@ btnLockPlan?.addEventListener('click', () => {
 
   document.getElementById('welcome-plano')?.addEventListener('click', () => {
     welcomeModal.style.display = 'none';
-    // Cambiar a cenital y abrir selector de plano
     SceneManager.setCamera('top');
     document.getElementById('cam-top')?.classList.add('active');
     document.getElementById('cam-iso')?.classList.remove('active');
     document.getElementById('btn-upload-plan')?.click();
+    invPanel.style.display = 'block';
+    btnInv?.classList.add('active');
+    InventoryPanel.refresh();
   });
 
   document.getElementById('welcome-plantilla')?.addEventListener('click', () => {
     welcomeModal.style.display = 'none';
-    // Abrir selector de plantilla (E4c pendiente — por ahora avisa)
     alert('Próximamente: carga de plantillas guardadas.');
+    invPanel.style.display = 'block';
+    btnInv?.classList.add('active');
+    InventoryPanel.refresh();
   });
 
   document.getElementById('welcome-libre')?.addEventListener('click', () => {
     welcomeModal.style.display = 'none';
+    invPanel.style.display = 'block';
+    btnInv?.classList.add('active');
+    InventoryPanel.refresh();
   });
 
   if (window.lucide) lucide.createIcons();
@@ -265,7 +272,7 @@ btnLockPlan?.addEventListener('click', () => {
   const invPanel = document.getElementById('inventory-panel');
   const btnInv   = document.getElementById('btn-inventory');
   btnInv?.addEventListener('click', () => {
-    const open = invPanel.style.display !== 'none';
+    const open = invPanel.style.display === 'block';
     invPanel.style.display = open ? 'none' : 'block';
     btnInv.classList.toggle('active', !open);
     if (!open) InventoryPanel.refresh();

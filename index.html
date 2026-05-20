@@ -60,9 +60,8 @@
 </div>
 
 <!-- ============ HEADER MAC ============ -->
-<header id="header-mac" class="fixed z-30 anim-in glass-mac px-2 py-1.5" style="top:12px;left:12px;right:12px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,0.2) transparent;">
-  <div style="display:flex;align-items:center;gap:8px;width:max-content;min-width:100%;">
-  
+<header id="header-mac" class="fixed z-30 anim-in glass-mac" style="top:12px;left:12px;right:12px;padding:6px 8px;height:44px;overflow-x:auto;overflow-y:hidden;">
+  <div id="header-inner" style="display:flex;flex-wrap:nowrap;align-items:center;gap:8px;height:100%;width:max-content;min-width:100%;">
   <!-- Logo -->
   <button id="btn-company" class="hdr-chip" title="Datos de empresa">
     <img id="company-logo-preview" class="h-5 w-5 rounded hidden" alt=""/>
@@ -162,87 +161,13 @@
     <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
   </button>
 
-  <input type="file" id="file-plan-img" accept="image/*" class="hidden"/>
-  <input type="file" id="file-plan-pdf" accept="application/pdf" class="hidden"/>
-  <input type="file" id="file-plan-dwg" accept=".dwg,.dxf" class="hidden"/>
   </div>
 </header>
-
-<!-- Canvas área -->
-  <div class="hdr-sep"></div>
-  <div class="flex items-center gap-1">
-    <span class="mono text-[10px]" style="color:var(--muted)">Área</span>
-    <input id="canvas-w" type="number" min="5" max="200" step="1" value="30"
-      title="Ancho (m)"
-      style="width:44px;padding:3px 5px;font-size:11px;font-family:'JetBrains Mono',monospace;border:1px solid rgba(0,0,0,0.15);border-radius:5px;background:rgba(255,255,255,0.6);text-align:center"/>
-    <span class="mono text-[10px]" style="color:var(--muted)">×</span>
-    <input id="canvas-l" type="number" min="5" max="200" step="1" value="30"
-      title="Largo (m)"
-      style="width:44px;padding:3px 5px;font-size:11px;font-family:'JetBrains Mono',monospace;border:1px solid rgba(0,0,0,0.15);border-radius:5px;background:rgba(255,255,255,0.6);text-align:center"/>
-    <span class="mono text-[10px]" style="color:var(--muted)">m</span>
-  </div>
-
-  <!-- Plano controles -->
-  <div class="hdr-sep"></div>
-  <div class="flex items-center gap-1">
-    <span class="mono text-[10px]" style="color:var(--muted)">Plano</span>
-    <button id="btn-move-plan" class="hdr-icon" title="Mover plano" style="width:28px;height:28px">
-      <i data-lucide="move" class="w-3.5 h-3.5"></i>
-    </button>
-    <button id="btn-lock-plan" class="hdr-icon" title="Bloquear plano" style="width:28px;height:28px">
-      <i data-lucide="unlock" class="w-3.5 h-3.5"></i>
-    </button>
-  </div>
-
-  <!-- Stats -->
-  <div class="hdr-chip" style="background:rgba(10,10,11,0.08)">
-    <span class="mono text-[10.5px] tracking-wider"><span id="hdr-pax">0</span> PAX</span>
-    <span style="color:var(--muted)">·</span>
-    <span class="mono text-[10.5px] tracking-wider"><span id="hdr-area">0</span> m²</span>
-  </div>
-
-  <div class="hdr-sep"></div>
-
-  <!-- Export + ajustes -->
-  <!-- Export -->
-  <button id="btn-export" class="hdr-icon" title="Exportar PDF"><i data-lucide="file-down" class="w-3.5 h-3.5"></i></button>
-  <button id="btn-print" class="hdr-icon" title="Imprimir"><i data-lucide="printer" class="w-3.5 h-3.5"></i></button>
-
-  <div class="hdr-sep"></div>
-
-  <!-- Ajustes -->
-  <button id="btn-settings" class="hdr-icon" title="Ajustes"><i data-lucide="settings" class="w-3.5 h-3.5"></i></button>
-
-  <div class="hdr-sep"></div>
-
-  <!-- Zoom -->
-  <div class="hdr-chip" title="Zoom">
-    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-    <span id="zoom-pct" class="mono text-[11px]">100%</span>
-    <input id="zoom-range" type="range" min="40" max="180" step="5" value="100" style="width:80px;accent-color:var(--ink)"/>
-  </div>
-
-  <div class="hdr-sep"></div>
-
-<!-- Cámara -->
-  <div class="hdr-segmented">
-    <button id="cam-iso" class="hdr-seg active" title="Isométrica"><i data-lucide="box" class="w-3.5 h-3.5"></i></button>
-    <button id="cam-top" class="hdr-seg" title="Cenital"><i data-lucide="square" class="w-3.5 h-3.5"></i></button>
-  </div>
-
-  <div class="hdr-sep"></div>
-
-  <button id="btn-inventory" class="hdr-icon" title="Inventario / Presupuesto">
-    <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
-  </button>
 
   <input type="file" id="file-plan-img" accept="image/*" class="hidden"/>
   <input type="file" id="file-plan-pdf" accept="application/pdf" class="hidden"/>
   <input type="file" id="file-plan-dwg" accept=".dwg,.dxf" class="hidden"/>
-</header>
 
-
-  
 <!-- ============ DOCK INFERIOR ============ -->
 <div id="dock" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-30 glass-mac anim-in delay-1">
   <div class="flex items-center gap-1 px-2 py-2" id="dock-items">
@@ -428,23 +353,26 @@
     <div class="mb-5">
       <span class="mono text-[10px] uppercase tracking-widest block mb-2" style="color:var(--muted)">Colores corporativos</span>
       <div class="grid grid-cols-2 gap-3">
-        <label class="block">
-          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color primario</span>
-          <div class="flex items-center gap-2">
-            <input id="company-color-primary" type="color" value="#2563eb" class="input-field" style="padding:2px;height:36px;width:48px"/>
-            <span id="company-color-primary-hex" class="mono text-[11px]">#2563eb</span>
+        <div class="brand-color-field">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Principal</span>
+          <div class="brand-color-row">
+            <span id="company-color-primary-preview" class="brand-color-preview"></span>
+            <input id="company-color-primary" type="text" value="#2563eb" class="input-field" placeholder="#2563EB o rgb(37, 99, 235)"/>
+            <input id="company-color-primary-picker" type="color" value="#2563eb" class="brand-color-picker" title="Elegir color principal"/>
           </div>
-        </label>
-        <label class="block">
-          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color secundario / acento</span>
-          <div class="flex items-center gap-2">
-            <input id="company-color-secondary" type="color" value="#d4ff3a" class="input-field" style="padding:2px;height:36px;width:48px"/>
-            <span id="company-color-secondary-hex" class="mono text-[11px]">#d4ff3a</span>
+          <div id="company-color-primary-palette" class="brand-palette"></div>
+          <div id="company-color-primary-error" class="brand-color-error">Color no válido</div>
+        </div>
+        <div class="brand-color-field">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Secundario</span>
+          <div class="brand-color-row">
+            <span id="company-color-secondary-preview" class="brand-color-preview"></span>
+            <input id="company-color-secondary" type="text" value="#d4ff3a" class="input-field" placeholder="#D4FF3A o rgb(212, 255, 58)"/>
+            <input id="company-color-secondary-picker" type="color" value="#d4ff3a" class="brand-color-picker" title="Elegir color secundario"/>
           </div>
-        </label>
-      </div>
-      <div class="mt-2 text-[10.5px]" style="color:var(--muted)">
-        El color primario se aplica al dock, botones activos y borde del área de trabajo.
+          <div id="company-color-secondary-palette" class="brand-palette"></div>
+          <div id="company-color-secondary-error" class="brand-color-error">Color no válido</div>
+        </div>
       </div>
     </div>
 
@@ -555,15 +483,7 @@
 
 <script type="module" src="src/main.js"></script>
 <!-- ============ PANEL INVENTARIO ============ -->
-<div id="inventory-panel" style="
-  display:none;
-  position:fixed;
-  top:72px; right:16px; bottom:80px;
-  width:320px;
-  z-index:35;
-  overflow-y:auto;
-  border-radius:14px;
-">
+<div id="inventory-panel" style="display:none;position:fixed;top:72px;right:16px;bottom:80px;width:320px;z-index:35;overflow-y:auto;border-radius:14px;">
   <div class="glass-mac p-5 h-full flex flex-col">
     <!-- Header -->
     <div class="flex items-center justify-between mb-4">

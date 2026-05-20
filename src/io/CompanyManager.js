@@ -1,36 +1,59 @@
-/* ─────────────────────────────────────────────────────────
-   COMPANY MANAGER — Datos de empresa (nombre/mail/logo)
-   ────────────────────────────────────────────────────────
-   Persistencia: localStorage bajo la clave 'escale_company'.
-   Estos datos aparecen en la cabecera y pie del PDF exportado.
-   ───────────────────────────────────────────────────────── */
-
 import { AppState } from '../core/AppState.js';
 
 const STORAGE_KEY = 'escale_company';
+const DEFAULT_PRIMARY = '#2563EB';
+const DEFAULT_SECONDARY = '#D4FF3A';
+const PALETTE = [
+  '#2563EB', '#0F766E', '#16A34A', '#D4FF3A', '#F59E0B',
+  '#EF4444', '#EC4899', '#8B5CF6', '#111827', '#F5F3EE'
+];
+
 let pending = null;
 
-function applyBrandColors(company) {
-  const root = document.documentElement;
-  if (company.colorPrimary) {
-    root.style.setProperty('--brand-primary', company.colorPrimary);
-    root.style.setProperty('--brand-primary-rgb', hexToRgb(company.colorPrimary));
-  } else {
-    root.style.setProperty('--brand-primary', '#2563eb');
-    root.style.setProperty('--brand-primary-rgb', '37,99,235');
+function normalizeColor(value) {
+  const raw = String(value || '').trim();
+  const hexMatch = raw.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hexMatch) {
+    const hex = hexMatch[1];
+    if (hex.length === 3) {
+      return `#${hex.split('').map(ch => ch + ch).join('')}`.toUpperCase();
+    }
+    return `#${hex}`.toUpperCase();
   }
-  if (company.colorSecondary) {
-    root.style.setProperty('--brand-secondary', company.colorSecondary);
-  } else {
-    root.style.setProperty('--brand-secondary', '#d4ff3a');
+
+  const rgbMatch = raw.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+  if (rgbMatch) {
+    const parts = rgbMatch.slice(1).map(Number);
+    if (parts.every(n => n >= 0 && n <= 255)) {
+      return `#${parts.map(n => n.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+    }
   }
+
+  return null;
+}
+
+function colorFor(company, key) {
+  const fallback = key === 'colorPrimary' ? DEFAULT_PRIMARY : DEFAULT_SECONDARY;
+  return normalizeColor(company?.[key]) || fallback;
 }
 
 function hexToRgb(hex) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
+  const normalized = normalizeColor(hex) || DEFAULT_PRIMARY;
+  const r = parseInt(normalized.slice(1, 3), 16);
+  const g = parseInt(normalized.slice(3, 5), 16);
+  const b = parseInt(normalized.slice(5, 7), 16);
   return `${r},${g},${b}`;
+}
+
+function applyBrandColors(company = AppState.company) {
+  const primary = colorFor(company, 'colorPrimary');
+  const secondary = colorFor(company, 'colorSecondary');
+  const root = document.documentElement;
+
+  root.style.setProperty('--brand-primary', primary);
+  root.style.setProperty('--brand-primary-rgb', hexToRgb(primary));
+  root.style.setProperty('--brand-secondary', secondary);
+  root.style.setProperty('--accent', secondary);
 }
 
 function init() {
@@ -38,43 +61,22 @@ function init() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const data = JSON.parse(raw);
-      if (data.name) AppState.company = { ...AppState.company, ...data };
+      AppState.company = { ...AppState.company, ...data };
     }
-  } catch (e) { /* localStorage no disponible o JSON inválido */ }
+  } catch (e) {
+    console.warn('No se pudo cargar el perfil de empresa:', e);
+  }
 
   applyBrandColors(AppState.company);
   syncBrandUI();
+  buildPalettes();
 
   document.getElementById('btn-company')?.addEventListener('click', openModal);
   document.getElementById('company-close')?.addEventListener('click', closeModal);
   document.getElementById('company-cancel')?.addEventListener('click', closeModal);
 
-  document.getElementById('company-color-primary')?.addEventListener('input', e => {
-    if (pending) {
-      pending.colorPrimary = e.target.value;
-      const hex = document.getElementById('company-color-primary-hex');
-      if (hex) hex.textContent = e.target.value;
-      applyBrandColors({ ...AppState.company, ...pending });
-    }
-  });
-
-  document.getElementById('company-color-secondary')?.addEventListener('input', e => {
-    if (pending) {
-      pending.colorSecondary = e.target.value;
-      const hex = document.getElementById('company-color-secondary-hex');
-      if (hex) hex.textContent = e.target.value;
-      applyBrandColors({ ...AppState.company, ...pending });
-    }
-  });
-
-  document.getElementById('company-color-secondary')?.addEventListener('input', e => {
-    if (pending) {
-      pending.colorSecondary = e.target.value;
-      const hex = document.getElementById('company-color-secondary-hex');
-      if (hex) hex.textContent = e.target.value;
-      applyBrandColors({ ...AppState.company, ...pending });
-    }
-  });
+  wireColorField('primary', 'colorPrimary');
+  wireColorField('secondary', 'colorSecondary');
 
   document.getElementById('company-modal')?.addEventListener('click', e => {
     if (e.target.id === 'company-modal') closeModal();
@@ -94,7 +96,7 @@ function init() {
   });
 
   document.getElementById('company-logo-load')?.addEventListener('click', () => {
-    document.getElementById('company-logo-input').click();
+    document.getElementById('company-logo-input')?.click();
   });
   document.getElementById('company-logo-input')?.addEventListener('change', handleLogoFile);
   document.getElementById('company-logo-clear')?.addEventListener('click', () => {
@@ -104,24 +106,98 @@ function init() {
     }
   });
 
-  document.getElementById('company-save')?.addEventListener('click', () => {
-    if (!pending) return;
-    AppState.company = { ...pending };
-    save();
-    syncBrandUI();
-    closeModal();
+  document.getElementById('company-save')?.addEventListener('click', savePending);
+}
+
+function buildPalettes() {
+  ['primary', 'secondary'].forEach(kind => {
+    const palette = document.getElementById(`company-color-${kind}-palette`);
+    if (!palette || palette.children.length) return;
+    PALETTE.forEach(color => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'brand-swatch';
+      btn.dataset.color = color;
+      btn.title = color;
+      btn.style.background = color;
+      palette.appendChild(btn);
+    });
   });
+}
+
+function wireColorField(kind, key) {
+  const text = document.getElementById(`company-color-${kind}`);
+  const picker = document.getElementById(`company-color-${kind}-picker`);
+  const palette = document.getElementById(`company-color-${kind}-palette`);
+
+  text?.addEventListener('input', () => {
+    commitColor(kind, key, text.value, { syncText: false });
+  });
+  text?.addEventListener('blur', () => {
+    commitColor(kind, key, text.value, { syncText: true });
+  });
+  picker?.addEventListener('input', () => {
+    commitColor(kind, key, picker.value, { syncText: true });
+  });
+  palette?.addEventListener('click', e => {
+    const btn = e.target.closest('[data-color]');
+    if (!btn) return;
+    commitColor(kind, key, btn.dataset.color, { syncText: true });
+  });
+}
+
+function commitColor(kind, key, value, { syncText }) {
+  if (!pending) return false;
+  const normalized = normalizeColor(value);
+  setColorError(kind, !normalized);
+  if (!normalized) return false;
+
+  pending[key] = normalized;
+  updateColorUI(kind, normalized, syncText);
+  applyBrandColors({ ...AppState.company, ...pending });
+  return true;
+}
+
+function updateColorUI(kind, color, syncText = true) {
+  const text = document.getElementById(`company-color-${kind}`);
+  const picker = document.getElementById(`company-color-${kind}-picker`);
+  const preview = document.getElementById(`company-color-${kind}-preview`);
+  const palette = document.getElementById(`company-color-${kind}-palette`);
+
+  if (syncText && text) text.value = color;
+  if (picker) picker.value = color;
+  if (preview) preview.style.background = color;
+  palette?.querySelectorAll('.brand-swatch').forEach(btn => {
+    btn.classList.toggle('active', normalizeColor(btn.dataset.color) === color);
+  });
+}
+
+function setColorError(kind, visible) {
+  document.getElementById(`company-color-${kind}-error`)?.classList.toggle('visible', visible);
+}
+
+function savePending() {
+  if (!pending) return;
+  const primaryOk = commitColor('primary', 'colorPrimary', document.getElementById('company-color-primary')?.value, { syncText: true });
+  const secondaryOk = commitColor('secondary', 'colorSecondary', document.getElementById('company-color-secondary')?.value, { syncText: true });
+  if (!primaryOk || !secondaryOk) return;
+
+  AppState.company = { ...pending };
+  save();
+  syncBrandUI();
+  closeModal({ keepPreview: true });
 }
 
 function openModal() {
   pending = { ...AppState.company };
   syncModalUI();
-  document.getElementById('company-modal').classList.add('visible');
+  document.getElementById('company-modal')?.classList.add('visible');
 }
 
-function closeModal() {
-  document.getElementById('company-modal').classList.remove('visible');
+function closeModal({ keepPreview = false } = {}) {
+  document.getElementById('company-modal')?.classList.remove('visible');
   pending = null;
+  if (!keepPreview) applyBrandColors(AppState.company);
 }
 
 function handleLogoFile(e) {
@@ -152,21 +228,20 @@ function save() {
 
 function syncModalUI() {
   if (!pending) return;
-  document.getElementById('company-name').value  = pending.name  || '';
+  document.getElementById('company-name').value = pending.name || '';
   document.getElementById('company-email').value = pending.email || '';
+
+  const primary = colorFor(pending, 'colorPrimary');
+  const secondary = colorFor(pending, 'colorSecondary');
+  updateColorUI('primary', primary, true);
+  updateColorUI('secondary', secondary, true);
+  setColorError('primary', false);
+  setColorError('secondary', false);
 
   const thumbImg = document.getElementById('company-logo-thumb-img');
   const emptyTxt = document.getElementById('company-logo-empty');
   const clearBtn = document.getElementById('company-logo-clear');
-  const label    = document.getElementById('company-logo-label');
-  const cp = document.getElementById('company-color-primary');
-  const cs = document.getElementById('company-color-secondary');
-  if (cp) { cp.value = pending.colorPrimary || '#2563eb'; }
-  if (cs) { cs.value = pending.colorSecondary || '#d4ff3a'; }
-  const cpHex = document.getElementById('company-color-primary-hex');
-  const csHex = document.getElementById('company-color-secondary-hex');
-  if (cpHex) cpHex.textContent = pending.colorPrimary || '#2563eb';
-  if (csHex) csHex.textContent = pending.colorSecondary || '#d4ff3a';
+  const label = document.getElementById('company-logo-label');
 
   if (pending.logo) {
     thumbImg.src = pending.logo;
@@ -197,4 +272,4 @@ function syncBrandUI() {
   }
 }
 
-export const CompanyManager = { init, syncBrandUI };
+export const CompanyManager = { init, syncBrandUI, applyBrandColors };
