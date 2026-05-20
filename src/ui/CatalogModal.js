@@ -97,6 +97,12 @@ function thumbSVG(def) {
   if (t === 'sillaCatering')   return svgChair(def.color || '#cccccc', def.subtype);
   if (t === 'sillaLineal')     return svgChairLineal(def.color || '#cccccc');
   if (t === 'poste')              return svgPoste();
+  if (t === 'barraLibre') return svgBarraLibre();
+  if (t === 'ambiente') {
+  if (def.subtype === 'alfombra') return svgAlfombra(def.color || '#8b1a1a');
+  if (def.subtype === 'planta')   return svgPlantaDeco();
+    return svgSpot();
+  }
   return svgPlaceholder();
 }
 
@@ -342,6 +348,53 @@ function svgPoste() {
     <rect x="46" y="14" width="8" height="68" fill="#6b4423" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
     <ellipse cx="50" cy="14" rx="4" ry="1.2" fill="#5a3a1f"/>
     <ellipse cx="50" cy="82" rx="14" ry="3" fill="#5a3a1f"/>
+  </svg>`;
+}
+
+function svgBarraLibre() {
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect x="10" y="54" width="80" height="26" fill="#1a1a1c" rx="2"/>
+    <rect x="10" y="50" width="80" height="6" fill="#2a2a2c" rx="1"/>
+    ${[28,50,72].map(x => `
+      <circle cx="${x}" cy="49" r="8" fill="#6b6864" stroke="#9a9692" stroke-width="1"/>
+      <circle cx="${x}" cy="49" r="5.5" fill="#d0eef8" opacity="0.7"/>
+    `).join('')}
+    <rect x="10" y="78" width="80" height="4" fill="#2a2a2c" rx="1"/>
+  </svg>`;
+}
+
+function svgAlfombra(fill) {
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect x="12" y="28" width="76" height="44" fill="${fill}" rx="3"/>
+    <rect x="16" y="32" width="68" height="36" fill="none" stroke="#c9a55a" stroke-width="2"/>
+    <rect x="22" y="38" width="56" height="24" fill="none" stroke="#c9a55a" stroke-width="0.8" opacity="0.5"/>
+    <circle cx="50" cy="50" r="8" fill="none" stroke="#c9a55a" stroke-width="1.5" opacity="0.6"/>
+  </svg>`;
+}
+
+function svgPlantaDeco() {
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="50" cy="84" rx="14" ry="3" fill="rgba(0,0,0,0.12)"/>
+    <path d="M 38 72 Q 36 60 50 72" fill="#8b5e3c"/>
+    <ellipse cx="50" cy="72" rx="14" ry="8" fill="#8b5e3c"/>
+    <circle cx="38" cy="50" r="16" fill="#3e7a3a"/>
+    <circle cx="60" cy="46" r="18" fill="#3e7a3a"/>
+    <circle cx="50" cy="36" r="13" fill="#3e7a3a"/>
+    <circle cx="43" cy="36" r="5" fill="white" opacity="0.2"/>
+  </svg>`;
+}
+
+function svgSpot() {
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <line x1="35" y1="82" x2="42" y2="32" stroke="#2a2a2c" stroke-width="2"/>
+    <line x1="50" y1="82" x2="50" y2="28" stroke="#2a2a2c" stroke-width="2"/>
+    <line x1="65" y1="82" x2="58" y2="32" stroke="#2a2a2c" stroke-width="2"/>
+    <ellipse cx="35" cy="82" rx="5" ry="2" fill="#1a1a1c"/>
+    <ellipse cx="50" cy="82" rx="5" ry="2" fill="#1a1a1c"/>
+    <ellipse cx="65" cy="82" rx="5" ry="2" fill="#1a1a1c"/>
+    <ellipse cx="50" cy="30" rx="12" ry="8" fill="#1a1a1c"/>
+    <ellipse cx="50" cy="28" rx="9" ry="5" fill="#fffbe8" opacity="0.9"/>
+    <ellipse cx="46" cy="26" rx="3" ry="1.5" fill="white" opacity="0.6"/>
   </svg>`;
 }
 

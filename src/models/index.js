@@ -24,6 +24,8 @@ import { createCarpaTipi }    from './carpaTipi.js';
 import { createCarpaTransparente } from './carpaTransparente.js';
 import { createCarpaDomo }         from './carpaDomo.js';
 import { createPoste } from './poste.js';
+import { createBarraLibre } from './barraLibre.js';
+import { createAmbiente }   from './ambiente.js';
 
 const builders = {
   mesa:           createMesa,
@@ -49,6 +51,8 @@ const builders = {
   carpaTransparente: createCarpaTransparente,
   carpaDomo:         createCarpaDomo,
   poste: createPoste,
+  barraLibre: createBarraLibre,
+  ambiente:   createAmbiente,
 };
 
 export const ModelFactory = {

@@ -146,3 +146,17 @@
 
 /* Empty hint se oculta cuando hay items */
 body.has-items #empty-hint { display: none; }
+
+/* ── Centrado forzado del header ── */
+#header-mac {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  max-width: calc(100vw - 48px);
+  white-space: nowrap;
+}
+
+/* ── Dock centrado ── */
+#dock {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}

@@ -66,39 +66,34 @@ function buildChiavari(W, D, SH, TH, color) {
   const g = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.55, flatShading: true });
 
-  // Asiento ligeramente curvo
+  // Asiento
   const seat = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, D), mat.clone());
   seat.position.y = SH;
   seat.castShadow = true; seat.receiveShadow = true;
   seat.userData.baseColor = color; seat.userData.isMain = true;
   g.add(seat);
 
-  // Marco superior del respaldo (curvado)
-  const topBar = new THREE.Mesh(
-    new THREE.TorusGeometry(W/2 - 0.03, 0.015, 8, 16, Math.PI),
-    mat.clone()
-  );
-  topBar.rotation.x = Math.PI / 2;
-  topBar.rotation.z = Math.PI;
-  topBar.position.set(0, TH - 0.02, D/2 - 0.03);
+  // Barra superior del respaldo (cilindro horizontal curvo → usamos BoxGeometry)
+  const topBar = new THREE.Mesh(new THREE.BoxGeometry(W - 0.04, 0.03, 0.03), mat.clone());
+  topBar.position.set(0, TH - 0.02, -D/2 + 0.03);
   topBar.castShadow = true;
   topBar.userData.baseColor = color;
   g.add(topBar);
 
-  // 5 barrotes verticales finos
+  // 5 barrotes verticales
   const barH = TH - SH - 0.06;
   const barGeo = new THREE.CylinderGeometry(0.008, 0.008, barH, 8);
   for (let i = 0; i < 5; i++) {
     const t = i / 4;
-    const x = -W/2 + 0.05 + t * (W - 0.10);
+    const x = -(W/2 - 0.05) + t * (W - 0.10);
     const bar = new THREE.Mesh(barGeo, mat.clone());
-    bar.position.set(x, SH + barH/2 + 0.02, D/2 - 0.025);
+    bar.position.set(x, SH + barH/2 + 0.02, -D/2 + 0.025);
     bar.castShadow = true;
     bar.userData.baseColor = color;
     g.add(bar);
   }
 
-  // 4 patas con forma cónica
+  // 4 patas cónicas
   const legGeo = new THREE.CylinderGeometry(0.010, 0.018, SH, 8);
   const offX = W/2 - 0.035, offZ = D/2 - 0.035;
   [[-offX,-offZ],[offX,-offZ],[-offX,offZ],[offX,offZ]].forEach(([x,z]) => {
@@ -115,41 +110,25 @@ function buildChiavari(W, D, SH, TH, color) {
 function buildTiffany(W, D, SH, TH, color) {
   const g = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.15,
-    metalness: 0.1,
-    transparent: true,
-    opacity: 0.55,
-    flatShading: false
+    color, roughness: 0.15, metalness: 0.1,
+    transparent: true, opacity: 0.55, flatShading: false
   });
 
+  // Asiento
   const seat = new THREE.Mesh(new THREE.BoxGeometry(W, 0.04, D), mat.clone());
   seat.position.y = SH;
   seat.castShadow = true;
   seat.userData.baseColor = color; seat.userData.baseOpacity = 0.55; seat.userData.isMain = true;
   g.add(seat);
 
-  // Respaldo curvo plano
+  // Respaldo plano
   const back = new THREE.Mesh(new THREE.BoxGeometry(W - 0.04, TH - SH - 0.04, 0.025), mat.clone());
-  back.position.set(0, SH + (TH - SH)/2, D/2 - 0.015);
+  back.position.set(0, SH + (TH - SH)/2, -D/2 + 0.015);
   back.castShadow = true;
   back.userData.baseColor = color; back.userData.baseOpacity = 0.55;
   g.add(back);
 
-  // Barrotes verticales transparentes
-  const barH = TH - SH - 0.04;
-  const barGeo = new THREE.CylinderGeometry(0.012, 0.012, barH, 8);
-  for (let i = 0; i < 4; i++) {
-    const t = (i + 0.5) / 4;
-    const x = -W/2 + t * W;
-    const bar = new THREE.Mesh(barGeo, mat.clone());
-    bar.position.set(x, SH + barH/2 + 0.02, D/2 - 0.025);
-    bar.castShadow = true;
-    bar.userData.baseColor = color; bar.userData.baseOpacity = 0.55;
-    g.add(bar);
-  }
-
-  // Patas
+  // 4 patas
   const legGeo = new THREE.CylinderGeometry(0.012, 0.015, SH, 8);
   const offX = W/2 - 0.035, offZ = D/2 - 0.035;
   [[-offX,-offZ],[offX,-offZ],[-offX,offZ],[offX,offZ]].forEach(([x,z]) => {
@@ -167,32 +146,29 @@ function buildTolix(W, D, SH, TH, color) {
   const g = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.65, flatShading: true });
 
-  // Asiento ligeramente curvado (cilindro corto chato)
-  const seat = new THREE.Mesh(new THREE.CylinderGeometry(W/2, W/2 - 0.04, 0.045, 16), mat.clone());
+  // Asiento circular
+  const seat = new THREE.Mesh(new THREE.CylinderGeometry(W/2, W/2 - 0.02, 0.045, 16), mat.clone());
   seat.position.y = SH;
   seat.castShadow = true; seat.receiveShadow = true;
   seat.userData.baseColor = color; seat.userData.isMain = true;
   g.add(seat);
 
-  // Respaldo curvo (semi-cilindro)
-  const backGeo = new THREE.CylinderGeometry(W/2 - 0.02, W/2 - 0.02, TH - SH - 0.05, 16, 1, true, Math.PI - 0.6, 1.2);
-  const back = new THREE.Mesh(backGeo, new THREE.MeshStandardMaterial({
-    color, roughness: 0.5, metalness: 0.65, side: THREE.DoubleSide, flatShading: true
-  }));
-  back.position.set(0, SH + (TH - SH)/2, D/2 - W/2 + 0.05);
+  // Respaldo plano curvado (caja simple)
+  const backH = TH - SH - 0.05;
+  const back = new THREE.Mesh(new THREE.BoxGeometry(W - 0.04, backH, 0.03), mat.clone());
+  back.position.set(0, SH + backH/2 + 0.02, -D/2 + 0.02);
   back.castShadow = true;
   back.userData.baseColor = color;
   g.add(back);
 
-  // 4 patas inclinadas
-  const legLen = SH * 1.04;
-  const legGeo = new THREE.CylinderGeometry(0.011, 0.011, legLen, 8);
+  // 4 patas ligeramente inclinadas
+  const legGeo = new THREE.CylinderGeometry(0.011, 0.011, SH, 8);
   const offX = W/2 - 0.04, offZ = D/2 - 0.04;
   [[-offX,-offZ],[offX,-offZ],[-offX,offZ],[offX,offZ]].forEach(([x,z]) => {
     const l = new THREE.Mesh(legGeo, mat.clone());
-    l.position.set(x*1.08, SH/2, z*1.08); // pies abiertos
-    l.rotation.x = z > 0 ?  0.08 : -0.08;
-    l.rotation.z = x > 0 ? -0.08 :  0.08;
+    l.position.set(x * 1.06, SH/2, z * 1.06);
+    l.rotation.x = z > 0 ? -0.06 :  0.06;
+    l.rotation.z = x > 0 ?  0.06 : -0.06;
     l.castShadow = true;
     l.userData.baseColor = color;
     g.add(l);
