@@ -8,6 +8,7 @@ import { InventoryPanel } from './ui/InventoryPanel.js';
 import { PlanManager } from './io/PlanManager.js';
 import { CompanyManager } from './io/CompanyManager.js';
 import { ExportManager } from './io/ExportManager.js';
+import { ShareManager } from './io/ShareManager.js';
 import { Dock } from './ui/Dock.js';
 import { CatalogModal } from './ui/CatalogModal.js';
 import { TemplateManager } from './io/TemplateManager.js';
@@ -27,6 +28,7 @@ async function bootstrap() {
   PlanManager.init();
   CompanyManager.init();
   ExportManager.init();
+  ShareManager.init();
   CatalogModal.init();
   Dock.init();
   TemplateManager.init();

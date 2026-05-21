@@ -26,6 +26,7 @@ function init() {
   host.appendChild(sep);
 
   host.appendChild(makeInventoryButton());
+  host.appendChild(makeShareButton());
 
   if (window.lucide) lucide.createIcons();
 }
@@ -52,6 +53,22 @@ function makeInventoryButton() {
     clearCategoryButtons();
     CatalogModal.close();
     document.dispatchEvent(new CustomEvent('escale:toggle-inventory'));
+  });
+  return button;
+}
+
+function makeShareButton() {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.id = 'dock-share-btn';
+  button.dataset.dockKind = 'share';
+  button.title = 'Compartir planning evento';
+  button.innerHTML = `<i data-lucide="send" class="w-5 h-5"></i>`;
+  button.addEventListener('click', () => {
+    clearCategoryButtons();
+    CatalogModal.close();
+    document.dispatchEvent(new CustomEvent('escale:inventory-close'));
+    document.dispatchEvent(new CustomEvent('escale:share-planning'));
   });
   return button;
 }

@@ -98,6 +98,7 @@ export const AppState = {
       this.selectedId = this.selectedIds.size ? [...this.selectedIds].pop() : null;
     }
     if (this.selectedIds.size === 0) UIManager.hideDetail?.();
+	UIManager.hideTooltip?.();
     UIManager.refresh();
   },
 

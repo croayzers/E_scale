@@ -3,6 +3,7 @@
    ───────────────────────────────────────────────────────── */
 
 import { ModelFactory } from '../models/index.js';
+import { computePostPositions } from '../models/carpaHelpers.js';
 // Imports diferidos para romper ciclos:
 // AppState y UIManager se cargan en runtime, no en estático.
 
@@ -171,6 +172,246 @@ function rebuildGrids() {
   scene.add(gridMain);
 }
 
+function isCarpaType(type) {
+  return type === 'carpa' || String(type || '').startsWith('carpa');
+}
+
+function isLightingItem(item) {
+  return item.type === 'cableLuces'
+    || item.type === 'poste'
+    || (item.type === 'ambiente' && item.subtype === 'spot');
+}
+
+function isCameraSpecificItem(item) {
+  return isCarpaType(item.type) || item.type === 'room' || isLightingItem(item);
+}
+
+function shouldUseTopSymbol(item) {
+  return _appState?.camera === 'top' && isCameraSpecificItem(item);
+}
+
+function createModelForCurrentView(item) {
+  const group = shouldUseTopSymbol(item) ? createTopSymbol(item) : ModelFactory.create(item);
+  if (_appState?.camera === 'iso' && isCameraSpecificItem(item)) hideIsoFootprintFills(group, item);
+  return group;
+}
+
+function createTopSymbol(item) {
+  if (isCarpaType(item.type)) return createTopCarpaSymbol(item);
+  if (item.type === 'room') return createTopRoomSymbol(item);
+  if (item.type === 'cableLuces') return createTopCableSymbol(item);
+  if (item.type === 'poste') return createTopPosteSymbol(item);
+  if (item.type === 'ambiente' && item.subtype === 'spot') return createTopSpotSymbol(item);
+  return ModelFactory.create(item);
+}
+
+function makeFlatMaterial(color, opacity = 0.12) {
+  const mat = new THREE.MeshBasicMaterial({
+    color,
+    transparent: opacity < 1,
+    opacity,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    depthTest: true,
+    polygonOffset: false,
+  });
+  mat.needsUpdate = true;
+  return mat;
+}
+
+function makeLine(points, color, y = 0.045) {
+  const geo = new THREE.BufferGeometry().setFromPoints(points.map(([x, z]) => new THREE.Vector3(x, y, z)));
+  const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9, depthTest: true }));
+  line.renderOrder = 25;
+  return line;
+}
+
+function addFlatRect(group, L, W, color, fillOpacity = 0.10) {
+  const fill = new THREE.Mesh(new THREE.PlaneGeometry(L, W), makeFlatMaterial(color, fillOpacity));
+  fill.rotation.x = -Math.PI / 2;
+  fill.position.y = 0.032;
+  fill.renderOrder = 20;
+  fill.userData.baseColor = color;
+  fill.userData.baseOpacity = fillOpacity;
+  fill.userData.isMain = true;
+  group.add(fill);
+
+  group.add(makeLine([
+    [-L / 2, -W / 2],
+    [ L / 2, -W / 2],
+    [ L / 2,  W / 2],
+    [-L / 2,  W / 2],
+    [-L / 2, -W / 2]
+  ], color));
+}
+
+function addFlatCircle(group, diameter, color, fillOpacity = 0.10) {
+  const radius = diameter / 2;
+  const fill = new THREE.Mesh(new THREE.CircleGeometry(radius, 64), makeFlatMaterial(color, fillOpacity));
+  fill.rotation.x = -Math.PI / 2;
+  fill.position.y = 0.032;
+  fill.renderOrder = 20;
+  fill.userData.baseColor = color;
+  fill.userData.baseOpacity = fillOpacity;
+  fill.userData.isMain = true;
+  group.add(fill);
+
+  const ring = new THREE.Mesh(new THREE.RingGeometry(Math.max(0.01, radius - 0.035), radius, 64), makeFlatMaterial(color, 0.9));
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.046;
+  ring.renderOrder = 26;
+  ring.userData.baseColor = color;
+  group.add(ring);
+}
+
+function addPostCircle(group, x, z, diameter, color) {
+  const radius = Math.max(diameter / 2, 0.075);
+  const post = new THREE.Mesh(new THREE.CircleGeometry(radius, 18), makeFlatMaterial(color, 0.95));
+  post.rotation.x = -Math.PI / 2;
+  post.position.set(x, 0.052, z);
+  post.renderOrder = 30;
+  post.userData.baseColor = color;
+  group.add(post);
+}
+
+function carpaFootprint(item) {
+  const dims = item.dims || {};
+  if (typeof dims.diameter === 'number') return { shape: 'circle', diameter: dims.diameter };
+  if (typeof dims.size === 'number') return { shape: 'rect', length: dims.size, width: dims.size };
+  return { shape: 'rect', length: dims.length ?? 6, width: dims.width ?? 3 };
+}
+
+function createTopCarpaSymbol(item) {
+  const group = new THREE.Group();
+  const color = parseHex(item.poleColor || item.tarpColor || '#6b4423');
+  const footprint = carpaFootprint(item);
+  const postD = item.posts?.diameter ?? 0.12;
+  const showPosts = item.posts?.enabled !== false;
+
+  if (footprint.shape === 'circle') {
+    addFlatCircle(group, footprint.diameter, color, 0.08);
+    if (showPosts) addPostCircle(group, 0, 0, postD * 1.8, color);
+    return group;
+  }
+
+  const L = footprint.length;
+  const W = footprint.width;
+  addFlatRect(group, L, W, color, 0.08);
+  if (showPosts) {
+    const spacing = item.posts?.spacing ?? Math.max(2, Math.min(L, W));
+    computePostPositions(L, W, spacing).forEach(([x, z]) => addPostCircle(group, x, z, postD, color));
+  }
+
+  if (item.columns?.enabled === true) {
+    const rows = Math.max(1, item.columns.rows ?? 1);
+    const cols = Math.max(1, item.columns.cols ?? 2);
+    const diameter = item.columns.diameter ?? 0.15;
+    for (let r = 1; r <= rows; r += 1) {
+      for (let c = 1; c <= cols; c += 1) {
+        addPostCircle(group, -L / 2 + (L * c) / (cols + 1), -W / 2 + (W * r) / (rows + 1), diameter, 0x8b5a2b);
+      }
+    }
+  }
+  return group;
+}
+
+function createTopRoomSymbol(item) {
+  const group = new THREE.Group();
+  const L = item.dims?.length ?? 6;
+  const W = item.dims?.width ?? 4;
+  const T = item.dims?.thickness ?? 0.1;
+  const color = parseHex(item.color || '#ffffff');
+
+  addFlatRect(group, L, W, color, 0.035);
+  const wallMat = makeFlatMaterial(color, 0.85);
+  [
+    { geo: new THREE.PlaneGeometry(L, T), pos: [0, 0.055, W / 2 - T / 2] },
+    { geo: new THREE.PlaneGeometry(L, T), pos: [0, 0.055, -W / 2 + T / 2] },
+    { geo: new THREE.PlaneGeometry(T, W), pos: [L / 2 - T / 2, 0.055, 0] },
+    { geo: new THREE.PlaneGeometry(T, W), pos: [-L / 2 + T / 2, 0.055, 0] }
+  ].forEach(({ geo, pos }, index) => {
+    const wall = new THREE.Mesh(geo, wallMat.clone());
+    wall.rotation.x = -Math.PI / 2;
+    wall.position.set(...pos);
+    wall.renderOrder = 31;
+    wall.userData.baseColor = color;
+    if (index === 0) wall.userData.isMain = true;
+    group.add(wall);
+  });
+  return group;
+}
+
+function createTopCableSymbol(item) {
+  const group = new THREE.Group();
+  const count = Math.max(2, item.count ?? 8);
+  const spacing = Math.max(0.2, item.spacing ?? 1.0);
+  const totalLength = count * spacing;
+  const cableColor = parseHex(item.cableColor || '#1a1a1c');
+  const lightColor = parseHex(item.lightColor || '#ffd454');
+
+  group.add(makeLine([[-totalLength / 2, 0], [totalLength / 2, 0]], cableColor, 0.055));
+
+  const hit = new THREE.Mesh(
+    new THREE.PlaneGeometry(totalLength, 0.45),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  hit.rotation.x = -Math.PI / 2;
+  hit.position.y = 0.04;
+  hit.userData.baseColor = cableColor;
+  hit.userData.isMain = true;
+  group.add(hit);
+
+  for (let i = 0; i < count; i += 1) {
+    const t = count === 1 ? 0.5 : (i + 0.5) / count;
+    const x = -totalLength / 2 + totalLength * t;
+    function addPostCircle(group, x, z, diameter, color) {
+  const radius = Math.max(diameter / 2, 0.075);
+  const post = new THREE.Mesh(new THREE.CircleGeometry(radius, 18), makeFlatMaterial(color, 0.95));
+  post.rotation.x = -Math.PI / 2;
+  post.position.set(x, 0.052, z);
+  post.renderOrder = 30;
+  post.userData.baseColor = color;
+  group.add(post);
+}
+  }
+  return group;
+}
+
+function createTopPosteSymbol(item) {
+  const group = new THREE.Group();
+  const color = parseHex(item.color || '#6b4423');
+  addPostCircle(group, 0, 0, item.dims?.diameter ?? 0.12, color);
+  group.children[0].userData.isMain = true;
+  return group;
+}
+
+function createTopSpotSymbol(item) {
+  const group = new THREE.Group();
+  const color = parseHex(item.color || '#fffbe8');
+  addFlatCircle(group, 0.55, color, 0.18);
+  group.add(makeLine([[0, 0], [0, 0.9]], color, 0.056));
+  return group;
+}
+
+function hideIsoFootprintFills(group, item) {
+  group.traverse(child => {
+    if (!child.isMesh || !child.material) return;
+    const role = child.userData?.role || '';
+    const isKnownFootprint = role.includes('base') || role.includes('floor');
+    const isSoftPlane = child.geometry?.type === 'PlaneGeometry'
+      && child.material.transparent === true
+      && child.material.opacity <= 0.15;
+    if (isKnownFootprint || (isCarpaType(item.type) && isSoftPlane) || (item.type === 'room' && isSoftPlane)) {
+      child.visible = false;
+      child.userData.isMain = false;
+    }
+  });
+}
+
+function parseHex(hex) {
+  return parseInt(String(hex || '#000000').replace('#', ''), 16);
+}
+
 function onResize() {
   const w = window.innerWidth, h = window.innerHeight, a = w / h;
   renderer.setSize(w, h);
@@ -208,14 +449,15 @@ function setCamera(mode) {
     document.getElementById('status-mode').textContent = 'TOP · CENITAL';
   }
   // Las carpas tienen representación distinta según vista → reconstruir
+  updatePlanViewMode();
   if (_appState) {
-    _appState.items.filter(i => i.type === 'carpa').forEach(c => rebuild(c));
+    _appState.items.filter(isCameraSpecificItem).forEach(item => rebuild(item));
   }
   applyShadowState();
 }
 
 function spawn(item) {
-  const group = ModelFactory.create(item);
+  const group = createModelForCurrentView(item);
   group.userData = { id: item.id };
   group.position.set(item.x, 0, item.z);
   if (item.rotY) group.rotation.y = item.rotY;
@@ -239,11 +481,31 @@ function removeItem(id) {
 }
 
 function disposeGroup(group) {
-  group.traverse(o => {
-    if (o.geometry) o.geometry.dispose();
+  const disposed = new WeakSet();
+  const items = [];
+  group.traverse(o => items.push(o));
+  // Quitamos primero del grafo, luego liberamos
+  items.forEach(o => {
+    if (o.parent) o.parent.remove(o);
+  });
+  items.forEach(o => {
+    if (o.geometry && !disposed.has(o.geometry)) {
+      disposed.add(o.geometry);
+      try { o.geometry.dispose(); } catch(e) {}
+    }
     if (o.material) {
-      if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
-      else o.material.dispose();
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach(m => {
+        if (!m || disposed.has(m)) return;
+        disposed.add(m);
+        try {
+          if (m.map && !disposed.has(m.map)) {
+            disposed.add(m.map);
+            m.map.dispose();
+          }
+          m.dispose();
+        } catch(e) {}
+      });
     }
   });
 }
@@ -427,7 +689,9 @@ function drawCotas() {
         const subLabel = item.subtype === 'alfombra' ? `${item.dims.length}×${item.dims.width}m`
                        : item.subtype === 'planta'   ? `H ${item.dims.height}m`
                        : `Spot · H ${item.dims.height}m`;
-        label = subLabel;
+        label = item.subtype === 'alfombra' && typeof item.dims?.diameter === 'number'
+          ? `Ø ${item.dims.diameter}m`
+          : subLabel;
         kind = 'lights';
         yOffset = item.subtype === 'alfombra' ? 0.4 : (item.dims.height ?? 1) + 0.4;
         break;
@@ -523,6 +787,16 @@ function setPlanTexture(texture) {
   scene.add(planMesh);
   _appState.plan.mesh = planMesh;
   _appState.plan.texture = texture;
+  updatePlanViewMode();
+}
+
+function updatePlanViewMode() {
+  if (!planMesh) return;
+  const isTop = _appState?.camera === 'top';
+  planMesh.position.y = isTop ? 0.005 : 0.018;
+  planMesh.renderOrder = isTop ? 1 : 3;
+  planMesh.material.depthWrite = false;
+  planMesh.material.needsUpdate = true;
 }
 
 function updatePlanSize() {
@@ -642,7 +916,9 @@ function startPlanMove(point) {
   // Guardamos posición actual del boundary
   planMeshStart = {
     x: canvasBoundary?.position.x ?? 0,
-    z: canvasBoundary?.position.z ?? 0
+    z: canvasBoundary?.position.z ?? 0,
+    planX: planMesh?.position.x ?? 0,
+    planZ: planMesh?.position.z ?? 0
   };
 }
 
@@ -652,6 +928,10 @@ function updatePlanMove(point) {
   const dz = point.z - planMoveStart.z;
   canvasBoundary.position.x = planMeshStart.x + dx;
   canvasBoundary.position.z = planMeshStart.z + dz;
+  if (planMesh) {
+    planMesh.position.x = planMeshStart.planX + dx;
+    planMesh.position.z = planMeshStart.planZ + dz;
+  }
 }
 
 function endPlanMove() {

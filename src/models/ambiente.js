@@ -58,6 +58,8 @@ function buildSpot(item) {
 /* ── ALFOMBRA ── */
 function buildAlfombra(item) {
   const g = new THREE.Group();
+  if (item.shape === 'round' || typeof item.dims?.diameter === 'number') return buildAlfombraRedonda(item);
+
   const L = item.dims?.length ?? 3.0;
   const W = item.dims?.width  ?? 2.0;
   const color = parseHex(item.color || '#8b1a1a');
@@ -96,6 +98,40 @@ function buildAlfombra(item) {
 }
 
 /* ── PLANTA DECORATIVA (maceta + arbusto) ── */
+function buildAlfombraRedonda(item) {
+  const g = new THREE.Group();
+  const D = item.dims?.diameter ?? 2.0;
+  const R = D / 2;
+  const color = parseHex(item.color || '#8b1a1a');
+  const borderColor = parseHex(item.borderColor || '#c9a55a');
+
+  const mat = new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.95,
+    metalness: 0.0,
+    flatShading: false,
+    side: THREE.DoubleSide
+  });
+  const rug = new THREE.Mesh(new THREE.CircleGeometry(R, 64), mat);
+  rug.rotation.x = -Math.PI / 2;
+  rug.position.y = 0.008;
+  rug.receiveShadow = true;
+  rug.userData.baseColor = color;
+  rug.userData.isMain = true;
+  g.add(rug);
+
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(Math.max(0.01, R - 0.08), R, 64),
+    new THREE.MeshStandardMaterial({ color: borderColor, roughness: 0.9, side: THREE.DoubleSide })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.009;
+  ring.userData.baseColor = borderColor;
+  g.add(ring);
+
+  return g;
+}
+
 function buildPlanta(item) {
   const g = new THREE.Group();
   const H = item.dims?.height ?? 1.2;

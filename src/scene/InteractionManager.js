@@ -273,11 +273,12 @@ function showContextMenu(x, y, item) {
     });
   });
   menu.querySelectorAll('[data-field]').forEach(el => {
-    const eventName = el.tagName === 'SELECT' ? 'change' : 'change';
-    el.addEventListener(eventName, () => {
+    const saveField = () => {
       const value = el.type === 'checkbox' ? el.checked : el.value;
       handleContextField(el.dataset.field, value, item.id);
-    });
+    };
+    el.addEventListener('change', saveField);
+    if (el.tagName === 'TEXTAREA' || el.type === 'text') el.addEventListener('input', saveField);
   });
 }
 
@@ -376,6 +377,55 @@ function isSeatEditable(item) {
     || (typeof item.chairs === 'number' && item.chairs > 0);
 }
 
+function isTableLike(item) {
+  return ['mesa', 'mesaRect', 'mesaImperial', 'mesaCurva', 'mesaSerpentina'].includes(item.type);
+}
+
+function guestsToText(guests = []) {
+  return guests
+    .map(guest => `${guest.name || ''}${guest.email ? `, ${guest.email}` : ''}`.trim())
+    .filter(Boolean)
+    .join('\n');
+}
+
+function parseGuestsText(text) {
+  return String(text || '')
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      const angle = line.match(/^(.*?)\s*<([^>]+)>$/);
+      if (angle) return { name: angle[1].trim(), email: angle[2].trim() };
+
+      const parts = line.split(/[;,]/).map(part => part.trim()).filter(Boolean);
+      const maybeEmailIndex = parts.findIndex(part => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(part));
+      if (maybeEmailIndex >= 0) {
+        const email = parts[maybeEmailIndex];
+        const name = parts.filter((_, index) => index !== maybeEmailIndex).join(' ').trim() || email;
+        return { name, email };
+      }
+
+      return { name: line, email: '' };
+    });
+}
+
+function tableAssignmentHTML(item) {
+  if (!isTableLike(item)) return '';
+
+  return `
+    <div class="ctx-block">
+      <div class="ctx-label">Invitados y mesa</div>
+      <label class="ctx-field ctx-field-full">
+        <span>Nombre mesa</span>
+        <input data-field="tableName" class="ctx-input" type="text" value="${escapeAttr(item.tableName || '')}" placeholder="Mesa 1"/>
+      </label>
+      <label class="ctx-field ctx-field-full">
+        <span>Invitados (nombre, email)</span>
+        <textarea data-field="guestsText" class="ctx-input ctx-textarea" rows="4" placeholder="Ana Garcia, ana@email.com&#10;Marc Ruiz, marc@email.com">${escapeHtml(guestsToText(item.guests))}</textarea>
+      </label>
+    </div>`;
+}
+
 function getSubtypeOptions(item) {
   if (item.type === 'mesa') {
     return [
@@ -427,8 +477,9 @@ function typeControlHTML(item) {
 }
 
 function fieldBounds(field) {
-  const name = field.replace(/^dims\./, '');
+  const name = field.split('.').pop();
   if (['chairs', 'count', 'cubiteras', 'peaks'].includes(name)) return { min: 0, max: 500, step: 1 };
+  if (['rows', 'cols'].includes(name)) return { min: 1, max: 20, step: 1 };
   if (name === 'anguloDeg') return { min: 1, max: 360, step: 1 };
   if (name === 'diameter') return { min: 0.04, max: 30, step: 0.01 };
   if (name === 'thickness') return { min: 0.02, max: 2, step: 0.01 };
@@ -443,6 +494,14 @@ function numberFieldHTML(field, label, value) {
       <span>${escapeHtml(label)}</span>
       <input data-field="${escapeAttr(field)}" class="ctx-input" type="number"
         min="${b.min}" max="${b.max}" step="${b.step}" value="${escapeAttr(formatNum(value))}"/>
+    </label>`;
+}
+
+function checkboxFieldHTML(field, label, checked) {
+  return `
+    <label class="ctx-check">
+      <input data-field="${escapeAttr(field)}" type="checkbox" ${checked ? 'checked' : ''}/>
+      <span>${escapeHtml(label)}</span>
     </label>`;
 }
 
@@ -471,6 +530,27 @@ function dimensionFieldsHTML(item) {
   return `<div class="ctx-field-grid">${fields.join('')}</div>`;
 }
 
+function carpaStructureHTML(item) {
+  if (item.type !== 'carpa') return '';
+
+  const posts = item.posts || { enabled: true, diameter: 0.10, spacing: 2.0, height: 3.0 };
+  const columns = item.columns || { enabled: false, rows: 1, cols: 2, diameter: 0.15 };
+  return `
+    <div class="ctx-block">
+      <div class="ctx-label">Postes y 2D/3D</div>
+      ${checkboxFieldHTML('posts.enabled', 'Mostrar postes perimetrales', posts.enabled !== false)}
+      ${checkboxFieldHTML('columns.enabled', 'Mostrar columnas internas', columns.enabled === true)}
+      <div class="ctx-field-grid">
+        ${numberFieldHTML('posts.spacing', 'Sep. postes', posts.spacing ?? 2.0)}
+        ${numberFieldHTML('posts.height', 'Alto poste', posts.height ?? 3.0)}
+        ${numberFieldHTML('posts.diameter', 'Diam. poste', posts.diameter ?? 0.10)}
+        ${numberFieldHTML('columns.diameter', 'Diam. columna', columns.diameter ?? 0.15)}
+        ${numberFieldHTML('columns.rows', 'Filas col.', columns.rows ?? 1)}
+        ${numberFieldHTML('columns.cols', 'Cols col.', columns.cols ?? 2)}
+      </div>
+    </div>`;
+}
+
 function presetValue(patch) {
   return encodeURIComponent(JSON.stringify(patch));
 }
@@ -493,8 +573,8 @@ function getQuickPresets(item) {
     case 'mesaRect':
       return [
         { label: '1.8 x 0.8', patch: { dims: { length: 1.8, width: 0.8 }, chairs: 6 } },
-        { label: '2.4 x 0.8', patch: { dims: { length: 2.4, width: 0.8 }, chairs: 8 } },
-        { label: '3.0 x 0.9', patch: { dims: { length: 3.0, width: 0.9 }, chairs: 10 } }
+        { label: '2.4 x 1.2', patch: { dims: { length: 2.4, width: 1.2 }, chairs: 8 } },
+        { label: '3.0 x 2.0', patch: { dims: { length: 3.0, width: 2.0 }, chairs: 10 } }
       ];
     case 'mesaImperial':
       return [
@@ -583,6 +663,13 @@ function getQuickPresets(item) {
       ];
     case 'ambiente':
       if (item.subtype === 'alfombra') {
+        if (item.shape === 'round' || typeof item.dims?.diameter === 'number') {
+          return [
+            { label: '2 m', patch: { dims: { diameter: 2.0 } } },
+            { label: '3 m', patch: { dims: { diameter: 3.0 } } },
+            { label: '4 m', patch: { dims: { diameter: 4.0 } } }
+          ];
+        }
         return [
           { label: '2 x 1.5', patch: { dims: { length: 2, width: 1.5 } } },
           { label: '3 x 2', patch: { dims: { length: 3, width: 2 } } },
@@ -634,10 +721,14 @@ function buildUnifiedContextMenuHTML(item) {
           ${numberFieldHTML('chairs', 'Sillas', item.chairs ?? 0)}
         </div>` : ''}
 
+      ${tableAssignmentHTML(item)}
+
       <div class="ctx-block">
         <div class="ctx-label">Medidas editables</div>
         ${dimensionFieldsHTML(item)}
       </div>
+
+      ${carpaStructureHTML(item)}
 
       <div class="ctx-block">
         <div class="ctx-label">3 medidas rapidas</div>
@@ -876,6 +967,16 @@ function handleContextField(field, value, id) {
     return;
   }
 
+  if (field === 'tableName') {
+    applyContextPatch(id, { tableName: String(value || '').trim() }, false);
+    return;
+  }
+
+  if (field === 'guestsText') {
+    applyContextPatch(id, { guests: parseGuestsText(value) }, false);
+    return;
+  }
+
   if (field === 'chairs') {
     const chairs = Math.max(0, Math.min(500, Math.round(parseFloat(value) || 0)));
     const patch = item.type === 'sillaLineal' ? { chairs, count: chairs } : { chairs };
@@ -888,6 +989,17 @@ function handleContextField(field, value, id) {
     const numeric = parseFloat(value);
     if (!Number.isFinite(numeric)) return;
     applyContextPatch(id, { dims: { [key]: numeric } });
+    return;
+  }
+
+  if (field.startsWith('posts.') || field.startsWith('columns.')) {
+    const [group, key] = field.split('.');
+    const current = item[group] || {};
+    const parsed = key === 'enabled'
+      ? Boolean(value)
+      : (['rows', 'cols'].includes(key) ? Math.max(1, Math.round(parseFloat(value) || 1)) : parseFloat(value));
+    if (key !== 'enabled' && !Number.isFinite(parsed)) return;
+    applyContextPatch(id, { [group]: { ...current, [key]: parsed } });
     return;
   }
 

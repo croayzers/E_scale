@@ -128,12 +128,12 @@ export function createMesaPresi(item) {
 
     const chairFront = createChair();
     chairFront.position.set(x, 0, sideOffsetZ);
-    chairFront.lookAt(new THREE.Vector3(x, chairFront.position.y, sideOffsetZ + 1));
+    chairFront.rotation.y = 0;
     group.add(chairFront);
 
     const chairBack = createChair();
     chairBack.position.set(x, 0, -sideOffsetZ);
-    chairBack.lookAt(new THREE.Vector3(x, chairBack.position.y, -sideOffsetZ - 1));
+    chairBack.rotation.y = Math.PI;
     group.add(chairBack);
   }
 
@@ -142,13 +142,13 @@ export function createMesaPresi(item) {
   if (item.endHead !== false) {
     const chairHead = createChair();
     chairHead.position.set(endOffsetX, 0, 0);
-    chairHead.lookAt(new THREE.Vector3(endOffsetX + 1, chairHead.position.y, 0));
+    chairHead.rotation.y = Math.PI / 2;
     group.add(chairHead);
   }
   if (item.endFoot !== false) {
     const chairFoot = createChair();
     chairFoot.position.set(-endOffsetX, 0, 0);
-    chairFoot.lookAt(new THREE.Vector3(-endOffsetX - 1, chairFoot.position.y, 0));
+    chairFoot.rotation.y = -Math.PI / 2;
     group.add(chairFoot);
   }
 

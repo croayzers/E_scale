@@ -5,7 +5,7 @@
 import { AppState } from './AppState.js';
 
 export const ElementLibrary = {
-  data: { chairs: [], tables: [], bars: [], stages: [], decor: [] },
+  data: { chairs: [], tables: [], bars: [], stages: [], decor: [], structures: [], ambient: [] },
 
   async load() {
     try {
@@ -28,6 +28,7 @@ export const ElementLibrary = {
       ...(d.stages     || []),
       ...(d.decor      || []),
       ...(d.structures || []),
+      ...(d.ambient    || []),
       ...(d.chairs     || [])
     ];
   },
@@ -63,6 +64,7 @@ export const ElementLibrary = {
       { key: 'stages',     label: 'Escenarios' },
       { key: 'decor',      label: 'Carpas / Decoración' },
       { key: 'structures', label: 'Estructuras' },
+      { key: 'ambient',    label: 'Ambiente' },
       { key: 'chairs',     label: 'Sillas' }
     ];
 

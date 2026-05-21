@@ -117,6 +117,7 @@ function thumbSVG(def) {
   if (t === 'poste')              return svgPoste();
   if (t === 'barraLibre') return svgBarraLibre();
   if (t === 'ambiente') {
+  if (def.subtype === 'alfombra' && (def.shape === 'round' || def.dims?.diameter)) return svgAlfombraRound(def.color || '#8b1a1a');
   if (def.subtype === 'alfombra') return svgAlfombra(def.color || '#8b1a1a');
   if (def.subtype === 'planta')   return svgPlantaDeco();
     return svgSpot();
@@ -387,6 +388,15 @@ function svgAlfombra(fill) {
     <rect x="16" y="32" width="68" height="36" fill="none" stroke="#c9a55a" stroke-width="2"/>
     <rect x="22" y="38" width="56" height="24" fill="none" stroke="#c9a55a" stroke-width="0.8" opacity="0.5"/>
     <circle cx="50" cy="50" r="8" fill="none" stroke="#c9a55a" stroke-width="1.5" opacity="0.6"/>
+  </svg>`;
+}
+
+function svgAlfombraRound(fill) {
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="34" fill="${fill}"/>
+    <circle cx="50" cy="50" r="28" fill="none" stroke="#c9a55a" stroke-width="3"/>
+    <circle cx="50" cy="50" r="14" fill="none" stroke="#c9a55a" stroke-width="1.2" opacity="0.55"/>
+    <ellipse cx="50" cy="84" rx="30" ry="4" fill="rgba(0,0,0,0.10)"/>
   </svg>`;
 }
 
