@@ -390,7 +390,11 @@ function handleCalibrationClick(point) {
     const dx = AppState.calibration.p2.x - AppState.calibration.p1.x;
     const dz = AppState.calibration.p2.z - AppState.calibration.p1.z;
     const sceneDist = Math.sqrt(dx*dx + dz*dz);
-    function askRealDistance(sceneDist) {
+    askRealDistance(sceneDist);
+  }
+}
+
+function askRealDistance(sceneDist) {
   const modal = document.getElementById('modal');
   document.getElementById('modal-title').textContent = '¿Cuánto mide esta distancia?';
   document.getElementById('modal-desc').innerHTML =
@@ -477,7 +481,7 @@ function showCalibrationToast(msg) {
   setTimeout(() => t.remove(), 3000);
 }
 
-function askRealDistance(sceneDist) {
+function askRealDistanceLegacy(sceneDist) {
   const modal = document.getElementById('modal');
   document.getElementById('modal-title').textContent = '¿Cuánto mide esta distancia?';
   document.getElementById('modal-desc').textContent =

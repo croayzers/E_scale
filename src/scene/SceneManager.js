@@ -459,48 +459,29 @@ function makeTextSprite(text, kind = 'mesa') {
   const ctx = canvas.getContext('2d');
   canvas.width = 640; canvas.height = 144;
 
-  const r = 16;
-  ctx.fillStyle = 'rgba(10,10,11,0.92)';
-  roundRect(ctx, 4, 4, canvas.width-8, canvas.height-8, r);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-  ctx.lineWidth = 2;
-  roundRect(ctx, 4, 4, canvas.width-8, canvas.height-8, r);
-  ctx.stroke();
+  // Sin fondo — solo texto
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const labels = {
-    mesa:   '— MESA —',
-    buffet: '— BUFFET —',
-    carpa:  '— CARPA —',
-    green:  '— VEGETACIÓN —',
-    lights: '— LUCES —',
-    room:   '— ESTRUCTURA —'
-  };
-  const labelColors = {
-    mesa:   'rgba(212,255,58,0.85)',
-    buffet: 'rgba(212,255,58,0.85)',
-    carpa:  'rgba(212,165,116,0.95)',
-    green:  'rgba(120,220,140,0.95)',
-    lights: 'rgba(255,210,90,0.95)',
-    room:   'rgba(220,220,220,0.95)'
-  };
-
-  ctx.font = '500 22px "JetBrains Mono", monospace';
-  ctx.fillStyle = labelColors[kind] || labelColors.mesa;
+  // Texto principal
+  ctx.font = 'bold 48px "JetBrains Mono", monospace';
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillText(labels[kind] || labels.mesa, canvas.width/2, 18);
-
-  ctx.font = '500 44px "JetBrains Mono", monospace';
-  ctx.fillStyle = '#f5f3ee';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, canvas.width/2, canvas.height/2 + 14);
 
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.needsUpdate = true;
-  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  // Stroke blanco
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+  ctx.lineWidth = 6;
+  ctx.lineJoin = 'round';
+  ctx.strokeText(text, canvas.width/2, canvas.height/2);
+
+  // Fill negro
+  ctx.fillStyle = 'rgba(10,10,11,0.85)';
+  ctx.fillText(text, canvas.width/2, canvas.height/2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
   const sprite = new THREE.Sprite(mat);
-  sprite.scale.set(2.8, 0.63, 1);
+  sprite.scale.set(4.5, 1.0, 1);
+  sprite.position.y = 0.15;
   sprite.renderOrder = 999;
   return sprite;
 }

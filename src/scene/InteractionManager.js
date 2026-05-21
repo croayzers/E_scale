@@ -15,6 +15,7 @@ let mouseDownTime = 0;
 let boxSelecting = null;      // { startX, startY, additive }
 
 let rKeyDown = false;
+let bKeyDown = false;
 let shiftDown = false;
 
 function init() {
@@ -29,6 +30,9 @@ function init() {
   document.addEventListener('click', e => {
     const ctx = document.getElementById('context-menu');
     if (ctx && !ctx.contains(e.target)) ctx.classList.remove('visible');
+  });
+  document.getElementById('context-menu')?.addEventListener('click', e => {
+    e.stopPropagation();
   });
   document.addEventListener('mousemove', e => {
     window._lastMousePos = { x: e.clientX, y: e.clientY };
@@ -145,6 +149,11 @@ function onPointerDown(e) {
   }
 
   if (item) {
+    if (bKeyDown && !shiftDown) {
+      AppState.select(item.id);
+      AppState.toggleLock(item.id);
+      return;
+    }
     if (item.locked) {
       // seleccionable pero no movible/duplicable
       AppState.select(item.id, shiftDown);
@@ -263,6 +272,13 @@ function showContextMenu(x, y, item) {
       if (!el.dataset.keepOpen) hideContextMenu();
     });
   });
+  menu.querySelectorAll('[data-field]').forEach(el => {
+    const eventName = el.tagName === 'SELECT' ? 'change' : 'change';
+    el.addEventListener(eventName, () => {
+      const value = el.type === 'checkbox' ? el.checked : el.value;
+      handleContextField(el.dataset.field, value, item.id);
+    });
+  });
 }
 
 function hideContextMenu() {
@@ -270,7 +286,393 @@ function hideContextMenu() {
   if (menu) menu.classList.remove('visible');
 }
 
+const TYPE_LABELS = {
+  mesa: 'Mesa redonda',
+  mesaRect: 'Mesa rectangular',
+  mesaCocktail: 'Mesa cocktail',
+  mesaImperial: 'Mesa imperial',
+  mesaCurva: 'Mesa curva',
+  mesaSerpentina: 'Mesa serpentina',
+  sillaCatering: 'Silla',
+  sillaLineal: 'Lineal de sillas',
+  buffet: 'Buffet',
+  barraLibre: 'Barra libre',
+  carpa: 'Carpa clasica',
+  carpaCuadrada: 'Carpa cuadrada',
+  carpaStar: 'Carpa star',
+  carpaPabellon: 'Carpa pabellon',
+  carpaTransparente: 'Carpa transparente',
+  carpaBeduina: 'Carpa beduina',
+  carpaSailcloth: 'Carpa sailcloth',
+  carpaTipi: 'Carpa tipi',
+  carpaDomo: 'Carpa domo',
+  poste: 'Poste',
+  room: '4 Paredes',
+  arbusto: 'Arbusto',
+  arbol: 'Arbol',
+  cableLuces: 'Cable con luces',
+  ambiente: 'Ambiente'
+};
+
+const DIM_LABELS = {
+  length: 'Largo',
+  width: 'Ancho',
+  height: 'Alto',
+  diameter: 'Diametro',
+  size: 'Tamano',
+  depth: 'Fondo',
+  seatHeight: 'Asiento',
+  totalHeight: 'Alto total',
+  ridgeRise: 'Cumbrera',
+  peakRise: 'Pico',
+  cornerHeight: 'Esquina',
+  peakHeight: 'Pico',
+  eaveHeight: 'Alero',
+  sideDrop: 'Caida',
+  modSpacing: 'Modulo',
+  radioInt: 'Radio int.',
+  anchoTab: 'Ancho tablero',
+  anguloDeg: 'Angulo',
+  alto: 'Alto',
+  thickness: 'Grosor',
+  crownWidth: 'Copa'
+};
+
+const DIRECT_NUM_LABELS = {
+  count: 'Cantidad',
+  gap: 'Separacion',
+  spacing: 'Separacion',
+  chairSep: 'Sep. sillas',
+  cubiteras: 'Cubiteras',
+  cubSep: 'Sep. cubiteras',
+  height: 'Alto',
+  peaks: 'Picos'
+};
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
+}
+
+function formatNum(value) {
+  const n = parseFloat(value);
+  if (!Number.isFinite(n)) return '0';
+  return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+}
+
+function contextTitle(item) {
+  const base = TYPE_LABELS[item.type] || item.type || 'Item';
+  const sub = item.subtype ? ` · ${item.subtype}` : '';
+  return `${base}${sub} · ID ${item.id}`;
+}
+
+function isSeatEditable(item) {
+  return ['mesa', 'mesaRect', 'mesaImperial', 'mesaCurva', 'mesaSerpentina', 'sillaCatering', 'sillaLineal'].includes(item.type)
+    || (typeof item.chairs === 'number' && item.chairs > 0);
+}
+
+function getSubtypeOptions(item) {
+  if (item.type === 'mesa') {
+    return [
+      ['standard', 'Estandar'],
+      ['napoleon', 'Napoleon'],
+      ['presi', 'Presidencial']
+    ];
+  }
+  if (item.type === 'buffet') {
+    return [
+      ['arroces', 'Arroces'],
+      ['feria', 'Feria'],
+      ['quesos', 'Quesos'],
+      ['italiano', 'Italiano'],
+      ['huevos', 'Huevos'],
+      ['jamon', 'Jamon']
+    ];
+  }
+  if (item.type === 'sillaCatering' || item.type === 'sillaLineal') {
+    return [
+      ['plegable', 'Plegable'],
+      ['chiavari', 'Chiavari'],
+      ['tiffany', 'Tiffany'],
+      ['tolix', 'Tolix']
+    ];
+  }
+  return [];
+}
+
+function typeControlHTML(item) {
+  const options = getSubtypeOptions(item);
+  if (!options.length) {
+    return `
+      <div class="ctx-readonly">
+        <span>Tipo</span>
+        <strong>${escapeHtml(TYPE_LABELS[item.type] || item.type || 'Item')}</strong>
+      </div>`;
+  }
+
+  return `
+    <label class="ctx-field ctx-field-full">
+      <span>Tipo</span>
+      <select data-field="subtype" class="ctx-input">
+        ${options.map(([value, label]) => `
+          <option value="${escapeAttr(value)}" ${item.subtype === value ? 'selected' : ''}>${escapeHtml(label)}</option>
+        `).join('')}
+      </select>
+    </label>`;
+}
+
+function fieldBounds(field) {
+  const name = field.replace(/^dims\./, '');
+  if (['chairs', 'count', 'cubiteras', 'peaks'].includes(name)) return { min: 0, max: 500, step: 1 };
+  if (name === 'anguloDeg') return { min: 1, max: 360, step: 1 };
+  if (name === 'diameter') return { min: 0.04, max: 30, step: 0.01 };
+  if (name === 'thickness') return { min: 0.02, max: 2, step: 0.01 };
+  if (name === 'seatHeight' || name === 'totalHeight') return { min: 0.1, max: 3, step: 0.01 };
+  return { min: 0, max: 200, step: 0.1 };
+}
+
+function numberFieldHTML(field, label, value) {
+  const b = fieldBounds(field);
+  return `
+    <label class="ctx-field">
+      <span>${escapeHtml(label)}</span>
+      <input data-field="${escapeAttr(field)}" class="ctx-input" type="number"
+        min="${b.min}" max="${b.max}" step="${b.step}" value="${escapeAttr(formatNum(value))}"/>
+    </label>`;
+}
+
+function dimensionFieldsHTML(item) {
+  const fields = [];
+  const dims = item.dims || {};
+  const dimOrder = [
+    'length', 'width', 'diameter', 'size', 'height', 'depth', 'seatHeight', 'totalHeight',
+    'crownWidth', 'ridgeRise', 'peakRise', 'cornerHeight', 'peakHeight', 'eaveHeight',
+    'sideDrop', 'modSpacing', 'radioInt', 'anchoTab', 'anguloDeg', 'alto', 'thickness'
+  ];
+
+  dimOrder.forEach(key => {
+    if (typeof dims[key] === 'number') fields.push(numberFieldHTML(`dims.${key}`, `${DIM_LABELS[key] || key} (m)`, dims[key]));
+  });
+
+  ['count', 'gap', 'spacing', 'chairSep', 'cubiteras', 'cubSep', 'height', 'peaks'].forEach(key => {
+    if (typeof item[key] === 'number' && !(key === 'height' && typeof dims.height === 'number')) {
+      fields.push(numberFieldHTML(key, DIRECT_NUM_LABELS[key] || key, item[key]));
+    }
+  });
+
+  if (!fields.length) {
+    return '<div class="ctx-empty">Sin medidas editables directas</div>';
+  }
+  return `<div class="ctx-field-grid">${fields.join('')}</div>`;
+}
+
+function presetValue(patch) {
+  return encodeURIComponent(JSON.stringify(patch));
+}
+
+function getQuickPresets(item) {
+  switch (item.type) {
+    case 'mesa':
+      if (item.subtype === 'presi') {
+        return [
+          { label: '2.0 x 1.2', patch: { dims: { length: 2.0, width: 1.2 }, chairs: 10 } },
+          { label: '2.5 x 1.2', patch: { dims: { length: 2.5, width: 1.2 }, chairs: 12 } },
+          { label: '3.0 x 1.5', patch: { dims: { length: 3.0, width: 1.5 }, chairs: 14 } }
+        ];
+      }
+      return [
+        { label: '1.5 m', patch: { dims: { diameter: 1.5 }, chairs: 6 } },
+        { label: '1.8 m', patch: { dims: { diameter: 1.8 }, chairs: 8 } },
+        { label: '2.0 m', patch: { dims: { diameter: 2.0 }, chairs: 10 } }
+      ];
+    case 'mesaRect':
+      return [
+        { label: '1.8 x 0.8', patch: { dims: { length: 1.8, width: 0.8 }, chairs: 6 } },
+        { label: '2.4 x 0.8', patch: { dims: { length: 2.4, width: 0.8 }, chairs: 8 } },
+        { label: '3.0 x 0.9', patch: { dims: { length: 3.0, width: 0.9 }, chairs: 10 } }
+      ];
+    case 'mesaImperial':
+      return [
+        { label: '4 x 1.2', patch: { dims: { length: 4, width: 1.2 }, chairs: 12 } },
+        { label: '6 x 1.2', patch: { dims: { length: 6, width: 1.2 }, chairs: 20 } },
+        { label: '8 x 1.2', patch: { dims: { length: 8, width: 1.2 }, chairs: 28 } }
+      ];
+    case 'mesaCocktail':
+      return [
+        { label: '0.7 m', patch: { dims: { diameter: 0.7, height: item.dims?.height ?? 1.1 } } },
+        { label: '0.8 m', patch: { dims: { diameter: 0.8, height: item.dims?.height ?? 1.1 } } },
+        { label: '0.9 m', patch: { dims: { diameter: 0.9, height: item.dims?.height ?? 1.1 } } }
+      ];
+    case 'sillaCatering':
+      return [
+        { label: '40 x 42', patch: { dims: { width: 0.40, depth: 0.42, seatHeight: 0.46, totalHeight: 0.92 } } },
+        { label: '44 x 44', patch: { dims: { width: 0.44, depth: 0.44, seatHeight: 0.45, totalHeight: 0.85 } } },
+        { label: '48 x 48', patch: { dims: { width: 0.48, depth: 0.48, seatHeight: 0.46, totalHeight: 0.92 } } }
+      ];
+    case 'sillaLineal':
+      return [
+        { label: '4 sillas', patch: { count: 4, chairs: 4, gap: item.gap ?? 0.55 } },
+        { label: '6 sillas', patch: { count: 6, chairs: 6, gap: item.gap ?? 0.55 } },
+        { label: '8 sillas', patch: { count: 8, chairs: 8, gap: item.gap ?? 0.55 } }
+      ];
+    case 'buffet':
+      return [
+        { label: '1.8 m', patch: { dims: { length: 1.8 } } },
+        { label: '3.6 m', patch: { dims: { length: 3.6 } } },
+        { label: '5.5 m', patch: { dims: { length: 5.5 } } }
+      ];
+    case 'barraLibre':
+      return [
+        { label: '3 m', patch: { dims: { length: 3, width: item.dims?.width ?? 0.8 }, cubiteras: 2 } },
+        { label: '5 m', patch: { dims: { length: 5, width: item.dims?.width ?? 0.8 }, cubiteras: 4 } },
+        { label: '7 m', patch: { dims: { length: 7, width: item.dims?.width ?? 0.8 }, cubiteras: 6 } }
+      ];
+    case 'carpa':
+    case 'carpaPabellon':
+    case 'carpaTransparente':
+    case 'carpaBeduina':
+    case 'carpaSailcloth':
+    case 'room':
+      return [
+        { label: '6 x 3', patch: { dims: { length: 6, width: 3 } } },
+        { label: '8 x 4', patch: { dims: { length: 8, width: 4 } } },
+        { label: '10 x 5', patch: { dims: { length: 10, width: 5 } } }
+      ];
+    case 'carpaCuadrada':
+    case 'carpaStar':
+      return [
+        { label: '4 m', patch: { dims: { size: 4 } } },
+        { label: '6 m', patch: { dims: { size: 6 } } },
+        { label: '8 m', patch: { dims: { size: 8 } } }
+      ];
+    case 'carpaTipi':
+    case 'carpaDomo':
+      return [
+        { label: '6 m', patch: { dims: { diameter: 6 } } },
+        { label: '8 m', patch: { dims: { diameter: 8 } } },
+        { label: '10 m', patch: { dims: { diameter: 10 } } }
+      ];
+    case 'arbusto':
+      return [
+        { label: '0.8 x 0.6', patch: { dims: { width: 0.8, height: 0.6 } } },
+        { label: '1.5 x 1.0', patch: { dims: { width: 1.5, height: 1.0 } } },
+        { label: '2.5 x 1.5', patch: { dims: { width: 2.5, height: 1.5 } } }
+      ];
+    case 'arbol':
+      return [
+        { label: '3 m', patch: { dims: { height: 3, crownWidth: 1.8 } } },
+        { label: '5 m', patch: { dims: { height: 5, crownWidth: 2.5 } } },
+        { label: '7 m', patch: { dims: { height: 7, crownWidth: 3.5 } } }
+      ];
+    case 'cableLuces':
+      return [
+        { label: '6 luces', patch: { count: 6, spacing: 1, height: 3.5 } },
+        { label: '8 luces', patch: { count: 8, spacing: 1, height: 4 } },
+        { label: '12 luces', patch: { count: 12, spacing: 1.2, height: 4 } }
+      ];
+    case 'poste':
+      return [
+        { label: '2.5 m', patch: { dims: { diameter: 0.10, height: 2.5 } } },
+        { label: '3.0 m', patch: { dims: { diameter: 0.12, height: 3.0 } } },
+        { label: '4.0 m', patch: { dims: { diameter: 0.15, height: 4.0 } } }
+      ];
+    case 'ambiente':
+      if (item.subtype === 'alfombra') {
+        return [
+          { label: '2 x 1.5', patch: { dims: { length: 2, width: 1.5 } } },
+          { label: '3 x 2', patch: { dims: { length: 3, width: 2 } } },
+          { label: '6 x 1.2', patch: { dims: { length: 6, width: 1.2 } } }
+        ];
+      }
+      return [
+        { label: '1.2 m', patch: { dims: { height: 1.2 } } },
+        { label: '1.8 m', patch: { dims: { height: 1.8 } } },
+        { label: '2.4 m', patch: { dims: { height: 2.4 } } }
+      ];
+    default:
+      return [];
+  }
+}
+
+function quickPresetsHTML(item) {
+  const presets = getQuickPresets(item);
+  if (!presets.length) return '<div class="ctx-empty">Sin medidas rapidas para este tipo</div>';
+  return `
+    <div class="pill-group ctx-presets">
+      ${presets.map(preset => `
+        <button data-action="preset" data-value="${escapeAttr(presetValue(preset.patch))}" data-keep-open="1" class="pill ctx-preset-btn">
+          ${escapeHtml(preset.label)}
+        </button>
+      `).join('')}
+    </div>`;
+}
+
+function buildUnifiedContextMenuHTML(item) {
+  return `
+    <div class="ctx-section ctx-editor">
+      <div class="ctx-title-row">
+        <div>
+          <div class="ctx-label">Modificar item</div>
+          <div class="ctx-title">${escapeHtml(contextTitle(item))}</div>
+        </div>
+        ${item.locked ? '<span class="ctx-lock-badge">Bloqueado</span>' : ''}
+      </div>
+
+      <div class="ctx-block">
+        <div class="ctx-label">Tipo</div>
+        ${typeControlHTML(item)}
+      </div>
+
+      ${isSeatEditable(item) ? `
+        <div class="ctx-block">
+          <div class="ctx-label">Cantidad de sillas</div>
+          ${numberFieldHTML('chairs', 'Sillas', item.chairs ?? 0)}
+        </div>` : ''}
+
+      <div class="ctx-block">
+        <div class="ctx-label">Medidas editables</div>
+        ${dimensionFieldsHTML(item)}
+      </div>
+
+      <div class="ctx-block">
+        <div class="ctx-label">3 medidas rapidas</div>
+        ${quickPresetsHTML(item)}
+      </div>
+
+      <div class="ctx-divider"></div>
+      <div class="ctx-actions">
+        <button data-action="rotate-step" data-keep-open="1" class="ctx-action-btn">
+          <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+          <span>Rotar</span>
+          <small>Pulsar R</small>
+        </button>
+        <button data-action="togglelock" class="ctx-action-btn">
+          <i data-lucide="${item.locked ? 'unlock' : 'lock'}" class="w-3.5 h-3.5"></i>
+          <span>${item.locked ? 'Desbloquear' : 'Bloquear'}</span>
+          <small>B + Click</small>
+        </button>
+        <button data-action="duplicate" class="ctx-action-btn">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>Duplicar</span>
+          <small>Control + Click</small>
+        </button>
+        <button data-action="delete" class="ctx-action-btn danger">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <span>Eliminar</span>
+          <small>Supr</small>
+        </button>
+      </div>
+    </div>`;
+}
+
 function buildContextMenuHTML(item) {
+  return buildUnifiedContextMenuHTML(item);
+
   const lockItem = `
     <div data-action="togglelock" class="ctx-item">
       <i data-lucide="${item.locked ? 'lock' : 'unlock'}" class="w-3.5 h-3.5"></i>
@@ -428,10 +830,94 @@ function refreshContextMenu(id) {
   showContextMenu(rect.left, rect.top, updated);
 }
 
+function applyContextPatch(id, patch, keepMenu = true) {
+  const item = AppState.items.find(i => i.id === id);
+  if (!item) return;
+
+  const next = { ...patch };
+  if (patch.dims) next.dims = { ...(item.dims || {}), ...patch.dims };
+  if (patch.posts) next.posts = { ...(item.posts || {}), ...patch.posts };
+  if (patch.columns) next.columns = { ...(item.columns || {}), ...patch.columns };
+
+  AppState.update(id, next);
+  if (keepMenu) refreshContextMenu(id);
+}
+
+function applyContextSubtype(id, value) {
+  const item = AppState.items.find(i => i.id === id);
+  if (!item) return;
+
+  if (item.type === 'mesa') {
+    const patch = { subtype: value };
+    if (value === 'presi') {
+      patch.dims = { length: 2.0, width: 1.2 };
+      patch.endHead = true;
+      patch.endFoot = true;
+      patch.chairs = 10;
+    } else if (item.subtype === 'presi') {
+      patch.dims = { diameter: 1.8 };
+      patch.chairs = 8;
+      patch.endHead = undefined;
+      patch.endFoot = undefined;
+    }
+    applyContextPatch(id, patch);
+    return;
+  }
+
+  applyContextPatch(id, { subtype: value });
+}
+
+function handleContextField(field, value, id) {
+  const item = AppState.items.find(i => i.id === id);
+  if (!item) return;
+
+  if (field === 'subtype') {
+    applyContextSubtype(id, value);
+    return;
+  }
+
+  if (field === 'chairs') {
+    const chairs = Math.max(0, Math.min(500, Math.round(parseFloat(value) || 0)));
+    const patch = item.type === 'sillaLineal' ? { chairs, count: chairs } : { chairs };
+    applyContextPatch(id, patch);
+    return;
+  }
+
+  if (field.startsWith('dims.')) {
+    const key = field.slice(5);
+    const numeric = parseFloat(value);
+    if (!Number.isFinite(numeric)) return;
+    applyContextPatch(id, { dims: { [key]: numeric } });
+    return;
+  }
+
+  const numeric = parseFloat(value);
+  if (!Number.isFinite(numeric)) return;
+  const intFields = ['count', 'cubiteras', 'peaks'];
+  const parsed = intFields.includes(field) ? Math.max(0, Math.round(numeric)) : numeric;
+  const patch = { [field]: parsed };
+  if (field === 'count' && item.type === 'sillaLineal') patch.chairs = parsed;
+  applyContextPatch(id, patch);
+}
+
 function handleContextAction(action, value, id) {
   const item = AppState.items.find(i => i.id === id);
   if (!item) return;
   switch (action) {
+    case 'rotate-step':
+      if (!AppState.selectedIds.has(id)) AppState.select(id);
+      rotateSelectionStep();
+      refreshContextMenu(id);
+      break;
+    case 'preset': {
+      try {
+        const patch = JSON.parse(decodeURIComponent(value));
+        applyContextPatch(id, patch);
+      } catch (err) {
+        console.warn('[ContextMenu] preset no valido:', err);
+      }
+      break;
+    }
     case 'togglelock':
       AppState.toggleLock(id);
       refreshContextMenu(id);
@@ -504,9 +990,15 @@ function handleContextAction(action, value, id) {
 
 function onKeyDown(e) {
   if (e.key === 'Shift') shiftDown = true;
-  if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  const activeTag = document.activeElement?.tagName;
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(activeTag) || document.activeElement?.isContentEditable) return;
 
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); AppState.undo(); return; }
+
+  if (e.key.toLowerCase() === 'b') {
+    bKeyDown = true;
+    return;
+  }
 
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
     e.preventDefault();
@@ -536,6 +1028,7 @@ function onKeyDown(e) {
 
 function onKeyUp(e) {
   if (e.key === 'Shift') shiftDown = false;
+  if (e.key.toLowerCase() === 'b') bKeyDown = false;
   if (e.key.toLowerCase() === 'r') {
     rKeyDown = false;
   }

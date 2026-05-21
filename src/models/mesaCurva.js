@@ -34,7 +34,7 @@ export function createMesaCurva(item) {
   // Faldón: misma forma pero extruido hasta el suelo
   const skirtGeo = buildArcStrip(rIn, rOut, ang, segs, H);
   const skirt = new THREE.Mesh(skirtGeo, clothMat);
-  skirt.position.y = H/2;
+  skirt.position.y = 0;
   skirt.userData.baseColor = 0xc9c5bd;
   g.add(skirt);
 
@@ -51,7 +51,7 @@ export function createMesaCurva(item) {
       const chair = makeChair();
       chair.position.set(x, 0, z);
       // Mirar hacia centro (interna) o hacia fuera (externa)
-      chair.rotation.y = faceOut ? a + Math.PI/2 : a - Math.PI/2;
+      chair.rotation.y = faceOut ? a - Math.PI/2 : a + Math.PI/2;
       g.add(chair);
     }
   };
