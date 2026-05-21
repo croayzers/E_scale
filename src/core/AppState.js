@@ -25,12 +25,20 @@ export const AppState = {
   calibration: { active: false, p1: null, p2: null },
 
   company: {
+    id: '',
     name: '',
     email: '',
     venue: '',
     logo: null,
+    logoAssetId: '',
+    logoFileName: '',
+    logoRelativePath: '',
     colorPrimary: null,
-    colorSecondary: null
+    colorSecondary: null,
+    subscriptionPlan: 'No informado',
+    subscriptionStatus: 'No informado',
+    recordStatus: 'Activo',
+    dashboardSyncedAt: ''
   },
 
   snap: { enabled: true, spacing: 0.25 },

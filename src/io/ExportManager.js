@@ -4,6 +4,7 @@ import {
   getInventoryTotalPax,
   groupInventoryLines
 } from '../core/InventoryRules.js';
+import { DashboardSync } from './DashboardSync.js';
 import { SceneManager } from '../scene/SceneManager.js';
 import { UIManager } from '../ui/UIManager.js';
 
@@ -223,7 +224,18 @@ function capturePlanoArea(rect) {
 
 async function buildAndPreview(imageDataUrl, modeLabel) {
   const result = await buildPdfBlob(imageDataUrl, modeLabel);
+  const syncPromise = persistDashboardExport(modeLabel, result.filename);
   await renderPreview(result, modeLabel);
+  await syncPromise;
+}
+
+async function persistDashboardExport(modeLabel, filename) {
+  try {
+    await DashboardSync.recordExport({ modeLabel, filename });
+  } catch (error) {
+    console.warn('No se pudo registrar la exportacion en el dashboard local:', error);
+    alert(`El PDF se generó, pero no se pudo registrar la exportación en el dashboard local.\n\n${error.message}`);
+  }
 }
 
 function handlePreviewError(error) {

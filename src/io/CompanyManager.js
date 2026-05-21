@@ -1,4 +1,5 @@
 import { AppState } from '../core/AppState.js';
+import { DashboardSync } from './DashboardSync.js';
 
 const STORAGE_KEY = 'escale_company';
 const DEFAULT_PRIMARY = '#2563EB';
@@ -71,6 +72,9 @@ function init() {
   applyBrandColors(AppState.company);
   syncBrandUI();
   buildPalettes();
+  DashboardSync.flushPending().catch(error => {
+    console.warn('No se pudo vaciar la cola del dashboard local:', error);
+  });
 
   document.getElementById('btn-company')?.addEventListener('click', openModal);
   document.getElementById('company-close')?.addEventListener('click', closeModal);
@@ -180,16 +184,29 @@ function setColorError(kind, visible) {
   document.getElementById(`company-color-${kind}-error`)?.classList.toggle('visible', visible);
 }
 
-function savePending() {
+async function savePending() {
   if (!pending) return;
   const primaryOk = commitColor('primary', 'colorPrimary', document.getElementById('company-color-primary')?.value, { syncText: true });
   const secondaryOk = commitColor('secondary', 'colorSecondary', document.getElementById('company-color-secondary')?.value, { syncText: true });
   if (!primaryOk || !secondaryOk) return;
 
   AppState.company = { ...pending };
+  let syncError = null;
+
+  try {
+    await DashboardSync.syncCompany(AppState.company);
+  } catch (error) {
+    syncError = error;
+    console.warn('No se pudo sincronizar la empresa con el dashboard local:', error);
+  }
+
   save();
   syncBrandUI();
   closeModal({ keepPreview: true });
+
+  if (syncError) {
+    alert(`Los datos se guardaron en la app, pero no se pudieron registrar en el dashboard local.\n\n${syncError.message}`);
+  }
 }
 
 function openModal() {

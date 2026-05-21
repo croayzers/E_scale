@@ -97,7 +97,7 @@ function buildAlfombra(item) {
   return g;
 }
 
-/* ── PLANTA DECORATIVA (maceta + arbusto) ── */
+/* ── ALFOMBRA REDONDA ── */
 function buildAlfombraRedonda(item) {
   const g = new THREE.Group();
   const D = item.dims?.diameter ?? 2.0;
@@ -131,7 +131,7 @@ function buildAlfombraRedonda(item) {
 
   return g;
 }
-
+/* ── PLANTA DECORATIVA (maceta + arbusto) ── */
 function buildPlanta(item) {
   const g = new THREE.Group();
   const H = item.dims?.height ?? 1.2;
