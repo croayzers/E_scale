@@ -74,7 +74,87 @@ module.exports = async function handler(req, res) {
   try {
     switch (event.type) {
 
-      checkout.session.completed
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        const customerId = session.customer;
+        const subscriptionId = session.subscription;
+        const email = session.customer_email 
+          || session.customer_details?.email 
+          || session.metadata?.company_email;
+        const planCode = session.metadata?.plan_code || 'pro';
+        const companyName = session.metadata?.company_name || session.customer_details?.business_name || '';
+
+        console.log('[webhook] checkout.session.completed', { customerId, subscriptionId, email, planCode });
+
+        if (!customerId) {
+          console.error('[webhook] No customerId');
+          break;
+        }
+
+        if (!email) {
+          console.error('[webhook] No email');
+          break;
+        }
+
+        // Buscar org por email
+        let orgRows = await supabaseRest('organizations', 'GET', null,
+          `?select=id&billing_email=eq.${encodeURIComponent(email)}&limit=1`);
+        let orgId = Array.isArray(orgRows) && orgRows[0] ? orgRows[0].id : null;
+
+        // Si no existe, crear org
+        if (!orgId) {
+          const created = await supabaseRest('organizations', 'POST', {
+            display_name: companyName || 'E-scale',
+            billing_email: email,
+            current_tier_code: planCode
+          });
+          orgId = Array.isArray(created) && created[0] ? created[0].id : null;
+          console.log('[webhook] Created org', orgId);
+        }
+
+        if (!orgId) {
+          console.error('[webhook] Failed to create org');
+          break;
+        }
+
+        // Actualizar tier
+        await supabaseRest('organizations', 'PATCH', {
+          current_tier_code: planCode,
+          updated_at: new Date().toISOString()
+        }, `?id=eq.${orgId}`);
+
+        // Upsert billing_customer
+        const existing = await supabaseRest('billing_customers', 'GET', null,
+          `?select=id&organization_id=eq.${orgId}&limit=1`);
+
+        if (Array.isArray(existing) && existing[0]) {
+          await supabaseRest('billing_customers', 'PATCH', {
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            stripe_price_id: env(`ESCALE_STRIPE_PRICE_${planCode.toUpperCase()}`),
+            subscription_status: 'active',
+            updated_at: new Date().toISOString()
+          }, `?id=eq.${existing[0].id}`);
+        } else {
+          await supabaseRest('billing_customers', 'POST', {
+            organization_id: orgId,
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            stripe_price_id: env(`ESCALE_STRIPE_PRICE_${planCode.toUpperCase()}`),
+            subscription_status: 'active'
+          });
+        }
+
+        // Audit
+        await supabaseRest('audit_events', 'POST', {
+          organization_id: orgId,
+          event_type: 'subscription_started',
+          event_payload: { plan_code: planCode, stripe_customer_id: customerId }
+        });
+
+        console.log(`[webhook] SUCCESS org=${orgId} plan=${planCode}`);
+        break;
+      }
 
       case 'customer.subscription.updated': {
         const sub = event.data.object;
@@ -129,7 +209,7 @@ module.exports = async function handler(req, res) {
             event_payload: { stripe_customer_id: customerId }
           });
         }
-        console.log(`[webhook] subscription.deleted customer=${customerId} → free_lite`);
+        console.log(`[webhook] subscription.deleted customer=${customerId}`);
         break;
       }
 
@@ -158,12 +238,13 @@ module.exports = async function handler(req, res) {
       }
 
       default:
-        console.log(`[webhook] Evento ignorado: ${event.type}`);
+        console.log(`[webhook] Ignored: ${event.type}`);
     }
 
     return json(res, 200, { received: true });
 
   } catch (err) {
+    console.error('[webhook] Error:', err);
     return serverError(res, err);
   }
 };
