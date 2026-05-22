@@ -65,6 +65,7 @@ async function bootstrap() {
   const settingsModal = document.getElementById('settings-modal');
   const btnMovePlan = document.getElementById('btn-move-plan');
   const btnLockPlan = document.getElementById('btn-lock-plan');
+  let welcomeUnlocked = false;
 
   const state = {
     inventoryOpen: false,
@@ -367,8 +368,12 @@ async function bootstrap() {
 
   const openAfterWelcome = () => {
     setInventoryOpen(true);
-    CompanyManager.requestAfterWelcome();
   };
+
+  document.addEventListener('escale:onboarding-company-complete', () => {
+    welcomeUnlocked = true;
+    if (welcomeModal) welcomeModal.style.display = 'flex';
+  });
 
   document.getElementById('welcome-plano')?.addEventListener('click', () => {
     if (welcomeModal) welcomeModal.style.display = 'none';
@@ -391,6 +396,7 @@ async function bootstrap() {
   refreshHeaderStats();
   InventoryPanel.refresh();
   updatePlanGuide();
+  if (!welcomeUnlocked && welcomeModal) welcomeModal.style.display = 'none';
   if (window.lucide) lucide.createIcons();
 
   console.info('[E-scale] arranque OK');

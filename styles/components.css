@@ -733,15 +733,26 @@ input[type=range]::-webkit-slider-thumb {
   line-height: 1.45;
   color: var(--muted);
 }
-.company-auth-actions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
 .company-auth-btn {
   justify-content: center;
   min-height: 40px;
   padding-inline: 10px;
+}
+.company-account-summary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.company-account-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 8px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.48);
+  font-size: 12px;
 }
 .company-auth-btn.recommended {
   border-color: var(--brand-primary);
@@ -770,12 +781,99 @@ input[type=range]::-webkit-slider-thumb {
   line-height: 1.35;
 }
 
+.access-shell {
+  width: min(1160px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 28px;
+  display: grid;
+  gap: 18px;
+}
+.access-copy {
+  max-width: 760px;
+}
+.access-description {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.access-form {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.42);
+}
+.access-email-field {
+  font-size: 13px;
+}
+.access-title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.access-profile-summary {
+  font-size: 12px;
+  color: var(--muted);
+}
+.access-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.access-note {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.access-plans {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.access-plan-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.42);
+}
+.access-plan-card-pro {
+  border-color: rgba(var(--brand-primary-rgb), 0.25);
+  box-shadow: 0 0 0 1px rgba(var(--brand-primary-rgb), 0.08);
+}
+.access-plan-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.access-plan-points {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 @media (max-width: 768px) {
+  .access-shell {
+    padding: 18px;
+  }
+
   .company-auth-head {
     flex-direction: column;
   }
 
-  .company-auth-actions {
+  .access-plans {
+    grid-template-columns: 1fr;
+  }
+
+  .access-actions {
     grid-template-columns: 1fr;
   }
 }

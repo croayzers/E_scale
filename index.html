@@ -29,8 +29,88 @@
 
 <canvas id="scene-canvas"></canvas>
 
+<!-- ============ MODAL ACCESO ============ -->
+<div id="access-modal" class="fixed inset-0 z-[220] flex items-center justify-center" style="background:rgba(245,243,238,0.96);backdrop-filter:blur(12px)">
+  <div class="glass-mac access-shell anim-in">
+    <div class="access-copy">
+      <div class="mono text-[11px] tracking-widest uppercase mb-3" style="color:var(--muted)">Acceso</div>
+      <div class="display-font text-4xl leading-tight mb-3">Empieza identificando tu cuenta</div>
+      <p id="access-description" class="access-description">Luego podrás elegir Google, Microsoft o recibir un acceso por correo.</p>
+    </div>
+
+    <div class="access-form">
+      <label class="block">
+        <span class="mono text-[10px] uppercase tracking-widest block mb-2" style="color:var(--muted)">Correo</span>
+        <input id="access-email" type="email" placeholder="tu@empresa.com" class="input-field access-email-field"/>
+      </label>
+      <div id="access-title" class="access-title">Pon tu correo para continuar</div>
+      <div id="access-profile-summary" class="access-profile-summary">Introduce tu correo para recuperar datos guardados en este equipo.</div>
+
+      <div class="access-actions">
+        <button id="access-google" class="btn ghost company-auth-btn">
+          <i data-lucide="mail" class="w-4 h-4"></i>
+          Google
+        </button>
+        <button id="access-microsoft" class="btn ghost company-auth-btn">
+          <i data-lucide="briefcase-business" class="w-4 h-4"></i>
+          Microsoft
+        </button>
+        <button id="access-email-link" class="btn ghost company-auth-btn">
+          <i data-lucide="link" class="w-4 h-4"></i>
+          Correo
+        </button>
+      </div>
+      <div class="access-note">En esta fase la app no abre Google ni Microsoft. Solo usa el correo para recuperar tu perfil local y seguir trabajando.</div>
+    </div>
+
+    <div class="access-plans">
+      <article class="access-plan-card">
+        <div class="access-plan-head">
+          <div class="display-font text-2xl">Free Lite</div>
+          <div class="mono text-[11px] tracking-widest uppercase">0 €</div>
+        </div>
+        <ul class="access-plan-points">
+          <li>Marca E-scale visible</li>
+          <li>Ideal para particulares</li>
+          <li>Montaje visual del espacio</li>
+          <li>Catálogo y distribución básica</li>
+          <li>Sin exportación PDF</li>
+        </ul>
+      </article>
+
+      <article class="access-plan-card access-plan-card-pro">
+        <div class="access-plan-head">
+          <div class="display-font text-2xl">PRO</div>
+          <div class="mono text-[11px] tracking-widest uppercase">34 €</div>
+        </div>
+        <ul class="access-plan-points">
+          <li>Logo propio</li>
+          <li>Exportación PDF</li>
+          <li>Envío directo al usuario</li>
+          <li>Precios de proveedor por Excel</li>
+          <li>Reporting operativo básico</li>
+        </ul>
+      </article>
+
+      <article class="access-plan-card">
+        <div class="access-plan-head">
+          <div class="display-font text-2xl">Premium</div>
+          <div class="mono text-[11px] tracking-widest uppercase">120 €</div>
+        </div>
+        <ul class="access-plan-points">
+          <li>Multiempresa avanzada</li>
+          <li>CRM, ERP y SharePoint</li>
+          <li>PDF al cliente final</li>
+          <li>Resumen de reportes</li>
+          <li>Preparado para operación empresarial</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL BIENVENIDA ============ -->
-<div id="welcome-modal" class="fixed inset-0 z-[200] flex items-center justify-center" style="background:rgba(245,243,238,0.92);backdrop-filter:blur(12px)">
+<div id="welcome-modal" class="fixed inset-0 z-[200] flex items-center justify-center" style="display:none;background:rgba(245,243,238,0.92);backdrop-filter:blur(12px)">
   <div class="glass-mac p-10 max-w-xl w-full mx-6 text-center anim-in">
     <div class="display-font text-4xl font-medium mb-2 leading-tight">E-scale</div>
     <div class="mono text-[11px] tracking-widest uppercase mb-8" style="color:var(--muted)">Planificador 3D de Eventos</div>
@@ -386,28 +466,24 @@
     <section class="company-auth-panel mb-5">
       <div class="company-auth-head">
         <div>
-          <div class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">Acceso y licencia</div>
-          <div id="company-auth-status-title" class="company-auth-title">Pon tu correo para recuperar tu licencia</div>
+          <div class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">Cuenta activa</div>
+          <div id="company-auth-status-title" class="company-auth-title">Identifica tu cuenta</div>
         </div>
         <div id="company-auth-meta" class="company-auth-meta">Sin iniciar sesión</div>
       </div>
+  
+      <div id="company-auth-status-text" class="company-auth-status-text">Primero accede desde la pantalla inicial y luego completa los datos de empresa.</div>
+      <div id="company-auth-hint" class="company-auth-hint">Aquí solo te mostramos el estado de la cuenta que está usando la app en este equipo.</div>
 
-      <div id="company-auth-status-text" class="company-auth-status-text">Tu plan se detecta al verificar la identidad del correo.</div>
-      <div id="company-auth-hint" class="company-auth-hint">Si compraste con Google u Outlook, usa esa misma cuenta. Para correo libre, te mandamos un enlace.</div>
-
-      <div class="company-auth-actions">
-        <button id="company-auth-google" class="btn ghost company-auth-btn">
-          <i data-lucide="mail" class="w-3.5 h-3.5"></i>
-          Google
-        </button>
-        <button id="company-auth-microsoft" class="btn ghost company-auth-btn">
-          <i data-lucide="briefcase-business" class="w-3.5 h-3.5"></i>
-          Microsoft
-        </button>
-        <button id="company-auth-email-link" class="btn ghost company-auth-btn">
-          <i data-lucide="link" class="w-3.5 h-3.5"></i>
-          Enlace al correo
-        </button>
+      <div class="company-account-summary">
+        <div class="company-account-pill">
+          <i data-lucide="mail-check" class="w-3.5 h-3.5"></i>
+          <span id="company-auth-provider-chip">Correo</span>
+        </div>
+        <div class="company-account-pill">
+          <i data-lucide="badge-euro" class="w-3.5 h-3.5"></i>
+          <span id="company-auth-plan-chip">Free Lite</span>
+        </div>
       </div>
 
       <div id="company-license-banner" class="company-license-banner hidden">
@@ -416,6 +492,10 @@
       </div>
 
       <div class="company-auth-footer">
+        <button id="company-auth-switch" class="btn ghost">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          Cambiar cuenta
+        </button>
         <button id="company-auth-signout" class="btn ghost hidden">
           <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
           Cerrar sesión

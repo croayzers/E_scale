@@ -3,9 +3,9 @@ import { DashboardSync } from './DashboardSync.js';
 import { CloudSync } from '../services/CloudSync.js';
 import { SubscriptionManager } from '../services/SubscriptionManager.js';
 import { AuthManager } from '../services/AuthManager.js';
-import { ServiceConfig } from '../services/ServiceConfig.js';
 
 const STORAGE_KEY = 'escale_company';
+const PROFILE_INDEX_KEY = 'escale_company_profiles';
 const DEFAULT_PRIMARY = '#2563EB';
 const DEFAULT_SECONDARY = '#D4FF3A';
 const PALETTE = [
@@ -14,7 +14,7 @@ const PALETTE = [
 ];
 
 let pending = null;
-let welcomePromptQueued = false;
+let onboardingActive = false;
 
 function normalizeColor(value) {
   const raw = String(value || '').trim();
@@ -42,6 +42,16 @@ function cleanText(value) {
   return String(value ?? '').trim().replace(/\s+/g, ' ');
 }
 
+function cleanEmail(value) {
+  return cleanText(value).toLowerCase();
+}
+
+function extractDomain(email) {
+  const normalized = cleanEmail(email);
+  const at = normalized.indexOf('@');
+  return at > 0 ? normalized.slice(at + 1) : '';
+}
+
 function colorFor(company, key) {
   const fallback = key === 'colorPrimary' ? DEFAULT_PRIMARY : DEFAULT_SECONDARY;
   return normalizeColor(company?.[key]) || fallback;
@@ -55,16 +65,7 @@ function hexToRgb(hex) {
   return `${r},${g},${b}`;
 }
 
-function currentDraft() {
-  return pending || AppState.company;
-}
-
-function currentEmailDraft() {
-  const formValue = document.getElementById('company-email')?.value;
-  return cleanText(formValue || currentDraft().email || AppState.company.authEmail);
-}
-
-function save() {
+function saveCompanyState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(AppState.company));
     applyBrandColors(AppState.company);
@@ -73,16 +74,81 @@ function save() {
   }
 }
 
-function persistDraftState() {
-  const draft = currentDraft();
-  if (!draft) return;
+function readProfileIndex() {
+  try {
+    const raw = localStorage.getItem(PROFILE_INDEX_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (error) {
+    console.warn('No se pudo leer el indice local de empresas:', error);
+    return [];
+  }
+}
+
+function writeProfileIndex(profiles) {
+  try {
+    localStorage.setItem(PROFILE_INDEX_KEY, JSON.stringify(profiles.slice(0, 12)));
+  } catch (error) {
+    console.warn('No se pudo persistir el indice local de empresas:', error);
+  }
+}
+
+function profileFromCompany(company = AppState.company) {
+  const email = cleanEmail(company.email || company.authEmail);
+  return {
+    email,
+    domain: extractDomain(email),
+    name: cleanText(company.name),
+    venue: cleanText(company.venue),
+    logo: typeof company.logo === 'string' ? company.logo : null,
+    colorPrimary: colorFor(company, 'colorPrimary'),
+    colorSecondary: colorFor(company, 'colorSecondary'),
+    subscriptionPlanCode: company.subscriptionPlanCode || 'free_lite',
+    subscriptionPlan: company.subscriptionPlan || 'Free Lite',
+    recordStatus: company.recordStatus || 'Activo',
+    savedAt: new Date().toISOString()
+  };
+}
+
+function storeCompanyProfile(company = AppState.company) {
+  const profile = profileFromCompany(company);
+  if (!profile.email && !profile.name) return;
+
+  const profiles = readProfileIndex().filter(entry => (
+    !(profile.email && entry.email === profile.email) &&
+    !(profile.domain && entry.domain === profile.domain)
+  ));
+  profiles.unshift(profile);
+  writeProfileIndex(profiles);
+}
+
+function findStoredProfile(email) {
+  const normalizedEmail = cleanEmail(email);
+  const domain = extractDomain(normalizedEmail);
+  const profiles = readProfileIndex();
+
+  return (
+    profiles.find(profile => normalizedEmail && profile.email === normalizedEmail) ||
+    profiles.find(profile => domain && profile.domain === domain) ||
+    profiles[0] ||
+    null
+  );
+}
+
+function mergeProfile(profile, { forceEmail = false } = {}) {
+  if (!profile) return;
 
   AppState.company = {
     ...AppState.company,
-    ...draft,
-    email: cleanText(draft.email || AppState.company.authEmail || AppState.company.email)
+    name: profile.name || AppState.company.name,
+    venue: profile.venue || AppState.company.venue,
+    logo: profile.logo || AppState.company.logo,
+    colorPrimary: profile.colorPrimary || AppState.company.colorPrimary,
+    colorSecondary: profile.colorSecondary || AppState.company.colorSecondary,
+    subscriptionPlanCode: profile.subscriptionPlanCode || AppState.company.subscriptionPlanCode,
+    subscriptionPlan: profile.subscriptionPlan || AppState.company.subscriptionPlan,
+    recordStatus: profile.recordStatus || AppState.company.recordStatus,
+    ...(forceEmail && profile.email ? { email: profile.email } : {})
   };
-  save();
 }
 
 function applyBrandColors(company = AppState.company) {
@@ -96,18 +162,31 @@ function applyBrandColors(company = AppState.company) {
   root.style.setProperty('--accent', secondary);
 }
 
+function currentDraft() {
+  return pending || AppState.company;
+}
+
+function currentEmailDraft() {
+  return cleanEmail(
+    document.getElementById('company-email')?.value ||
+    document.getElementById('access-email')?.value ||
+    currentDraft().email ||
+    AppState.company.authEmail
+  );
+}
+
 function buildPalettes() {
   ['primary', 'secondary'].forEach(kind => {
     const palette = document.getElementById(`company-color-${kind}-palette`);
     if (!palette || palette.children.length) return;
     PALETTE.forEach(color => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'brand-swatch';
-      btn.dataset.color = color;
-      btn.title = color;
-      btn.style.background = color;
-      palette.appendChild(btn);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'brand-swatch';
+      button.dataset.color = color;
+      button.title = color;
+      button.style.background = color;
+      palette.appendChild(button);
     });
   });
 }
@@ -167,68 +246,59 @@ function setButtonRecommended(buttonId, recommended) {
   document.getElementById(buttonId)?.classList.toggle('recommended', recommended);
 }
 
-function syncAuthUi() {
-  const authEnabled = ServiceConfig.hasFeature('auth');
-  const cloudEnabled = ServiceConfig.hasFeature('cloudSync');
-  const authenticated = AuthManager.isAuthenticated();
-  const hint = AuthManager.suggestProvider(currentEmailDraft());
+function syncAccessUi() {
+  const email = currentEmailDraft();
+  const hint = AuthManager.suggestProvider(email);
+  const profile = findStoredProfile(email);
 
+  document.getElementById('access-email').value = email || '';
+  document.getElementById('access-title').textContent = hint.title;
+  document.getElementById('access-description').textContent = hint.description;
+  document.getElementById('access-profile-summary').textContent = profile
+    ? `${profile.name || 'Perfil guardado'} · ${profile.subscriptionPlan || 'Free Lite'}`
+    : 'Introduce tu correo para recuperar datos guardados en este equipo.';
+
+  setButtonRecommended('access-google', hint.primaryProvider === 'google');
+  setButtonRecommended('access-microsoft', hint.primaryProvider === 'azure');
+  setButtonRecommended('access-email-link', hint.primaryProvider === 'email');
+}
+
+function syncAuthUi() {
+  const authenticated = AuthManager.isAuthenticated();
   const statusTitle = document.getElementById('company-auth-status-title');
   const statusText = document.getElementById('company-auth-status-text');
   const accountHint = document.getElementById('company-auth-hint');
   const signOutButton = document.getElementById('company-auth-signout');
+  const switchButton = document.getElementById('company-auth-switch');
   const portalButton = document.getElementById('company-auth-portal');
-  const licenseBanner = document.getElementById('company-license-banner');
-  const licenseBannerText = document.getElementById('company-license-banner-text');
   const footerMeta = document.getElementById('company-auth-meta');
+  const providerChip = document.getElementById('company-auth-provider-chip');
+  const planChip = document.getElementById('company-auth-plan-chip');
 
-  if (!authEnabled) {
-    statusTitle.textContent = 'Modo local';
-    statusText.textContent = 'En este entorno no hay autenticacion cloud disponible.';
-    accountHint.textContent = 'Puedes seguir trabajando en local y activar acceso cloud cuando publiques en Vercel.';
-    footerMeta.textContent = 'Sin validacion remota';
-    signOutButton?.classList.add('hidden');
-    portalButton?.classList.add('hidden');
-    licenseBanner?.classList.add('hidden');
-    return;
-  }
+  if (!statusTitle || !statusText || !accountHint || !footerMeta || !providerChip || !planChip) return;
 
   if (authenticated) {
     const providerName = AuthManager.providerLabel(AppState.company.authProvider || 'email');
-    const planName = SubscriptionManager.currentPlan().name;
-    statusTitle.textContent = `Sesión activa · ${planName}`;
-    statusText.textContent = AppState.company.authEmail || 'Cuenta autenticada';
-    accountHint.textContent = AppState.company.licenseNeedsInvite && AppState.company.licenseDetectedOrganizationName
-      ? `Hemos detectado ${AppState.company.licenseDetectedOrganizationName}, pero tu licencia solo se desbloquea cuando el propietario te añade o cuando entras con el correo de compra.`
-      : `Licencia validada por ${providerName}. La app usa esta identidad para restaurar tu plan sin depender del navegador.`;
-    footerMeta.textContent = cloudEnabled
-      ? `Proveedor: ${providerName} · Estado ${AppState.company.cloudSyncStatus || 'connected'}`
-      : `Proveedor: ${providerName}`;
+    providerChip.textContent = providerName;
+    planChip.textContent = SubscriptionManager.currentPlan().name;
+    statusTitle.textContent = `Acceso listo · ${SubscriptionManager.currentPlan().name}`;
+    statusText.textContent = AppState.company.authEmail || 'Cuenta local';
+    accountHint.textContent = 'En esta fase el acceso es local y no sale a Google ni Microsoft. La app usa este correo para recuperar tus datos guardados.';
+    footerMeta.textContent = `Modo local · ${providerName}`;
     signOutButton?.classList.remove('hidden');
-    portalButton?.classList.toggle('hidden', !AppState.company.billingCustomerId || SubscriptionManager.currentPlanCode() === 'free_lite');
+    switchButton?.classList.remove('hidden');
+    portalButton?.classList.add('hidden');
   } else {
-    statusTitle.textContent = hint.title;
-    statusText.textContent = 'Tu plan se detecta al verificar la identidad del correo.';
-    accountHint.textContent = hint.description;
+    providerChip.textContent = 'Correo';
+    planChip.textContent = 'Free Lite';
+    statusTitle.textContent = 'Identifica tu cuenta';
+    statusText.textContent = 'Primero elegimos correo y método de acceso.';
+    accountHint.textContent = 'Después pasarás a los datos de empresa con autocompletado si ya existen en este equipo o con el mismo dominio.';
     footerMeta.textContent = 'Sin iniciar sesión';
     signOutButton?.classList.add('hidden');
+    switchButton?.classList.remove('hidden');
     portalButton?.classList.add('hidden');
   }
-
-  setButtonRecommended('company-auth-google', hint.primaryProvider === 'google');
-  setButtonRecommended('company-auth-microsoft', hint.primaryProvider === 'azure');
-  setButtonRecommended('company-auth-email-link', hint.primaryProvider === 'email');
-
-  if (licenseBanner && licenseBannerText) {
-    if (AppState.company.licenseNeedsInvite && AppState.company.licenseDetectedOrganizationName) {
-      licenseBanner.classList.remove('hidden');
-      licenseBannerText.textContent = `Dominio detectado: ${AppState.company.licenseDetectedOrganizationName}. Aun no desbloqueamos esa licencia por seguridad.`;
-    } else {
-      licenseBanner.classList.add('hidden');
-      licenseBannerText.textContent = '';
-    }
-  }
-
   syncAccountChip();
 }
 
@@ -239,7 +309,7 @@ function syncAccountChip() {
   if (!button || !label || !meta) return;
 
   if (AuthManager.isAuthenticated()) {
-    label.textContent = AppState.company.authEmail || 'Cuenta conectada';
+    label.textContent = AppState.company.authEmail || 'Cuenta local';
     meta.textContent = SubscriptionManager.currentPlan().name;
     button.classList.add('is-connected');
     return;
@@ -250,126 +320,57 @@ function syncAccountChip() {
   button.classList.remove('is-connected');
 }
 
-async function handleAuthAction(kind) {
-  try {
-    if (pending) {
-      pending.email = currentEmailDraft();
-      pending.name = cleanText(document.getElementById('company-name')?.value || pending.name);
-      pending.venue = cleanText(document.getElementById('company-venue')?.value || pending.venue);
+function syncBrandUI() {
+  const { name, logo } = AppState.company;
+  const brandEl = document.getElementById('brand-name');
+  if (brandEl) brandEl.textContent = name || 'E-scale';
+
+  const preview = document.getElementById('company-logo-preview');
+  if (preview) {
+    if (logo) {
+      preview.classList.remove('hidden');
+      preview.src = logo;
+    } else {
+      preview.classList.add('hidden');
     }
-    persistDraftState();
-
-    if (kind === 'email') {
-      const email = currentEmailDraft();
-      if (!email) {
-        alert('Indica primero un correo para enviarte el enlace.');
-        document.getElementById('company-email')?.focus();
-        return;
-      }
-      const { error } = await AuthManager.signInWithOtp(email);
-      if (error) throw error;
-      alert(`Te hemos enviado un enlace de acceso a ${email}.`);
-      return;
-    }
-
-    const provider = kind === 'microsoft' ? 'azure' : kind;
-    const { error } = await AuthManager.signInWithProvider(provider, currentEmailDraft());
-    if (error) throw error;
-  } catch (error) {
-    alert(error.message || 'No se pudo iniciar el acceso.');
   }
+
+  syncAccountChip();
 }
 
-async function handleCustomerPortal() {
-  try {
-    await SubscriptionManager.openCustomerPortal();
-  } catch (error) {
-    alert(error.message || 'No se pudo abrir la gestion del plan.');
-  }
+function openAccessModal() {
+  onboardingActive = true;
+  document.getElementById('access-modal')?.classList.add('visible');
+  syncAccessUi();
+  document.getElementById('access-email')?.focus();
 }
 
-async function savePending() {
-  if (!pending) return;
-  const primaryOk = commitColor('primary', 'colorPrimary', document.getElementById('company-color-primary')?.value, { syncText: true });
-  const secondaryOk = commitColor('secondary', 'colorSecondary', document.getElementById('company-color-secondary')?.value, { syncText: true });
-  if (!primaryOk || !secondaryOk) return;
-
-  pending.email = cleanText(document.getElementById('company-email')?.value || pending.email || AppState.company.authEmail);
-  pending.name = cleanText(document.getElementById('company-name')?.value || pending.name);
-  pending.venue = cleanText(document.getElementById('company-venue')?.value || pending.venue);
-
-  if (pending.logo && !SubscriptionManager.hasFeature('ownLogo')) {
-    SubscriptionManager.ensureFeature('ownLogo');
-    pending.logo = null;
-    pending.logoAssetId = '';
-    pending.logoFileName = '';
-    pending.logoRelativePath = '';
-  }
-
-  AppState.company = { ...AppState.company, ...pending };
-  const syncErrors = [];
-
-  try {
-    await DashboardSync.syncCompany(AppState.company);
-  } catch (error) {
-    syncErrors.push(`dashboard local: ${error.message}`);
-    console.warn('No se pudo sincronizar la empresa con el dashboard local:', error);
-  }
-
-  try {
-    const cloudResponse = await CloudSync.syncCompany(AppState.company);
-    if (cloudResponse?.reason === 'auth_required') {
-      AppState.company.cloudSyncStatus = 'needs_auth';
-    }
-  } catch (error) {
-    syncErrors.push(`cloud sync: ${error.message}`);
-    console.warn('No se pudo sincronizar la empresa con servicios cloud:', error);
-  }
-
-  save();
-  syncBrandUI();
-  closeModal({ keepPreview: true });
-
-  if (syncErrors.length) {
-    alert(`Los datos se guardaron en la app, pero hubo sincronizaciones pendientes.\n\n${syncErrors.join('\n')}`);
-  }
+function closeAccessModal() {
+  document.getElementById('access-modal')?.classList.remove('visible');
 }
 
-function openModal() {
-  pending = {
-    ...AppState.company,
-    email: cleanText(AppState.company.email || AppState.company.authEmail)
-  };
-  syncModalUI();
-  syncAuthUi();
-  document.getElementById('company-modal')?.classList.add('visible');
-}
+function prefillPendingFromEmail(email) {
+  const profile = findStoredProfile(email);
+  if (!profile) return;
 
-function closeModal({ keepPreview = false } = {}) {
-  document.getElementById('company-modal')?.classList.remove('visible');
-  pending = null;
-  if (!keepPreview) applyBrandColors(AppState.company);
-}
-
-function handleLogoFile(event) {
-  const file = event.target.files[0];
-  if (!file || !pending) return;
-  if (file.size > 1_000_000) {
-    alert('El logo es demasiado grande (max 1 MB). Comprime la imagen primero.');
-    event.target.value = '';
-    return;
+  if (!pending) {
+    pending = { ...AppState.company };
   }
-  const reader = new FileReader();
-  reader.onload = readEvent => {
-    pending.logo = readEvent.target.result;
-    syncModalUI();
-  };
-  reader.readAsDataURL(file);
-  event.target.value = '';
+
+  pending.name = pending.name || profile.name || '';
+  pending.venue = pending.venue || profile.venue || '';
+  pending.logo = pending.logo || profile.logo || null;
+  pending.colorPrimary = pending.colorPrimary || profile.colorPrimary || AppState.company.colorPrimary;
+  pending.colorSecondary = pending.colorSecondary || profile.colorSecondary || AppState.company.colorSecondary;
+  pending.subscriptionPlanCode = profile.subscriptionPlanCode || pending.subscriptionPlanCode;
+  pending.subscriptionPlan = profile.subscriptionPlan || pending.subscriptionPlan;
 }
 
 function syncModalUI() {
   if (!pending) return;
+
+  prefillPendingFromEmail(pending.email || AppState.company.authEmail);
+
   document.getElementById('company-name').value = pending.name || '';
   document.getElementById('company-email').value = pending.email || AppState.company.authEmail || '';
   document.getElementById('company-venue').value = pending.venue || '';
@@ -402,52 +403,120 @@ function syncModalUI() {
   syncAuthUi();
 }
 
-function syncBrandUI() {
-  const { name, logo } = AppState.company;
-  const brandEl = document.getElementById('brand-name');
-  if (brandEl) brandEl.textContent = name || 'E-scale';
-
-  const preview = document.getElementById('company-logo-preview');
-  if (preview) {
-    if (logo) {
-      preview.classList.remove('hidden');
-      preview.src = logo;
-    } else {
-      preview.classList.add('hidden');
-    }
-  }
-
-  syncAccountChip();
+function openModal({ onboarding = false } = {}) {
+  pending = {
+    ...AppState.company,
+    email: cleanEmail(AppState.company.email || AppState.company.authEmail)
+  };
+  onboardingActive = onboarding || onboardingActive;
+  syncModalUI();
+  document.getElementById('company-modal')?.classList.add('visible');
 }
 
-function requestAfterWelcome() {
-  if (welcomePromptQueued) return;
-  welcomePromptQueued = true;
+function finalizeOnboarding() {
+  onboardingActive = false;
+  document.dispatchEvent(new CustomEvent('escale:onboarding-company-complete'));
+}
 
-  const tryOpen = () => {
-    const companyModal = document.getElementById('company-modal');
-    const blockingModalVisible = [
-      'plan-format-modal',
-      'dwg-info-modal',
-      'export-modal',
-      'export-preview-modal'
-    ].some(id => document.getElementById(id)?.classList.contains('visible'));
+function closeModal({ keepPreview = false, completeOnboarding = false } = {}) {
+  document.getElementById('company-modal')?.classList.remove('visible');
+  pending = null;
+  if (!keepPreview) applyBrandColors(AppState.company);
+  if (onboardingActive && !completeOnboarding) {
+    openAccessModal();
+    return;
+  }
+  if (completeOnboarding) {
+    finalizeOnboarding();
+  } else {
+    onboardingActive = false;
+  }
+}
 
-    if (companyModal?.classList.contains('visible')) {
-      welcomePromptQueued = false;
-      return;
-    }
-
-    if (blockingModalVisible) {
-      setTimeout(tryOpen, 220);
-      return;
-    }
-
-    welcomePromptQueued = false;
-    openModal();
+function handleLogoFile(event) {
+  const file = event.target.files[0];
+  if (!file || !pending) return;
+  if (file.size > 1_000_000) {
+    alert('El logo es demasiado grande (max 1 MB). Comprime la imagen primero.');
+    event.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = readEvent => {
+    pending.logo = readEvent.target.result;
+    syncModalUI();
   };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
 
-  setTimeout(tryOpen, 180);
+async function handleAccessChoice(kind) {
+  const email = cleanEmail(document.getElementById('access-email')?.value || AppState.company.email || AppState.company.authEmail);
+  if (!email) {
+    alert('Escribe primero tu correo para continuar.');
+    document.getElementById('access-email')?.focus();
+    return;
+  }
+
+  const profile = findStoredProfile(email);
+  if (profile) {
+    mergeProfile(profile);
+  }
+
+  AppState.company.email = email;
+  AppState.company.authEmail = email;
+  await AuthManager.mockSignIn(kind === 'microsoft' ? 'azure' : kind, email);
+  saveCompanyState();
+  closeAccessModal();
+  openModal({ onboarding: true });
+}
+
+async function savePending() {
+  if (!pending) return;
+  const primaryOk = commitColor('primary', 'colorPrimary', document.getElementById('company-color-primary')?.value, { syncText: true });
+  const secondaryOk = commitColor('secondary', 'colorSecondary', document.getElementById('company-color-secondary')?.value, { syncText: true });
+  if (!primaryOk || !secondaryOk) return;
+
+  pending.email = cleanEmail(document.getElementById('company-email')?.value || pending.email || AppState.company.authEmail);
+  pending.name = cleanText(document.getElementById('company-name')?.value || pending.name);
+  pending.venue = cleanText(document.getElementById('company-venue')?.value || pending.venue);
+
+  if (pending.logo && !SubscriptionManager.hasFeature('ownLogo')) {
+    SubscriptionManager.ensureFeature('ownLogo');
+    pending.logo = null;
+    pending.logoAssetId = '';
+    pending.logoFileName = '';
+    pending.logoRelativePath = '';
+  }
+
+  AppState.company = { ...AppState.company, ...pending };
+  const syncErrors = [];
+
+  try {
+    await DashboardSync.syncCompany(AppState.company);
+  } catch (error) {
+    syncErrors.push(`dashboard local: ${error.message}`);
+    console.warn('No se pudo sincronizar la empresa con el dashboard local:', error);
+  }
+
+  try {
+    const cloudResponse = await CloudSync.syncCompany(AppState.company);
+    if (cloudResponse?.reason === 'auth_required') {
+      AppState.company.cloudSyncStatus = 'needs_auth';
+    }
+  } catch (error) {
+    syncErrors.push(`cloud sync: ${error.message}`);
+    console.warn('No se pudo sincronizar la empresa con servicios cloud:', error);
+  }
+
+  storeCompanyProfile(AppState.company);
+  saveCompanyState();
+  syncBrandUI();
+  closeModal({ keepPreview: true, completeOnboarding: true });
+
+  if (syncErrors.length) {
+    alert(`Los datos se guardaron en la app, pero hubo sincronizaciones pendientes.\n\n${syncErrors.join('\n')}`);
+  }
 }
 
 function init() {
@@ -461,6 +530,11 @@ function init() {
     console.warn('No se pudo cargar el perfil de empresa:', error);
   }
 
+  if (!AppState.company.email) {
+    const profile = findStoredProfile('');
+    if (profile) mergeProfile(profile, { forceEmail: true });
+  }
+
   if (!AppState.company.email && AppState.company.authEmail) {
     AppState.company.email = AppState.company.authEmail;
   }
@@ -472,16 +546,26 @@ function init() {
     console.warn('No se pudo vaciar la cola del dashboard local:', error);
   });
 
-  document.getElementById('btn-company')?.addEventListener('click', openModal);
-  document.getElementById('btn-account')?.addEventListener('click', openModal);
-  document.getElementById('company-close')?.addEventListener('click', closeModal);
-  document.getElementById('company-cancel')?.addEventListener('click', closeModal);
+  document.getElementById('btn-company')?.addEventListener('click', () => openModal());
+  document.getElementById('btn-account')?.addEventListener('click', openAccessModal);
+  document.getElementById('company-close')?.addEventListener('click', () => closeModal());
+  document.getElementById('company-cancel')?.addEventListener('click', () => closeModal());
+
+  document.getElementById('access-google')?.addEventListener('click', () => void handleAccessChoice('google'));
+  document.getElementById('access-microsoft')?.addEventListener('click', () => void handleAccessChoice('microsoft'));
+  document.getElementById('access-email-link')?.addEventListener('click', () => void handleAccessChoice('email'));
+  document.getElementById('access-email')?.addEventListener('input', () => syncAccessUi());
 
   wireColorField('primary', 'colorPrimary');
   wireColorField('secondary', 'colorSecondary');
 
   document.getElementById('company-modal')?.addEventListener('click', event => {
     if (event.target.id === 'company-modal') closeModal();
+  });
+  document.getElementById('access-modal')?.addEventListener('click', event => {
+    if (event.target.id === 'access-modal') {
+      document.getElementById('access-email')?.focus();
+    }
   });
 
   document.addEventListener('keydown', event => {
@@ -494,8 +578,11 @@ function init() {
     if (pending) pending.name = event.target.value.trim();
   });
   document.getElementById('company-email')?.addEventListener('input', event => {
-    if (pending) pending.email = event.target.value.trim();
-    syncAuthUi();
+    if (pending) {
+      pending.email = event.target.value.trim();
+      prefillPendingFromEmail(pending.email);
+    }
+    syncModalUI();
   });
   document.getElementById('company-venue')?.addEventListener('input', event => {
     if (pending) pending.venue = event.target.value.trim();
@@ -512,22 +599,28 @@ function init() {
     }
   });
 
-  document.getElementById('company-auth-google')?.addEventListener('click', () => void handleAuthAction('google'));
-  document.getElementById('company-auth-microsoft')?.addEventListener('click', () => void handleAuthAction('microsoft'));
-  document.getElementById('company-auth-email-link')?.addEventListener('click', () => void handleAuthAction('email'));
+  document.getElementById('company-auth-switch')?.addEventListener('click', () => {
+    document.getElementById('company-modal')?.classList.remove('visible');
+    pending = null;
+    openAccessModal();
+  });
   document.getElementById('company-auth-signout')?.addEventListener('click', async () => {
     await AuthManager.signOut();
+    AppState.company.authEmail = '';
+    AppState.company.authProvider = '';
+    AppState.company.authStatus = 'anonymous';
+    saveCompanyState();
     syncAuthUi();
+    openAccessModal();
   });
-  document.getElementById('company-auth-portal')?.addEventListener('click', () => void handleCustomerPortal());
 
   document.getElementById('company-save')?.addEventListener('click', () => void savePending());
 
   document.addEventListener('escale:auth-changed', () => {
-    if (pending && !pending.email && AppState.company.authEmail) {
-      pending.email = AppState.company.authEmail;
+    if (!AppState.company.email && AppState.company.authEmail) {
+      AppState.company.email = AppState.company.authEmail;
     }
-    save();
+    saveCompanyState();
     syncAuthUi();
     syncBrandUI();
   });
@@ -536,12 +629,14 @@ function init() {
     syncAuthUi();
     syncBrandUI();
   });
+
+  openAccessModal();
 }
 
 export const CompanyManager = {
   init,
   openModal,
-  requestAfterWelcome,
+  requestAfterWelcome: () => {},
   syncBrandUI,
   applyBrandColors
 };
