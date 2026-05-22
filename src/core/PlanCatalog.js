@@ -4,6 +4,8 @@ export const PLAN_CATALOG = {
     name: 'Free Lite',
     monthlyPriceEur: 0,
     audience: 'particular',
+    stripe_price_monthly: null,
+    stripe_price_yearly:  null,
     ui: {
       forceEscaleBranding: true,
       showUpgradePopup: true
@@ -25,6 +27,8 @@ export const PLAN_CATALOG = {
     name: 'PRO',
     monthlyPriceEur: 34,
     audience: 'freelance',
+    stripe_price_monthly: 'price_1TZqIGJXIT1cvBSGaokiITj1',
+    stripe_price_yearly:  'price_1TZqOvJXIT1cvBSG8h9NReP9',
     ui: {
       forceEscaleBranding: false,
       showUpgradePopup: true
@@ -46,6 +50,8 @@ export const PLAN_CATALOG = {
     name: 'Premium',
     monthlyPriceEur: 120,
     audience: 'company',
+    stripe_price_monthly: 'price_1TZqLAJXIT1cvBSGJKY9zsGF',
+    stripe_price_yearly:  'price_1TZqMIJXIT1cvBSGOTV5f61x',
     ui: {
       forceEscaleBranding: false,
       showUpgradePopup: true
