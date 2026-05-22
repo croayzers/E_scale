@@ -1,4 +1,4 @@
-const { env } = require('../../lib/env');
+const { env, supabaseRestUrl, supabaseServerKey } = require('../../lib/env');
 const { json, methodNotAllowed, serverError } = require('../../lib/http');
 const { normalizePlanCode } = require('../../lib/plans');
 
@@ -8,16 +8,23 @@ const PRICE_TO_TIER = {
 };
 
 function supabaseHeaders() {
+  const key = supabaseServerKey();
   return {
-    apikey: env('ESCALE_SUPABASE_SERVICE_ROLE_KEY'),
-    Authorization: `Bearer ${env('ESCALE_SUPABASE_SERVICE_ROLE_KEY')}`,
+    apikey: key,
+    ...(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(String(key || ''))
+      ? { Authorization: `Bearer ${key}` }
+      : {}),
     'Content-Type': 'application/json',
     Prefer: 'return=representation'
   };
 }
 
 async function supabaseRest(path, method, body, query = '') {
-  const url = `${env('ESCALE_SUPABASE_URL')}/rest/v1/${path}${query}`;
+  const baseUrl = supabaseRestUrl();
+  if (!baseUrl) {
+    throw new Error('ESCALE_SUPABASE_URL no esta configurada correctamente.');
+  }
+  const url = `${baseUrl}/${path}${query}`;
   const res = await fetch(url, {
     method,
     headers: supabaseHeaders(),
