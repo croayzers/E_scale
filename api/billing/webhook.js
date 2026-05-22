@@ -74,73 +74,7 @@ module.exports = async function handler(req, res) {
   try {
     switch (event.type) {
 
-      case 'checkout.session.completed': {
-        const session = event.data.object;
-        const customerId = session.customer;
-        const subscriptionId = session.subscription;
-        const email = session.customer_email 
-        || session.customer_details?.email 
-        || session.metadata?.company_email;
-        const planCode = session.metadata?.plan_code || 'pro';
-        const companyName = session.metadata?.company_name || '';
-
-        if (!customerId) break;
-
-        // Buscar org por email
-        let orgRows = await supabaseRest('organizations', 'GET', null,
-          `?select=id&billing_email=eq.${encodeURIComponent(email)}&limit=1`);
-        let orgId = Array.isArray(orgRows) && orgRows[0] ? orgRows[0].id : null;
-
-        // Si no existe, crear org
-        if (!orgId) {
-          const created = await supabaseRest('organizations', 'POST', {
-            display_name: companyName || 'E-scale',
-            billing_email: email,
-            current_tier_code: planCode
-          });
-          orgId = Array.isArray(created) && created[0] ? created[0].id : null;
-        }
-
-        if (!orgId) break;
-
-        // Actualizar tier
-        await supabaseRest('organizations', 'PATCH', {
-          current_tier_code: planCode,
-          updated_at: new Date().toISOString()
-        }, `?id=eq.${orgId}`);
-
-        // Upsert billing_customer
-        const existing = await supabaseRest('billing_customers', 'GET', null,
-          `?select=id&organization_id=eq.${orgId}&limit=1`);
-
-        if (Array.isArray(existing) && existing[0]) {
-          await supabaseRest('billing_customers', 'PATCH', {
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId,
-            stripe_price_id: env(`ESCALE_STRIPE_PRICE_${planCode.toUpperCase()}`),
-            subscription_status: 'active',
-            updated_at: new Date().toISOString()
-          }, `?id=eq.${existing[0].id}`);
-        } else {
-          await supabaseRest('billing_customers', 'POST', {
-            organization_id: orgId,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId,
-            stripe_price_id: env(`ESCALE_STRIPE_PRICE_${planCode.toUpperCase()}`),
-            subscription_status: 'active'
-          });
-        }
-
-        // Audit
-        await supabaseRest('audit_events', 'POST', {
-          organization_id: orgId,
-          event_type: 'subscription_started',
-          event_payload: { plan_code: planCode, stripe_customer_id: customerId }
-        });
-
-        console.log(`[webhook] checkout.completed org=${orgId} plan=${planCode}`);
-        break;
-      }
+      checkout.session.completed
 
       case 'customer.subscription.updated': {
         const sub = event.data.object;
