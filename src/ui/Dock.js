@@ -1,14 +1,5 @@
 import { CatalogModal } from './CatalogModal.js';
-
-const CATEGORIES = [
-  { key: 'chairs', label: 'Sillas', icon: 'armchair' },
-  { key: 'tables', label: 'Mesas', icon: 'circle-dot' },
-  { key: 'decor', label: 'Carpas', icon: 'tent' },
-  { key: 'bars', label: 'Buffets', icon: 'utensils' },
-  { key: 'freebar', label: 'Barra libre', icon: 'wine' },
-  { key: 'structures', label: 'Estructuras', icon: 'columns-3' },
-  { key: 'ambient', label: 'Ambiente', icon: 'sparkles' }
-];
+import { CATALOG_CATEGORIES } from '../schemas/CatalogCategories.js';
 
 function init() {
   const host = document.getElementById('dock-items');
@@ -16,7 +7,7 @@ function init() {
 
   host.innerHTML = '';
 
-  CATEGORIES.forEach(category => {
+  CATALOG_CATEGORIES.forEach(category => {
     host.appendChild(makeCategoryButton(category));
   });
 

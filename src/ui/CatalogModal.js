@@ -122,7 +122,21 @@ function thumbSVG(def) {
   if (def.subtype === 'planta')   return svgPlantaDeco();
     return svgSpot();
   }
+  if (def.schemaId) return svgSchemaThumb(def);
   return svgPlaceholder();
+}
+
+function svgSchemaThumb(def) {
+  const color = def.color || def.lightColor || '#cfd4dc';
+  const icon = def.icon || 'box';
+  const label = (def.name || '').slice(0, 2).toUpperCase();
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect x="14" y="16" width="72" height="68" rx="12" fill="rgba(255,255,255,0.78)" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+    <rect x="20" y="22" width="60" height="36" rx="10" fill="${color}" opacity="0.86"/>
+    <rect x="20" y="62" width="60" height="14" rx="7" fill="rgba(0,0,0,0.06)"/>
+    <text x="50" y="48" text-anchor="middle" font-size="10" font-family="Inter Tight, sans-serif" fill="white">${icon.replace(/[^a-z]/gi, '').slice(0, 6)}</text>
+    <text x="50" y="72" text-anchor="middle" font-size="18" font-family="JetBrains Mono, monospace" fill="rgba(0,0,0,0.7)">${label || 'ES'}</text>
+  </svg>`;
 }
 
 function svgCircle(fill) {

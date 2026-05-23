@@ -26,6 +26,7 @@ import { createCarpaDomo }         from './carpaDomo.js';
 import { createPoste } from './poste.js';
 import { createBarraLibre } from './barraLibre.js';
 import { createAmbiente }   from './ambiente.js';
+import { SchemaModelFactory } from './schema/SchemaModelFactory.js';
 
 const builders = {
   mesa:           createMesa,
@@ -58,7 +59,10 @@ const builders = {
 export const ModelFactory = {
   /** Construye la geometría 3D de un item según su `type`.
    *  Devuelve un THREE.Group vacío si el tipo no está registrado. */
-  create(item) {
+  create(item, context = {}) {
+    const schemaGroup = SchemaModelFactory.create(item, context);
+    if (schemaGroup) return schemaGroup;
+
     const builder = builders[item.type];
     if (!builder) {
       console.warn('[ModelFactory] tipo no registrado:', item.type);

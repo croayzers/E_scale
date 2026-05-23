@@ -191,7 +191,8 @@ function shouldUseTopSymbol(item) {
 }
 
 function createModelForCurrentView(item) {
-  const group = shouldUseTopSymbol(item) ? createTopSymbol(item) : ModelFactory.create(item);
+  const view = _appState?.camera === 'top' ? 'top' : 'iso';
+  const group = shouldUseTopSymbol(item) ? createTopSymbol(item) : ModelFactory.create(item, { view });
   if (_appState?.camera === 'iso' && isCameraSpecificItem(item)) hideIsoFootprintFills(group, item);
   return group;
 }
@@ -202,7 +203,7 @@ function createTopSymbol(item) {
   if (item.type === 'cableLuces') return createTopCableSymbol(item);
   if (item.type === 'poste') return createTopPosteSymbol(item);
   if (item.type === 'ambiente' && item.subtype === 'spot') return createTopSpotSymbol(item);
-  return ModelFactory.create(item);
+  return ModelFactory.create(item, { view: 'top' });
 }
 
 function makeFlatMaterial(color, opacity = 0.12) {

@@ -187,6 +187,10 @@ function showDetail(item) {
   const content = document.getElementById('detail-content');
   if (!panel || !content || !A) return;
 
+  if (PropertyRenderer.canRender(item) && PropertyRenderer.render({ item, panel, content, AppState: A })) {
+    return;
+  }
+
   if (item.type === 'mesa') {
     const isPresi = item.subtype === 'presi';
     const dimRow = isPresi
@@ -1335,3 +1339,4 @@ export const UIManager = {
   refreshUndoBadge,
   updateCarpaPostsCount
 };
+import { PropertyRenderer } from './PropertyRenderer.js';
