@@ -1,4 +1,4 @@
-import { AppState } from '../core/AppState.js';
+﻿import { AppState } from '../core/AppState.js';
 import { DashboardSync } from './DashboardSync.js';
 import { CloudSync } from '../services/CloudSync.js';
 import { SubscriptionManager } from '../services/SubscriptionManager.js';
@@ -15,12 +15,14 @@ const PALETTE = [
 
 let pending = null;
 let onboardingActive = false;
+let accessMode = 'login';
+let accessPasswordVisible = false;
 
 function hasAccessScreen() {
   return Boolean(
     document.getElementById('access-modal') &&
     document.getElementById('access-email') &&
-    document.getElementById('access-title') &&
+    document.getElementById('access-form') &&
     document.getElementById('access-profile-summary')
   );
 }
@@ -263,28 +265,109 @@ function setButtonRecommended(buttonId, recommended) {
   document.getElementById(buttonId)?.classList.toggle('recommended', recommended);
 }
 
+function currentAccessMode() {
+  return accessMode === 'register' ? 'register' : 'login';
+}
+
+function syncAccessPasswordUi() {
+  const input = document.getElementById('access-password');
+  const toggle = document.getElementById('access-password-toggle');
+  if (!input || !toggle) return;
+
+  input.type = accessPasswordVisible ? 'text' : 'password';
+  input.autocomplete = currentAccessMode() === 'register' ? 'new-password' : 'current-password';
+  toggle.setAttribute('aria-pressed', accessPasswordVisible ? 'true' : 'false');
+  toggle.setAttribute('aria-label', accessPasswordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  toggle.title = accessPasswordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña';
+}
+
+function syncAccessPlanBadge() {
+  const badge = document.getElementById('access-plan-badge');
+  const label = document.getElementById('access-plan-badge-text');
+  if (!badge || !label) return;
+
+  const code = SubscriptionManager.currentPlanCode();
+  const plan = SubscriptionManager.currentPlan();
+  badge.dataset.plan = code;
+  label.textContent = code === 'free_lite' ? 'LITE' : plan.name.toUpperCase();
+}
+
+function setAccessMode(mode = 'login') {
+  accessMode = mode === 'register' ? 'register' : 'login';
+  accessPasswordVisible = false;
+  syncAccessUi();
+
+  const targetId = currentAccessMode() === 'register' ? 'access-name' : 'access-email';
+  document.getElementById(targetId)?.focus();
+}
+
+function toggleAccessPasswordVisibility() {
+  accessPasswordVisible = !accessPasswordVisible;
+  syncAccessPasswordUi();
+  document.getElementById('access-password')?.focus();
+}
+
 function syncAccessUi() {
   if (!hasAccessScreen()) return;
+
   const email = currentEmailDraft();
   const hint = AuthManager.suggestProvider(email);
   const profile = findStoredProfile(email);
+  const storedAccount = AuthManager.findLocalAccount?.(email) || null;
+  const mode = currentAccessMode();
 
   const emailInput = document.getElementById('access-email');
+  const nameInput = document.getElementById('access-name');
+  const nameRow = document.getElementById('access-name-row');
+  const passwordInput = document.getElementById('access-password');
+  const loginTab = document.getElementById('access-tab-login');
+  const registerTab = document.getElementById('access-tab-register');
+  const submitLabel = document.getElementById('access-submit-label');
   const title = document.getElementById('access-title');
   const description = document.getElementById('access-description');
   const summary = document.getElementById('access-profile-summary');
-  if (!emailInput || !title || !description || !summary) return;
+  const forgotButton = document.getElementById('access-forgot');
+  if (!emailInput || !passwordInput || !submitLabel || !title || !description || !summary) return;
 
   emailInput.value = email || '';
-  title.textContent = hint.title;
-  description.textContent = hint.description;
+  if (nameInput && !nameInput.value) {
+    nameInput.value = AppState.company.authDisplayName || storedAccount?.fullName || '';
+  }
+
+  loginTab?.classList.toggle('active', mode === 'login');
+  loginTab?.setAttribute('aria-selected', mode === 'login' ? 'true' : 'false');
+  registerTab?.classList.toggle('active', mode === 'register');
+  registerTab?.setAttribute('aria-selected', mode === 'register' ? 'true' : 'false');
+  nameRow?.classList.toggle('hidden', mode !== 'register');
+  forgotButton?.classList.toggle('hidden', mode === 'register');
+
+  title.textContent = mode === 'register'
+    ? (storedAccount ? 'Cuenta local detectada' : 'Crea tu cuenta')
+    : hint.title;
+
+  description.textContent = mode === 'register'
+    ? (storedAccount
+      ? 'Puedes actualizar el nombre o seguir con esta cuenta local en este equipo.'
+      : 'Crearemos una cuenta local en este equipo y vincularemos tus datos al correo.')
+    : (storedAccount?.password
+      ? 'Introduce tu contraseña o usa Google o Microsoft si ya entras con esos proveedores.'
+      : hint.description);
+
   summary.textContent = profile
     ? `${profile.name || 'Perfil guardado'} · ${profile.subscriptionPlan || 'Free Lite'}`
-    : 'Introduce tu correo para recuperar datos guardados en este equipo.';
+    : storedAccount
+      ? `${storedAccount.fullName || 'Cuenta local'} · acceso guardado en este equipo`
+      : mode === 'register'
+        ? 'Tu licencia comenzara en Free Lite hasta activar PRO.'
+        : 'Introduce tu correo para recuperar datos guardados en este equipo.';
+
+  submitLabel.textContent = mode === 'register' ? 'Crear cuenta' : 'Iniciar sesión';
 
   setButtonRecommended('access-google', hint.primaryProvider === 'google');
   setButtonRecommended('access-microsoft', hint.primaryProvider === 'azure');
-  setButtonRecommended('access-email-link', hint.primaryProvider === 'email');
+  setButtonRecommended('access-submit', hint.primaryProvider === 'email');
+  syncAccessPlanBadge();
+  syncAccessPasswordUi();
 }
 
 function syncAuthUi() {
@@ -303,10 +386,13 @@ function syncAuthUi() {
 
   if (authenticated) {
     const providerName = AuthManager.providerLabel(AppState.company.authProvider || 'email');
+    const displayName = cleanText(AppState.company.authDisplayName);
     providerChip.textContent = providerName;
     planChip.textContent = SubscriptionManager.currentPlan().name;
     statusTitle.textContent = `Acceso listo · ${SubscriptionManager.currentPlan().name}`;
-    statusText.textContent = AppState.company.authEmail || 'Cuenta local';
+    statusText.textContent = displayName
+      ? `${displayName} · ${AppState.company.authEmail || 'Cuenta local'}`
+      : (AppState.company.authEmail || 'Cuenta local');
     accountHint.textContent = 'En esta fase el acceso es local y no sale a Google ni Microsoft. La app usa este correo para recuperar tus datos guardados.';
     footerMeta.textContent = `Modo local · ${providerName}`;
     signOutButton?.classList.remove('hidden');
@@ -316,13 +402,14 @@ function syncAuthUi() {
     providerChip.textContent = 'Correo';
     planChip.textContent = 'Free Lite';
     statusTitle.textContent = 'Identifica tu cuenta';
-    statusText.textContent = 'Primero elegimos correo y método de acceso.';
-    accountHint.textContent = 'Después pasarás a los datos de empresa con autocompletado si ya existen en este equipo o con el mismo dominio.';
-    footerMeta.textContent = 'Sin iniciar sesión';
+    statusText.textContent = 'Primero elegimos correo y metodo de acceso.';
+    accountHint.textContent = 'Despues pasaras a los datos de empresa con autocompletado si ya existen en este equipo o con el mismo dominio.';
+    footerMeta.textContent = 'Sin iniciar sesion';
     signOutButton?.classList.add('hidden');
     switchButton?.classList.remove('hidden');
     portalButton?.classList.add('hidden');
   }
+  syncAccessPlanBadge();
   syncAccountChip();
 }
 
@@ -333,7 +420,7 @@ function syncAccountChip() {
   if (!button || !label || !meta) return;
 
   if (AuthManager.isAuthenticated()) {
-    label.textContent = AppState.company.authEmail || 'Cuenta local';
+    label.textContent = cleanText(AppState.company.authDisplayName) || AppState.company.authEmail || 'Cuenta local';
     meta.textContent = SubscriptionManager.currentPlan().name;
     button.classList.add('is-connected');
     return;
@@ -368,16 +455,21 @@ function openAccessModal() {
     return false;
   }
   onboardingActive = true;
+  accessPasswordVisible = false;
   const accessModal = document.getElementById('access-modal');
   if (accessModal) accessModal.style.display = 'flex';
   syncAccessUi();
-  document.getElementById('access-email')?.focus();
+  const targetId = currentAccessMode() === 'register' ? 'access-name' : 'access-email';
+  document.getElementById(targetId)?.focus();
   return true;
 }
 
 function closeAccessModal() {
   const accessModal = document.getElementById('access-modal');
   if (accessModal) accessModal.style.display = 'none';
+  const passwordInput = document.getElementById('access-password');
+  if (passwordInput) passwordInput.value = '';
+  accessPasswordVisible = false;
 }
 
 function prefillPendingFromEmail(email) {
@@ -496,22 +588,61 @@ function handleLogoFile(event) {
   event.target.value = '';
 }
 
+function handleForgotPassword() {
+  const email = cleanEmail(document.getElementById('access-email')?.value || '');
+  const storedAccount = AuthManager.findLocalAccount?.(email);
+  const summary = document.getElementById('access-profile-summary');
+  if (!summary) return;
+
+  summary.textContent = storedAccount?.password
+    ? 'En este entorno la clave se guarda solo en este equipo. Si no la recuerdas, usa otro proveedor o crea una cuenta nueva.'
+    : 'Si aun no guardaste una clave local, puedes seguir entrando por correo con este equipo.';
+}
+
 async function handleAccessChoice(kind) {
   const email = cleanEmail(document.getElementById('access-email')?.value || AppState.company.email || AppState.company.authEmail);
+  const fullName = cleanText(document.getElementById('access-name')?.value || AppState.company.authDisplayName);
+  const password = String(document.getElementById('access-password')?.value || '');
+  const mode = currentAccessMode();
+
   if (!email) {
     alert('Escribe primero tu correo para continuar.');
     document.getElementById('access-email')?.focus();
     return;
   }
 
+  if (mode === 'register' && !fullName) {
+    alert('Escribe tu nombre completo para continuar.');
+    document.getElementById('access-name')?.focus();
+    return;
+  }
+
+  if (mode === 'register' && kind === 'email' && !password) {
+    alert('Escribe una contraseña para crear la cuenta.');
+    document.getElementById('access-password')?.focus();
+    return;
+  }
+
   const profile = findStoredProfile(email);
+
+  try {
+    await AuthManager.mockSignIn(kind === 'microsoft' ? 'azure' : kind, email, {
+      fullName,
+      password,
+      createAccount: mode === 'register'
+    });
+  } catch (error) {
+    alert(error.message || 'No se pudo iniciar sesion.');
+    return;
+  }
+
   if (profile) {
     mergeProfile(profile);
   }
 
   AppState.company.email = email;
   AppState.company.authEmail = email;
-  await AuthManager.mockSignIn(kind === 'microsoft' ? 'azure' : kind, email);
+  AppState.company.authDisplayName = fullName || AppState.company.authDisplayName;
   saveCompanyState();
   closeAccessModal();
   finalizeOnboarding();
@@ -597,10 +728,18 @@ function init() {
   document.getElementById('company-close')?.addEventListener('click', () => closeModal());
   document.getElementById('company-cancel')?.addEventListener('click', () => closeModal());
 
+  document.getElementById('access-tab-login')?.addEventListener('click', () => setAccessMode('login'));
+  document.getElementById('access-tab-register')?.addEventListener('click', () => setAccessMode('register'));
   document.getElementById('access-google')?.addEventListener('click', () => void handleAccessChoice('google'));
   document.getElementById('access-microsoft')?.addEventListener('click', () => void handleAccessChoice('microsoft'));
-  document.getElementById('access-email-link')?.addEventListener('click', () => void handleAccessChoice('email'));
+  document.getElementById('access-form')?.addEventListener('submit', event => {
+    event.preventDefault();
+    void handleAccessChoice('email');
+  });
   document.getElementById('access-email')?.addEventListener('input', () => syncAccessUi());
+  document.getElementById('access-name')?.addEventListener('input', () => syncAccessUi());
+  document.getElementById('access-password-toggle')?.addEventListener('click', toggleAccessPasswordVisibility);
+  document.getElementById('access-forgot')?.addEventListener('click', handleForgotPassword);
 
   wireColorField('primary', 'colorPrimary');
   wireColorField('secondary', 'colorSecondary');
@@ -610,7 +749,8 @@ function init() {
   });
   document.getElementById('access-modal')?.addEventListener('click', event => {
     if (event.target.id === 'access-modal') {
-      document.getElementById('access-email')?.focus();
+      const targetId = currentAccessMode() === 'register' ? 'access-name' : 'access-email';
+      document.getElementById(targetId)?.focus();
     }
   });
 
@@ -658,9 +798,11 @@ function init() {
     await AuthManager.signOut();
     AppState.company.authEmail = '';
     AppState.company.authProvider = '';
+    AppState.company.authDisplayName = '';
     AppState.company.authStatus = 'anonymous';
     saveCompanyState();
     syncAuthUi();
+    setAccessMode('login');
     openAccessModal();
   });
 
@@ -671,11 +813,13 @@ function init() {
       AppState.company.email = AppState.company.authEmail;
     }
     saveCompanyState();
+    syncAccessUi();
     syncAuthUi();
     syncBrandUI();
   });
 
   document.addEventListener('escale:license-state', () => {
+    syncAccessUi();
     syncAuthUi();
     syncBrandUI();
   });
