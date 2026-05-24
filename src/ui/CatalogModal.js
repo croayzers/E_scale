@@ -5,51 +5,115 @@
 import { ElementLibrary } from '../core/ElementLibrary.js';
 
 let currentCategory = null;
-let pendingDefinition = null;
+let pendingPlacement = null;
+
+function clonePendingPlacement() {
+  return pendingPlacement ? JSON.parse(JSON.stringify(pendingPlacement)) : null;
+}
 
 function syncPendingGlobal() {
-  window.__escalePendingCatalogDefinition = pendingDefinition
-    ? JSON.parse(JSON.stringify(pendingDefinition))
+  window.__escalePendingCatalogPlacement = clonePendingPlacement();
+  window.__escalePendingCatalogDefinition = pendingPlacement?.definition
+    ? JSON.parse(JSON.stringify(pendingPlacement.definition))
     : null;
 }
 
 function emitPlacementState(active) {
+  const detail = active ? clonePendingPlacement() : null;
   document.dispatchEvent(new CustomEvent(
     active ? 'escale:catalog-placement-start' : 'escale:catalog-placement-end',
     {
       detail: {
         active,
-        definition: active ? pendingDefinition : null
+        definition: detail?.definition || null,
+        sticky: Boolean(detail?.sticky),
+        source: detail?.source || '',
+        label: detail?.label || detail?.definition?.name || '',
+        placement: detail
       }
     }
   ));
 }
 
-function setPendingPlacement(definition) {
-  pendingDefinition = definition || null;
+function setPendingPlacement(definition, options = {}) {
+  if (!definition) {
+    clearPendingPlacement();
+    return;
+  }
+  pendingPlacement = {
+    source: options.source || 'catalog',
+    sticky: Boolean(options.sticky),
+    label: options.label || definition.name || definition.catalogName || 'Elemento seleccionado',
+    definition: JSON.parse(JSON.stringify(definition)),
+    itemTemplate: null
+  };
   syncPendingGlobal();
-  document.body.classList.toggle('placement-pending', Boolean(pendingDefinition));
-  emitPlacementState(Boolean(pendingDefinition));
+  document.body.classList.toggle('placement-pending', true);
+  emitPlacementState(true);
+}
+
+function setPendingItemTemplate(item, options = {}) {
+  if (!item) {
+    clearPendingPlacement();
+    return;
+  }
+
+  const itemTemplate = JSON.parse(JSON.stringify(item));
+  delete itemTemplate.id;
+  itemTemplate.locked = false;
+  pendingPlacement = {
+    source: options.source || 'clipboard',
+    sticky: options.sticky !== false,
+    label: options.label || item.catalogName || item.labelText || item.tableName || item.type || 'Copia',
+    definition: null,
+    itemTemplate
+  };
+  syncPendingGlobal();
+  document.body.classList.toggle('placement-pending', true);
+  emitPlacementState(true);
 }
 
 function clearPendingPlacement() {
-  if (!pendingDefinition && !window.__escalePendingCatalogDefinition) return;
-  pendingDefinition = null;
+  if (!pendingPlacement && !window.__escalePendingCatalogPlacement && !window.__escalePendingCatalogDefinition) return;
+  pendingPlacement = null;
   syncPendingGlobal();
   document.body.classList.remove('placement-pending');
   emitPlacementState(false);
 }
 
 function hasPendingPlacement() {
-  return Boolean(pendingDefinition || window.__escalePendingCatalogDefinition);
+  return Boolean(pendingPlacement || window.__escalePendingCatalogPlacement || window.__escalePendingCatalogDefinition);
 }
 
 function getPendingDefinition() {
-  return pendingDefinition || window.__escalePendingCatalogDefinition || null;
+  return pendingPlacement?.definition
+    || window.__escalePendingCatalogPlacement?.definition
+    || window.__escalePendingCatalogDefinition
+    || null;
+}
+
+function getPendingPlacement() {
+  return pendingPlacement || window.__escalePendingCatalogPlacement || null;
+}
+
+function shouldKeepPlacementActive() {
+  return Boolean(getPendingPlacement()?.sticky);
 }
 
 function createPendingItem({ x = 0, z = 0 } = {}) {
-  const definition = getPendingDefinition();
+  const placement = getPendingPlacement();
+  if (!placement) return null;
+
+  if (placement.itemTemplate) {
+    const clone = JSON.parse(JSON.stringify(placement.itemTemplate));
+    delete clone.id;
+    clone.locked = false;
+    clone.x = x;
+    clone.z = z;
+    return clone;
+  }
+
+  const definition = placement.definition || getPendingDefinition();
   if (!definition) return null;
   return ElementLibrary.toItem(definition, { x, z });
 }
@@ -92,7 +156,7 @@ function open(categoryKey) {
       card.addEventListener('click', () => {
         const def = items.find(d => d.id === card.dataset.elementId);
         if (def) {
-          setPendingPlacement(def);
+          setPendingPlacement(def, { source: 'catalog', sticky: false });
           close();
         }
       });
@@ -537,7 +601,10 @@ export const CatalogModal = {
   close,
   isOpen,
   hasPendingPlacement,
+  getPendingPlacement,
   getPendingDefinition,
   createPendingItem,
-  clearPendingPlacement
+  clearPendingPlacement,
+  shouldKeepPlacementActive,
+  setPendingItemTemplate
 };

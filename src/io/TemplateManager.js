@@ -8,6 +8,32 @@ import { SceneManager } from '../scene/SceneManager.js';
 import { UIManager }    from '../ui/UIManager.js';
 
 const TEMPLATE_VERSION = '1.0';
+let currentTemplateMeta = {
+  name: 'Escena actual',
+  source: 'scene'
+};
+
+function emitTemplateMetaChange() {
+  const detail = getCurrentTemplateMeta();
+  document.dispatchEvent(new CustomEvent('escale:template-meta-changed', { detail }));
+  return detail;
+}
+
+function setCurrentTemplateMeta(nextMeta = {}) {
+  currentTemplateMeta = {
+    ...currentTemplateMeta,
+    ...nextMeta
+  };
+  emitTemplateMetaChange();
+}
+
+function getCurrentTemplateMeta() {
+  const fallbackName = document.getElementById('inventory-event-name')?.value?.trim() || 'Escena actual';
+  return {
+    ...currentTemplateMeta,
+    name: currentTemplateMeta.name || fallbackName
+  };
+}
 
 /* ═══════════════════════════════════════════════════════
    SERIALIZAR — Estado completo → JSON
@@ -97,6 +123,10 @@ function save() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
+  setCurrentTemplateMeta({
+    name: data.name || 'Escena actual',
+    source: 'saved'
+  });
   showToast(`Plantilla guardada: ${filename}`);
 }
 
@@ -134,6 +164,10 @@ async function handleFileLoad(e) {
     if (!confirm(msg)) return;
 
     await applyTemplate(data);
+    setCurrentTemplateMeta({
+      name: data.name || file.name.replace(/\.(escale\.)?json$/i, ''),
+      source: 'loaded'
+    });
     showToast(`Plantilla cargada — ${itemCount} elemento${itemCount !== 1 ? 's' : ''}`);
 
   } catch (err) {
@@ -340,6 +374,17 @@ function init() {
     document.getElementById('welcome-modal').style.display = 'none';
     load();
   });
+
+  emitTemplateMetaChange();
 }
 
-export const TemplateManager = { init, save, load, serialize, applyTemplate, showToast };
+export const TemplateManager = {
+  init,
+  save,
+  load,
+  serialize,
+  applyTemplate,
+  showToast,
+  getCurrentTemplateMeta,
+  setCurrentTemplateMeta
+};

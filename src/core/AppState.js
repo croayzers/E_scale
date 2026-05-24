@@ -4,6 +4,64 @@
 
 import { SceneManager } from '../scene/SceneManager.js';
 import { UIManager } from '../ui/UIManager.js';
+import {
+  getInventoryTotalItems,
+  getInventoryTotalPax,
+  isInventoryTracked
+} from './InventoryRules.js';
+
+function getEventName() {
+  return document.getElementById('inventory-event-name')?.value?.trim() || '';
+}
+
+function buildCountsByType(items) {
+  return items.reduce((counts, item) => {
+    const key = item?.type || 'unknown';
+    counts[key] = (counts[key] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function buildSceneInsights(state, reason = 'snapshot') {
+  const items = state.items || [];
+  const planCode = String(state.company?.subscriptionPlanCode || 'free_lite').toLowerCase();
+  const selectedItems = [...(state.selectedIds || [])];
+  const lockedItems = items.filter(item => item.locked).length;
+  const guestAssignments = items.reduce((sum, item) => (
+    sum + (Array.isArray(item.guests) ? item.guests.filter(guest => guest?.name || guest?.email).length : 0)
+  ), 0);
+  const inventoryItems = items.filter(isInventoryTracked);
+  const hasPlan = Boolean(state.plan?.texture || state.plan?.mesh);
+
+  return {
+    reason,
+    timestamp: new Date().toISOString(),
+    hasSceneItems: items.length > 0,
+    totalItems: items.length,
+    inventoryItems: getInventoryTotalItems(items),
+    nonInventoryItems: items.length - inventoryItems.length,
+    totalPax: getInventoryTotalPax(items),
+    selectedItems: selectedItems.length,
+    selectedIds: selectedItems,
+    lockedItems,
+    unlockedItems: items.length - lockedItems,
+    guestAssignments,
+    hasPlan,
+    planWidthM: state.plan?.widthM ?? 0,
+    planLengthM: state.plan?.lengthM ?? 0,
+    eventName: getEventName(),
+    companyName: state.company?.name || '',
+    planCode,
+    hasProAccess: planCode === 'pro' || planCode === 'premium',
+    canPromotePro: planCode === 'free_lite' && items.length > 0,
+    upgradeHints: {
+      showPrintUpsell: planCode === 'free_lite' && items.length > 0,
+      showReportingUpsell: planCode === 'free_lite' && inventoryItems.length > 0,
+      showShareUpsell: planCode === 'free_lite' && guestAssignments > 0
+    },
+    itemCountsByType: buildCountsByType(items)
+  };
+}
 
 export const AppState = {
   items: [],
@@ -62,6 +120,18 @@ export const AppState = {
   HISTORY_LIMIT: 3,
   _suppressHistory: false,
 
+  getSceneInsights(reason = 'snapshot') {
+    return buildSceneInsights(this, reason);
+  },
+
+  emitSceneInsights(reason = 'snapshot') {
+    const detail = this.getSceneInsights(reason);
+    window.__ESCALE_SCENE_INSIGHTS__ = detail;
+    document.dispatchEvent(new CustomEvent('escale:scene-insights-changed', { detail }));
+    window.dispatchEvent(new CustomEvent('escale:scene-insights-changed', { detail }));
+    return detail;
+  },
+
   pushHistory() {
     if (this._suppressHistory) return;
     const snapshot = {
@@ -98,6 +168,7 @@ export const AppState = {
       UIManager.hideDetail?.();
     }
     this._suppressHistory = false;
+    this.emitSceneInsights('undo');
   },
 
   add(item) {
@@ -107,6 +178,7 @@ export const AppState = {
     this.items.push(item);
     SceneManager.spawn(item);
     UIManager.refresh();
+    this.emitSceneInsights('add');
     return item;
   },
 
@@ -123,6 +195,7 @@ export const AppState = {
     if (this.selectedIds.size === 0) UIManager.hideDetail?.();
 	UIManager.hideTooltip?.();
     UIManager.refresh();
+    this.emitSceneInsights('remove');
   },
 
   update(id, patch, opts = {}) {
@@ -138,6 +211,7 @@ export const AppState = {
     if (item.type === 'carpa' && UIManager.updateCarpaPostsCount) {
       UIManager.updateCarpaPostsCount(item);
     }
+    this.emitSceneInsights('update');
   },
 
   replace(id, nextItem, opts = {}) {
@@ -178,6 +252,7 @@ export const AppState = {
     if (this.selectedId === id && this.selectedIds.size === 1 && !opts.skipDetailRebuild) {
       UIManager.showDetail?.(replacement);
     }
+    this.emitSceneInsights('replace');
   },
 
   duplicate(id) {
@@ -207,6 +282,7 @@ export const AppState = {
     } else {
       UIManager.hideDetail?.();
     }
+    this.emitSceneInsights('select');
   },
 
   selectMany(ids, additive = false) {
@@ -220,6 +296,7 @@ export const AppState = {
     } else if (this.selectedIds.size > 1) {
       UIManager.showMultiDetail?.([...this.selectedIds]);
     }
+    this.emitSceneInsights('select-many');
   },
 
   deselect() {
@@ -228,6 +305,7 @@ export const AppState = {
     SceneManager.highlightSelection();
     UIManager.hideDetail?.();
     UIManager.hideTooltip?.();
+    this.emitSceneInsights('deselect');
   },
 
   toggleLock(id) {
@@ -238,14 +316,21 @@ export const AppState = {
     if (this.selectedIds.size === 1 && this.selectedId === id) {
       UIManager.showDetail?.(item);
     }
+    this.emitSceneInsights('toggle-lock');
   },
 
   clear() {
     this.pushHistory();
-    this._suppressHistory = true;
-    [...this.items].forEach(i => this.remove(i.id));
-    this._suppressHistory = false;
+    [...this.items].forEach(item => SceneManager.removeItem(item.id));
+    this.items = [];
+    this.selectedIds.clear();
+    this.selectedId = null;
+    UIManager.hideDetail?.();
+    UIManager.hideTooltip?.();
+    UIManager.refresh();
+    this.emitSceneInsights('clear');
   }
 };
 
 window.AppState = AppState;
+window.getEscaleSceneInsights = reason => AppState.getSceneInsights(reason);

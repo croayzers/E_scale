@@ -30,6 +30,7 @@
   white-space: nowrap;
 }
 .hdr-chip:hover { background: rgba(0,0,0,0.06); }
+.hdr-chip.active { background: rgba(0,0,0,0.08); }
 
 .hdr-icon {
   width: 30px; height: 30px;
@@ -177,6 +178,20 @@ body.placement-pending #scene-canvas {
     linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.14), rgba(var(--brand-primary-rgb), 0.03));
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.72);
   flex: 0 0 auto;
+  position: relative;
+}
+
+.placement-indicator-box::after {
+  content: '+';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brand-primary);
 }
 
 .placement-indicator-copy {

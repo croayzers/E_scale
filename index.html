@@ -215,33 +215,22 @@
 
   <div class="hdr-sep"></div>
 
-  <!-- Export -->
-
-  <button id="btn-export" class="hdr-icon" title="Exportar PDF"><i data-lucide="file-down" class="w-3.5 h-3.5"></i></button>
-
-  <div class="hdr-sep"></div>
-
-  <!-- Ajustes -->
-  <!-- Plantillas (E4c) -->
-  <button id="btn-save-template" class="hdr-icon" title="Guardar plantilla">
-    <i data-lucide="save" class="w-3.5 h-3.5"></i>
-  </button>
-  <button id="btn-load-template" class="hdr-icon" title="Cargar plantilla">
+  <button id="btn-template-menu" class="hdr-chip" title="Plantilla">
     <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
+    <span>Plantilla</span>
+    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
   </button>
+
+  <button id="btn-print-menu" class="hdr-chip" title="Imprimir y exportar">
+    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+    <span>Imprimir</span>
+    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+  </button>
+
   <div class="hdr-sep"></div>
   
-   <!-- Ajustes -->
+  <!-- Ajustes -->
   <button id="btn-settings" class="hdr-icon" title="Ajustes"><i data-lucide="settings" class="w-3.5 h-3.5"></i></button>
-
-  <div class="hdr-sep"></div>
-
-  <!-- Zoom -->
-  <div class="hdr-chip" title="Zoom">
-    <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-    <span id="zoom-pct" class="mono text-[11px]">100%</span>
-    <input id="zoom-range" type="range" min="40" max="300" step="5" value="100" style="width:88px;accent-color:var(--ink)"/>
-  </div>
 
   <div class="hdr-sep"></div>
 
@@ -253,6 +242,64 @@
 
   </div>
 </header>
+
+<div id="template-menu" class="hdr-popover hidden" aria-hidden="true">
+  <div class="hdr-popover-head">
+    <div class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">Plantilla actual</div>
+    <div id="template-current-source" class="hdr-popover-meta">Escena en curso</div>
+  </div>
+  <button id="template-current-name" class="hdr-popover-current" type="button">Escena actual</button>
+  <div class="hdr-popover-actions">
+    <button class="menu-action" type="button" data-template-action="load">
+      <span class="menu-action-icon"><i data-lucide="folder-open" class="w-4 h-4"></i></span>
+      <span class="menu-action-copy">
+        <strong>Cargar Plantilla</strong>
+        <small>Importar JSON guardado</small>
+      </span>
+    </button>
+    <button class="menu-action" type="button" data-template-action="save">
+      <span class="menu-action-icon"><i data-lucide="save" class="w-4 h-4"></i></span>
+      <span class="menu-action-copy">
+        <strong>Guardar Plantilla</strong>
+        <small>Descargar escena actual</small>
+      </span>
+    </button>
+  </div>
+</div>
+
+<div id="print-menu" class="hdr-popover hidden" aria-hidden="true">
+  <div class="hdr-popover-head">
+    <div class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">Imprimir y exportar</div>
+    <div class="hdr-popover-meta">Preview antes de descargar</div>
+  </div>
+  <div id="print-menu-note" class="hdr-popover-note">Disponible para cuando empieces a colocar elementos.</div>
+  <div class="hdr-popover-actions">
+    <button class="menu-action" type="button" data-print-action="pdf" data-pro-feature="pdfExport">
+      <span class="menu-action-icon"><i data-lucide="file-down" class="w-4 h-4"></i></span>
+      <span class="menu-action-copy">
+        <strong>Exportar PDF</strong>
+        <small>Plano cenital o vista ISO</small>
+      </span>
+      <span class="menu-action-tag">PRO</span>
+    </button>
+    <button class="menu-action" type="button" data-print-action="inventory" data-pro-feature="companyReporting">
+      <span class="menu-action-icon"><i data-lucide="files" class="w-4 h-4"></i></span>
+      <span class="menu-action-copy">
+        <strong>Exportar Inventario</strong>
+        <small>PDF + CSV empresa e inventario</small>
+      </span>
+      <span class="menu-action-tag">PRO</span>
+    </button>
+    <button class="menu-action" type="button" data-print-action="share" data-pro-feature="companyReporting">
+      <span class="menu-action-icon"><i data-lucide="send" class="w-4 h-4"></i></span>
+      <span class="menu-action-copy">
+        <strong>Compartir Planning</strong>
+        <small>Mesas, invitados e invitacion</small>
+      </span>
+      <span class="menu-action-tag">PRO</span>
+    </button>
+  </div>
+</div>
 
   <input type="file" id="file-plan-img" accept="image/*" class="hidden"/>
   <input type="file" id="file-plan-pdf" accept="application/pdf" class="hidden"/>
@@ -620,7 +667,8 @@
 <div id="export-modal" class="modal-bg">
   <div class="glass p-8 max-w-lg w-full mx-6" style="border-radius:14px">
     <div class="mono text-[10px] tracking-widest uppercase mb-2" style="color:var(--muted)">Exportar</div>
-    <h3 class="display-font text-3xl mb-2 leading-tight">Elige el tipo</h3>
+    <h3 id="export-modal-title" class="display-font text-3xl mb-2 leading-tight">Elige el tipo</h3>
+    <p id="export-modal-copy" class="text-[12px] mb-2" style="color:var(--muted)">Escoge si quieres una exportacion cenital o isometrica antes de descargar el PDF.</p>
     <div class="grid grid-cols-2 gap-4 my-6">
       <button id="export-choice-plano" class="p-5 text-left border border-black/15 hover:border-black hover:bg-black hover:text-white transition-all">
         <i data-lucide="square-dashed-mouse-pointer" class="w-7 h-7 mb-3"></i>
@@ -656,7 +704,7 @@
       <button id="export-preview-cancel" class="btn ghost">Cancelar</button>
       <button id="export-preview-download" class="btn primary">
         <i data-lucide="file-down" class="w-4 h-4"></i>
-        Descargar PDF
+        <span id="export-preview-download-label">Descargar PDF</span>
       </button>
     </div>
   </div>
@@ -824,10 +872,9 @@
       </div>
     </div>
 
-    <!-- Botón exportar -->
-      <button id="inv-export-btn" class="btn primary w-full justify-center">
-        <i data-lucide="file-down" class="w-4 h-4"></i>
-        Exportar presupuesto PDF
+    <button id="inv-export-btn" class="btn primary w-full justify-center">
+        <i data-lucide="printer" class="w-4 h-4"></i>
+        Abrir menú imprimir
       </button>
     </div>
 </div>

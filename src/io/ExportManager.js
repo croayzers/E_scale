@@ -15,6 +15,18 @@ let areaSelecting = false;
 let areaStart = null;
 let areaEnd = null;
 let previewState = null;
+let exportIntent = {
+  kind: 'pdf',
+  featureKey: 'pdfExport'
+};
+
+function normalizeExportIntent(options = {}) {
+  const kind = options.kind === 'inventory' ? 'inventory' : 'pdf';
+  return {
+    kind,
+    featureKey: kind === 'inventory' ? 'companyReporting' : 'pdfExport'
+  };
+}
 
 function parseColor(value, fallback) {
   const raw = String(value || '').trim();
@@ -65,12 +77,42 @@ function init() {
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && overlay && !overlay.classList.contains('hidden')) cancelArea();
   });
+
+  syncExportModalCopy();
 }
 
-function openModal() {
-  if (!SubscriptionManager.ensureFeature('pdfExport')) return;
+function syncExportModalCopy() {
+  const modalTitle = document.getElementById('export-modal-title');
+  const modalCopy = document.getElementById('export-modal-copy');
+  const downloadLabel = document.getElementById('export-preview-download-label');
+
+  if (modalTitle) {
+    modalTitle.textContent = exportIntent.kind === 'inventory'
+      ? 'Elige la vista del inventario'
+      : 'Elige el tipo';
+  }
+
+  if (modalCopy) {
+    modalCopy.textContent = exportIntent.kind === 'inventory'
+      ? 'Se generara el PDF del planning y un CSV del inventario con los datos de la empresa.'
+      : 'Escoge si quieres una exportacion cenital o isometrica antes de descargar el PDF.';
+  }
+
+  if (downloadLabel) {
+    downloadLabel.textContent = exportIntent.kind === 'inventory'
+      ? 'Descargar PDF + CSV'
+      : 'Descargar PDF';
+  }
+}
+
+function openModal(options = {}) {
+  exportIntent = normalizeExportIntent(options);
+  syncExportModalCopy();
+
+  if (!SubscriptionManager.ensureFeature(exportIntent.featureKey)) return;
   void AnalyticsManager.track('export_modal_opened', {
-    planCode: SubscriptionManager.currentPlanCode()
+    planCode: SubscriptionManager.currentPlanCode(),
+    exportKind: exportIntent.kind
   });
   document.getElementById('export-modal')?.classList.add('visible');
 }
@@ -88,7 +130,9 @@ function openPreviewShell(message = 'Preparando vista previa...') {
 
   modal.classList.add('visible');
   pages.innerHTML = `<div class="export-preview-loading mono text-[11px] tracking-widest uppercase">${message}</div>`;
-  meta.textContent = 'Generando PDF para revisión previa.';
+  meta.textContent = exportIntent.kind === 'inventory'
+    ? 'Generando PDF y CSV de inventario para revisión previa.'
+    : 'Generando PDF para revisión previa.';
 }
 
 async function export3D() {
@@ -108,7 +152,7 @@ async function export3D() {
       ctx.fillRect(0, 0, out.width, out.height);
       ctx.drawImage(src, 0, 0);
 
-      await buildAndPreview(out.toDataURL('image/png'), '3D · Vista isometrica');
+      await buildAndPreview(out.toDataURL('image/png'), buildModeLabel('3D', 'Vista isometrica'));
     } catch (error) {
       handlePreviewError(error);
     }
@@ -222,18 +266,36 @@ function capturePlanoArea(rect) {
         out.height
       );
 
-      await buildAndPreview(out.toDataURL('image/png'), 'PLANO · Vista cenital');
+      await buildAndPreview(out.toDataURL('image/png'), buildModeLabel('Plano', 'Vista cenital'));
     } catch (error) {
       handlePreviewError(error);
     }
   });
 }
 
+function buildModeLabel(viewLabel, cameraLabel) {
+  if (exportIntent.kind === 'inventory') {
+    return `${viewLabel.toUpperCase()} · ${cameraLabel} + inventario`;
+  }
+  return `${viewLabel.toUpperCase()} · ${cameraLabel}`;
+}
+
 async function buildAndPreview(imageDataUrl, modeLabel) {
-  const result = await buildPdfBlob(imageDataUrl, modeLabel);
+  const pdfResult = await buildPdfBlob(imageDataUrl, modeLabel);
+  const result = exportIntent.kind === 'inventory'
+    ? attachInventoryDownload(pdfResult, modeLabel)
+    : pdfResult;
   const syncPromise = persistExport(modeLabel, result);
   await renderPreview(result, modeLabel);
   await syncPromise;
+}
+
+function attachInventoryDownload(result, modeLabel) {
+  const csv = buildInventoryCsvDownload(modeLabel);
+  return {
+    ...result,
+    extraDownloads: [csv]
+  };
 }
 
 async function persistExport(modeLabel, result) {
@@ -293,6 +355,16 @@ function downloadPreview() {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+
+  (previewState.extraDownloads || []).forEach(file => {
+    const extraLink = document.createElement('a');
+    extraLink.href = URL.createObjectURL(file.blob);
+    extraLink.download = file.filename;
+    document.body.appendChild(extraLink);
+    extraLink.click();
+    document.body.removeChild(extraLink);
+    setTimeout(() => URL.revokeObjectURL(extraLink.href), 0);
+  });
 }
 
 async function renderPreview(result, modeLabel) {
@@ -307,11 +379,14 @@ async function renderPreview(result, modeLabel) {
   const meta = document.getElementById('export-preview-meta');
   if (!pagesHost || !meta) return;
 
-  meta.textContent = `${modeLabel} · ${result.filename}`;
+  meta.textContent = result.extraDownloads?.length
+    ? `${modeLabel} · ${result.filename} · incluye ${result.extraDownloads.length} archivo adicional`
+    : `${modeLabel} · ${result.filename}`;
   pagesHost.innerHTML = '';
   void AnalyticsManager.track('export_preview_ready', {
     modeLabel,
-    filename: result.filename
+    filename: result.filename,
+    exportKind: exportIntent.kind
   });
 
   const pdfData = await result.blob.arrayBuffer();
@@ -541,4 +616,50 @@ async function buildPdfBlob(imageDataUrl, modeLabel) {
   return { blob, filename };
 }
 
-export const ExportManager = { init };
+function csvCell(value) {
+  const text = String(value ?? '');
+  if (!/[",;\n]/.test(text)) return text;
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function buildInventoryCsvDownload(modeLabel) {
+  const company = AppState.company || {};
+  const eventName = document.getElementById('inventory-event-name')?.value?.trim() || '';
+  const rows = [
+    ['Empresa', company.name || ''],
+    ['Email', company.email || ''],
+    ['Lugar', company.venue || ''],
+    ['Evento', eventName],
+    ['Plan', SubscriptionManager.currentPlanCode()],
+    ['Logo', company.logoFileName || company.logoRelativePath || (company.logo ? 'logo_cargado' : 'sin_logo')],
+    ['Exportacion', modeLabel],
+    [],
+    ['Grupo', 'Elemento', 'Cantidad', 'PAX']
+  ];
+
+  groupInventoryLines(AppState.items).forEach(group => {
+    group.lines.forEach(line => {
+      rows.push([group.label, line.label, line.count, line.pax > 0 ? line.pax : '']);
+    });
+  });
+
+  rows.push([]);
+  rows.push(['Total elementos', getInventoryTotalItems(AppState.items)]);
+  rows.push(['Total PAX', getInventoryTotalPax(AppState.items)]);
+
+  const csv = `\uFEFF${rows.map(columns => columns.map(csvCell).join(';')).join('\n')}`;
+  const safeName = (company.name || 'escale')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  return {
+    blob: new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+    filename: `${safeName || 'escale'}_inventario_${Date.now()}.csv`
+  };
+}
+
+export const ExportManager = {
+  init,
+  openModal
+};

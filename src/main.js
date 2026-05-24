@@ -11,6 +11,7 @@ import { ExportManager } from './io/ExportManager.js';
 import { ShareManager } from './io/ShareManager.js';
 import { Dock } from './ui/Dock.js';
 import { CatalogModal } from './ui/CatalogModal.js';
+import { HeaderActionMenus } from './ui/HeaderActionMenus.js';
 import { TemplateManager } from './io/TemplateManager.js';
 import { ServiceConfig } from './services/ServiceConfig.js';
 import { AuthManager } from './services/AuthManager.js';
@@ -52,10 +53,12 @@ async function bootstrap() {
   await safeInit('CatalogModal', () => CatalogModal.init());
   await safeInit('Dock', () => Dock.init());
   await safeInit('TemplateManager', () => TemplateManager.init());
+  await safeInit('HeaderActionMenus', () => HeaderActionMenus.init());
   await safeInit('InventoryPanel', () => InventoryPanel.init());
 
   const welcomeModal = document.getElementById('welcome-modal');
   const inventoryPanel = document.getElementById('inventory-panel');
+  const inventoryEventName = document.getElementById('inventory-event-name');
   const zoomRange = document.getElementById('zoom-range');
   const zoomPct = document.getElementById('zoom-pct');
   const camIso = document.getElementById('cam-iso');
@@ -221,7 +224,16 @@ async function bootstrap() {
 
   document.getElementById('inventory-close')?.addEventListener('click', () => setInventoryOpen(false));
   document.getElementById('inv-export-btn')?.addEventListener('click', () => {
-    document.getElementById('btn-export')?.click();
+    document.dispatchEvent(new CustomEvent('escale:open-print-menu'));
+  });
+  inventoryEventName?.addEventListener('input', () => {
+    AppState.emitSceneInsights('event-name');
+    const templateMeta = TemplateManager.getCurrentTemplateMeta();
+    if (templateMeta.source === 'scene') {
+      TemplateManager.setCurrentTemplateMeta({
+        name: inventoryEventName.value.trim() || 'Escena actual'
+      });
+    }
   });
 
   document.getElementById('btn-settings')?.addEventListener('click', () => {
@@ -364,8 +376,6 @@ async function bootstrap() {
     if (confirm('¿Vaciar toda la escena?')) AppState.clear();
   });
 
-  document.getElementById('btn-print')?.addEventListener('click', () => window.print());
-
   const openAfterWelcome = () => {
     setInventoryOpen(true);
   };
@@ -396,6 +406,7 @@ async function bootstrap() {
   refreshHeaderStats();
   InventoryPanel.refresh();
   updatePlanGuide();
+  AppState.emitSceneInsights('bootstrap');
   if (!welcomeUnlocked && welcomeModal) welcomeModal.style.display = 'none';
   if (window.lucide) lucide.createIcons();
 

@@ -19,6 +19,7 @@ let rKeyDown = false;
 let bKeyDown = false;
 let shiftDown = false;
 let placementIndicator = null;
+let copiedItemTemplate = null;
 
 function init() {
   const canvas = document.getElementById('scene-canvas');
@@ -142,12 +143,15 @@ function syncPlacementCursor() {
 }
 
 function onPlacementStart(event) {
-  const definition = event.detail?.definition;
-  if (!definition) return;
+  const label = event.detail?.label || event.detail?.definition?.name || 'Elemento seleccionado';
+  if (!label) return;
   syncPlacementCursor();
   const indicator = ensurePlacementIndicator();
   indicator.classList.remove('hidden');
-  document.getElementById('placement-indicator-title').textContent = definition.name || 'Elemento seleccionado';
+  document.getElementById('placement-indicator-title').textContent = label;
+  document.getElementById('placement-indicator-hint').textContent = event.detail?.sticky
+    ? 'Haz click para clonar · Esc o clic derecho cancelan'
+    : 'Haz click en el destino · Esc cancela';
   const mousePos = window._lastMousePos || { x: window.innerWidth / 2, y: window.innerHeight / 2 };
   updatePlacementIndicator(mousePos.x, mousePos.y);
   updateCursorReadout();
@@ -203,9 +207,29 @@ function placePendingItemAt(clientX, clientY) {
   if (!item) return false;
 
   const placed = AppState.add(item);
-  CatalogModal.clearPendingPlacement();
+  if (!CatalogModal.shouldKeepPlacementActive()) CatalogModal.clearPendingPlacement();
   AppState.select(placed.id);
   document.body.classList.add('has-items');
+  return true;
+}
+
+function copySelectedItem() {
+  if (AppState.selectedId === null) return false;
+  const item = AppState.items.find(entry => entry.id === AppState.selectedId);
+  if (!item) return false;
+  copiedItemTemplate = JSON.parse(JSON.stringify(item));
+  delete copiedItemTemplate.id;
+  copiedItemTemplate.locked = false;
+  return true;
+}
+
+function activateCopiedPlacement() {
+  if (!copiedItemTemplate) return false;
+  CatalogModal.setPendingItemTemplate(copiedItemTemplate, {
+    source: 'clipboard',
+    sticky: true,
+    label: copiedItemTemplate.catalogName || copiedItemTemplate.labelText || copiedItemTemplate.type || 'Copia'
+  });
   return true;
 }
 
@@ -226,7 +250,7 @@ function updateCursorReadout() {
     : applySnap(getDragPoint());
   if (!point) return;
   const suffix = CatalogModal.hasPendingPlacement()
-    ? ` · Colocar: ${CatalogModal.getPendingDefinition()?.name || 'Item'}`
+    ? ` · Colocar: ${CatalogModal.getPendingPlacement()?.label || CatalogModal.getPendingDefinition()?.name || 'Item'}`
     : '';
   document.getElementById('status-cursor').textContent =
     `X: ${point.x.toFixed(2)}m · Z: ${point.z.toFixed(2)}m${suffix}`;
@@ -873,6 +897,11 @@ function buildUnifiedContextMenuHTML(item) {
           <span>${item.locked ? 'Desbloquear' : 'Bloquear'}</span>
           <small>B + Click</small>
         </button>
+        <button data-action="copy" class="ctx-action-btn">
+          <i data-lucide="clipboard" class="w-3.5 h-3.5"></i>
+          <span>Copiar</span>
+          <small>Ctrl + C</small>
+        </button>
         <button data-action="duplicate" class="ctx-action-btn">
           <i data-lucide="copy" class="w-3.5 h-3.5"></i>
           <span>Duplicar</span>
@@ -1205,6 +1234,11 @@ function handleContextAction(action, value, id) {
     case 'length': AppState.update(id, { dims: { ...item.dims, length: parseFloat(value) } }); break;
     case 'bufftype': AppState.update(id, { subtype: value }); break;
     case 'duplicate': AppState.duplicate(id); break;
+    case 'copy':
+      copiedItemTemplate = JSON.parse(JSON.stringify(item));
+      delete copiedItemTemplate.id;
+      copiedItemTemplate.locked = false;
+      break;
     case 'delete': AppState.remove(id); break;
     case 'carpa-preset': {
       const [L, W] = value.split('x').map(parseFloat);
@@ -1232,6 +1266,14 @@ function onKeyDown(e) {
   if (['INPUT', 'SELECT', 'TEXTAREA'].includes(activeTag) || document.activeElement?.isContentEditable) return;
 
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); AppState.undo(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+    if (copySelectedItem()) e.preventDefault();
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+    if (activateCopiedPlacement()) e.preventDefault();
+    return;
+  }
 
   if (e.key.toLowerCase() === 'b') {
     bKeyDown = true;
