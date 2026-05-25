@@ -143,25 +143,13 @@ function openPreviewShell(message = 'Preparando vista previa...') {
 async function export3D() {
   closeModal();
   openPreviewShell();
-  SceneManager.renderer.render(SceneManager.scene, SceneManager.activeCam);
 
-  requestAnimationFrame(async () => {
-    try {
-      const src = SceneManager.renderer.domElement;
-      const out = document.createElement('canvas');
-      out.width = src.width;
-      out.height = src.height;
-
-      const ctx = out.getContext('2d');
-      ctx.fillStyle = '#f5f3ee';
-      ctx.fillRect(0, 0, out.width, out.height);
-      ctx.drawImage(src, 0, 0);
-
-      await buildAndPreview(out.toDataURL('image/png'), buildModeLabel('3D', 'Vista isometrica'));
-    } catch (error) {
-      handlePreviewError(error);
-    }
-  });
+  try {
+    const imageDataUrl = await captureHighResSceneDataUrl('3d');
+    await buildAndPreview(imageDataUrl, buildModeLabel('3D', 'Vista isometrica'));
+  } catch (error) {
+    handlePreviewError(error);
+  }
 }
 
 function startPlanoSelection() {
@@ -247,35 +235,50 @@ function capturePlanoArea(rect) {
   openPreviewShell();
   SceneManager.renderer.render(SceneManager.scene, SceneManager.activeCam);
 
-  requestAnimationFrame(async () => {
-    try {
-      const dpr = window.devicePixelRatio || 1;
-      const src = SceneManager.renderer.domElement;
-      const out = document.createElement('canvas');
+  try {
+    // Renderizar la escena a alta resolución y luego recortar el área seleccionada
+    const renderer = SceneManager.renderer;
+    const origPR = renderer.getPixelRatio();
+    const origW  = renderer.domElement.width  / origPR;
+    const origH  = renderer.domElement.height / origPR;
 
-      out.width = Math.round(rect.w * dpr);
-      out.height = Math.round(rect.h * dpr);
+    let imageDataUrl;
+    try {
+      renderer.setPixelRatio(EXPORT_SCALE);
+      renderer.setSize(origW, origH, false);
+      await waitFrame();
+      renderer.render(SceneManager.scene, SceneManager.activeCam);
+      await waitFrame();
+
+      const src = renderer.domElement;
+      const out = document.createElement('canvas');
+      out.width  = Math.round(rect.w * EXPORT_SCALE);
+      out.height = Math.round(rect.h * EXPORT_SCALE);
 
       const ctx = out.getContext('2d');
       ctx.fillStyle = '#f5f3ee';
       ctx.fillRect(0, 0, out.width, out.height);
       ctx.drawImage(
         src,
-        rect.x * dpr,
-        rect.y * dpr,
-        rect.w * dpr,
-        rect.h * dpr,
-        0,
-        0,
+        rect.x * EXPORT_SCALE,
+        rect.y * EXPORT_SCALE,
+        rect.w * EXPORT_SCALE,
+        rect.h * EXPORT_SCALE,
+        0, 0,
         out.width,
         out.height
       );
-
-      await buildAndPreview(out.toDataURL('image/png'), buildModeLabel('Plano', 'Vista cenital'));
-    } catch (error) {
-      handlePreviewError(error);
+      imageDataUrl = out.toDataURL('image/png');
+    } finally {
+      renderer.setPixelRatio(origPR);
+      renderer.setSize(origW, origH, false);
+      renderer.render(SceneManager.scene, SceneManager.activeCam);
     }
-  });
+
+    await buildAndPreview(imageDataUrl, buildModeLabel('Plano', 'Vista cenital'));
+  } catch (error) {
+    handlePreviewError(error);
+  }
 }
 
 function buildModeLabel(viewLabel, cameraLabel) {
@@ -419,6 +422,52 @@ async function captureSceneDataUrl(view) {
   return out.toDataURL('image/png');
 }
 
+/**
+ * Versión alta resolución para PDF.
+ * Renderiza temporalmente el scene a EXPORT_SCALE × la resolución CSS del canvas,
+ * captura el buffer, y restaura la resolución original.
+ */
+const EXPORT_SCALE = 3; // 3× → ~300 DPI en A4
+
+async function captureHighResSceneDataUrl(view) {
+  setExportCamera(view);
+  enableExportCotas();
+
+  const renderer = SceneManager.renderer;
+  const cam      = SceneManager.activeCam;
+
+  // Guardar estado actual
+  const origPR  = renderer.getPixelRatio();
+  const origW   = renderer.domElement.width  / origPR;
+  const origH   = renderer.domElement.height / origPR;
+
+  let dataUrl;
+  try {
+    // Renderizar a resolución alta (false = no tocar el CSS del canvas)
+    renderer.setPixelRatio(EXPORT_SCALE);
+    renderer.setSize(origW, origH, false);
+    await waitFrame();
+    renderer.render(SceneManager.scene, cam);
+    await waitFrame();
+
+    const src = renderer.domElement;
+    const out = document.createElement('canvas');
+    out.width  = src.width;
+    out.height = src.height;
+    const ctx  = out.getContext('2d');
+    ctx.fillStyle = '#f5f3ee';
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.drawImage(src, 0, 0);
+    dataUrl = out.toDataURL('image/png');
+  } finally {
+    // Restaurar siempre, aunque haya error
+    renderer.setPixelRatio(origPR);
+    renderer.setSize(origW, origH, false);
+    renderer.render(SceneManager.scene, cam);
+  }
+  return dataUrl;
+}
+
 async function composePrintCanvas(imageDataUrl, view) {
   const image = await loadImage(imageDataUrl);
   const company = AppState.company || {};
@@ -557,7 +606,7 @@ async function renderPreview(result, modeLabel) {
 
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
-    const viewport = page.getViewport({ scale: 1.35 });
+    const viewport = page.getViewport({ scale: 2.0 });
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
 
@@ -758,7 +807,7 @@ async function buildPdfBlob(imageDataUrl, modeLabel) {
   setPdfColor(pdf, brandPrimary, 'draw');
   pdf.setLineWidth(0.2);
   pdf.rect(drawX - 1, drawY - 1, drawWidth + 2, drawHeight + 2);
-  pdf.addImage(imageDataUrl, 'PNG', drawX, drawY, drawWidth, drawHeight);
+  pdf.addImage(imageDataUrl, 'PNG', drawX, drawY, drawWidth, drawHeight, undefined, 'NONE');
 
   pdf.setFontSize(7);
   setPdfColor(pdf, brandSecondary);
