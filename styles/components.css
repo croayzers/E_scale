@@ -2152,3 +2152,156 @@ input[type=range]::-webkit-slider-thumb {
   color: var(--muted, #888);
   font-style: italic;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   TEMPLATE MENU — Secciones y carpeta
+   ═══════════════════════════════════════════════════════════ */
+
+/* Fila de carpeta activa (cabecera del popover, clickeable) */
+.tpl-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px 9px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border, rgba(0,0,0,0.08));
+  margin-bottom: 8px;
+  border-radius: 6px 6px 0 0;
+  transition: background 0.15s;
+}
+.tpl-folder-row:hover { background: var(--surface-2, rgba(0,0,0,0.04)); }
+.tpl-folder-icon { color: var(--muted, #888); flex-shrink: 0; }
+.tpl-folder-name {
+  flex: 1;
+  font-size: 10.5px;
+  color: var(--muted, #888);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tpl-folder-change {
+  font-size: 12px;
+  color: var(--muted, #bbb);
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+/* Sección dentro del popover */
+.tpl-section { padding: 0 0 4px; }
+.tpl-section-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted, #888);
+  padding: 4px 10px 6px;
+}
+
+/* Separador entre secciones */
+.tpl-divider {
+  height: 1px;
+  background: var(--border, rgba(0,0,0,0.08));
+  margin: 6px 0;
+}
+
+/* Acciones más compactas dentro de secciones */
+.tpl-actions-compact .menu-action {
+  padding: 7px 10px;
+}
+.tpl-actions-compact .menu-action strong { font-size: 11.5px; }
+.tpl-actions-compact .menu-action small  { font-size: 10px; }
+
+/* ═══════════════════════════════════════════════════════════
+   MODO SELECCIÓN PLANNING — Banner flotante
+   ═══════════════════════════════════════════════════════════ */
+
+.planning-sel-banner {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  background: rgba(10,10,11,0.95);
+  color: #f5f3ee;
+  border-radius: 14px;
+  border: 1.5px solid rgba(212,255,58,0.35);
+  box-shadow: 0 8px 36px rgba(0,0,0,0.4);
+  backdrop-filter: blur(16px);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  white-space: nowrap;
+  animation: fadeSlideIn 0.25s ease both;
+}
+.planning-sel-banner.hidden { display: none !important; }
+
+/* Símbolo "+" grande */
+.planning-sel-cursor {
+  font-size: 26px;
+  font-weight: 300;
+  color: #d4ff3a;
+  line-height: 1;
+  flex-shrink: 0;
+  font-family: monospace;
+}
+
+/* Texto de instrucciones */
+.planning-sel-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.planning-sel-info strong { color: #d4ff3a; font-size: 12px; }
+.planning-sel-info span   { opacity: 0.75; font-size: 10.5px; }
+
+/* Contador y botones */
+.planning-sel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 6px;
+}
+.planning-sel-count {
+  font-size: 10px;
+  opacity: 0.65;
+  max-width: 180px;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+.planning-sel-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+.planning-sel-btn:hover { opacity: 0.85; }
+.planning-sel-btn--ok     { background: #d4ff3a; color: #111; }
+.planning-sel-btn--cancel { background: rgba(255,255,255,0.1); color: #f5f3ee; }
+
+/* Cursor crosshair en el canvas cuando está en modo selección */
+body.planning-select-mode #scene-canvas {
+  cursor: crosshair !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BOTÓN PLANTILLA — Resaltado 15s tras guardar
+   ═══════════════════════════════════════════════════════════ */
+
+@keyframes tplHighlight {
+  0%   { box-shadow: 0 0 0 0 rgba(212,255,58,0.7); border-color: #d4ff3a; }
+  50%  { box-shadow: 0 0 0 5px rgba(212,255,58,0); }
+  100% { box-shadow: 0 0 0 0 rgba(212,255,58,0); border-color: #d4ff3a; }
+}
+
+.tpl-btn-highlight {
+  border: 1.5px solid #d4ff3a !important;
+  animation: tplHighlight 1.5s ease infinite;
+}
