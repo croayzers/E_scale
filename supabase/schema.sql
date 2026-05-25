@@ -191,6 +191,7 @@ as $$
   );
 $$;
 
+alter table public.user_profiles enable row level security;
 alter table public.organizations enable row level security;
 alter table public.organization_members enable row level security;
 alter table public.billing_customers enable row level security;
@@ -200,6 +201,18 @@ alter table public.export_inventory_lines enable row level security;
 alter table public.provider_price_imports enable row level security;
 alter table public.integration_connections enable row level security;
 alter table public.audit_events enable row level security;
+
+create policy "users can read own profile"
+on public.user_profiles for select
+using (auth.uid() = user_id);
+
+create policy "users can insert own profile"
+on public.user_profiles for insert
+with check (auth.uid() = user_id);
+
+create policy "users can update own profile"
+on public.user_profiles for update
+using (auth.uid() = user_id);
 
 create policy "org members can read organizations"
 on public.organizations

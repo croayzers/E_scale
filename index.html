@@ -147,17 +147,10 @@
 <!-- ============ HEADER MAC ============ -->
 <header id="header-mac" class="fixed z-30 anim-in glass-mac" style="top:12px;left:12px;right:12px;padding:6px 8px;height:44px;overflow-x:auto;overflow-y:hidden;">
   <div id="header-inner" style="display:flex;flex-wrap:nowrap;align-items:center;gap:8px;height:100%;width:max-content;min-width:100%;">
-  <!-- Logo -->
-  <button id="btn-company" class="hdr-chip" title="Datos de empresa">
-    <img id="company-logo-preview" class="h-5 w-5 rounded hidden" alt=""/>
-    <span id="brand-name" class="display-font text-[14px] font-medium">E-scale</span>
-  </button>
-
-  <button id="btn-account" class="hdr-chip hdr-account" title="Acceso y licencia">
-    <i data-lucide="badge-check" class="w-3.5 h-3.5"></i>
-    <span id="account-chip-label" class="mono text-[10.5px] tracking-wide">Acceder</span>
-    <span class="hdr-dot"></span>
-    <span id="account-chip-meta" class="mono text-[10px] tracking-wide" style="color:var(--muted)">Licencia</span>
+  <!-- Logo E-scale / Mi empresa -->
+  <button id="btn-company" class="hdr-chip" title="Mi empresa">
+    <img id="app-logo" src="/brand/logo.svg" class="h-5 w-5 object-contain" alt="E-scale" onerror="this.style.display='none'"/>
+    <span class="display-font text-[14px] font-medium">Mi empresa</span>
   </button>
 
   <div class="hdr-sep"></div>
@@ -229,7 +222,7 @@
   </button>
 
   <div class="hdr-sep"></div>
-  
+
   <!-- Ajustes -->
   <button id="btn-settings" class="hdr-icon" title="Ajustes"><i data-lucide="settings" class="w-3.5 h-3.5"></i></button>
 
@@ -240,6 +233,16 @@
     <button id="cam-iso" class="hdr-seg active" title="IsomÃ©trica"><i data-lucide="box" class="w-3.5 h-3.5"></i></button>
     <button id="cam-top" class="hdr-seg" title="Cenital"><i data-lucide="square" class="w-3.5 h-3.5"></i></button>
   </div>
+
+  <div class="hdr-sep"></div>
+
+  <!-- Cuenta — siempre al extremo derecho -->
+  <button id="btn-account" class="hdr-chip hdr-account" title="Acceso y licencia">
+    <i data-lucide="badge-check" class="w-3.5 h-3.5"></i>
+    <span id="account-chip-label" class="mono text-[10.5px] tracking-wide">Acceder</span>
+    <span class="hdr-dot"></span>
+    <span id="account-chip-meta" class="mono text-[10px] tracking-wide" style="color:var(--muted)">Licencia</span>
+  </button>
 
   </div>
 </header>

@@ -18,6 +18,7 @@ import { TextSanitizer } from './ui/TextSanitizer.js';
 import { TemplateManager } from './io/TemplateManager.js';
 import { ServiceConfig } from './services/ServiceConfig.js';
 import { AuthManager } from './services/AuthManager.js';
+import { BrandConfig } from './services/BrandConfig.js';
 import { SubscriptionManager } from './services/SubscriptionManager.js';
 import { AnalyticsManager } from './services/AnalyticsManager.js';
 import { SupportManager } from './services/SupportManager.js';
@@ -37,6 +38,7 @@ async function bootstrap() {
     return;
   }
 
+  await safeInit('BrandConfig', () => BrandConfig.load());
   await safeInit('ServiceConfig', () => ServiceConfig.init());
   await safeInit('AuthManager', () => AuthManager.init());
   await safeInit('SubscriptionManager', () => SubscriptionManager.init());

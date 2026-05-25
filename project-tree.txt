@@ -22,6 +22,9 @@ PROJECT STRUCTURE
 │   │   ├── send-export.js
 │   │   └── send-share.js
 │   └── public-config.js
+├── brand/
+│   ├── brand.json
+│   └── logo.svg
 ├── dashboard_api.py
 ├── dashboard_sharepoint_mock/
 │   ├── build_dashboard_workbook.mjs
@@ -133,6 +136,7 @@ PROJECT STRUCTURE
 │   ├── services/
 │   │   ├── AnalyticsManager.js
 │   │   ├── AuthManager.js
+│   │   ├── BrandConfig.js
 │   │   ├── CloudApi.js
 │   │   ├── CloudSync.js
 │   │   ├── ServiceConfig.js
@@ -155,6 +159,8 @@ PROJECT STRUCTURE
 │   ├── dock.css
 │   └── layout.css
 ├── supabase/
+│   ├── migrations/
+│   │   └── add_owner_user_id.sql
 │   └── schema.sql
 ├── vercel.json
 └── __pycache__/

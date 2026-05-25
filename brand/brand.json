@@ -1,0 +1,23 @@
+{
+  "_comment": "Configuración de marca de E-scale. Cambia estos valores para actualizar colores y tipografía en toda la app.",
+
+  "app": {
+    "name": "E-scale",
+    "tagline": "Diseño de espacios profesional",
+    "logo": "/brand/logo.svg"
+  },
+
+  "colors": {
+    "primary":   "#4a5568",
+    "secondary": "#718096",
+    "accent":    "#667eea",
+    "surface":   "#f5f3ee",
+    "text":      "#1a202c"
+  },
+
+  "typography": {
+    "displayFont": "'Fraunces', Georgia, serif",
+    "bodyFont":    "'Inter Tight', 'Inter', system-ui, sans-serif",
+    "monoFont":    "'JetBrains Mono', 'Fira Code', monospace"
+  }
+}
