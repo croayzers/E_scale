@@ -1,17 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
-  <!-- Cubo isométrico E-scale -->
-  <g stroke="#4a5568" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
-    <!-- Cara top -->
-    <polygon points="60,12 100,34 60,56 20,34" fill="white" fill-opacity="0.9"/>
-    <!-- Cara izquierda -->
-    <polygon points="20,34 60,56 60,100 20,78" fill="#e8eaf0" fill-opacity="0.9"/>
-    <!-- Cara derecha -->
-    <polygon points="60,56 100,34 100,78 60,100" fill="#d0d4e0" fill-opacity="0.9"/>
-    <!-- Marco cubo -->
-    <polyline points="20,34 20,78 60,100 100,78 100,34"/>
-    <line x1="60" y1="56" x2="60" y2="100"/>
-    <polyline points="20,34 60,12 100,34"/>
-  </g>
-  <!-- Letras ES centradas en la cara frontal izquierda -->
-  <text x="28" y="73" font-family="'Inter Tight', 'Inter', sans-serif" font-weight="700" font-size="18" fill="#4a5568" transform="skewY(-14) translate(0,8)">ES</text>
+  <!-- Hex outer frame (pointy-top) -->
+  <polygon
+    points="60,4 107,30 107,90 60,116 13,90 13,30"
+    fill="white" fill-opacity="0.08"
+    stroke="#606880" stroke-width="2.8" stroke-linejoin="round"/>
+
+  <!-- Isometric cube — top face -->
+  <polygon points="60,22 94,41 60,60 26,41"
+    fill="#f4f5f8" stroke="#606880" stroke-width="2.2" stroke-linejoin="round"/>
+
+  <!-- Isometric cube — left face (front-left) -->
+  <polygon points="26,41 60,60 60,97 26,78"
+    fill="#e6e9f0" stroke="#606880" stroke-width="2.2" stroke-linejoin="round"/>
+
+  <!-- Isometric cube — right face (front-right) -->
+  <polygon points="60,60 94,41 94,78 60,97"
+    fill="#d8dce8" stroke="#606880" stroke-width="2.2" stroke-linejoin="round"/>
+
+  <!-- ── E on left face (isometric-projected strokes) ── -->
+  <!-- Slope of left face horizontals: dy/dx = 19/34 ≈ 0.56 -->
+  <!-- Spine vertical -->
+  <line x1="32" y1="52" x2="32" y2="84"
+    stroke="#606880" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Top bar -->
+  <line x1="32" y1="52" x2="52" y2="63"
+    stroke="#606880" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Middle bar (3/4 length) -->
+  <line x1="32" y1="68" x2="47" y2="76"
+    stroke="#606880" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Bottom bar -->
+  <line x1="32" y1="84" x2="52" y2="95"
+    stroke="#606880" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- ── S on right face (isometric-adapted curves) ── -->
+  <!-- Right face: from (60,60) → (94,41) top-right, down to (94,78)→(60,97) -->
+  <!-- S top curve -->
+  <path d="M 71,51 C 91,41 97,55 84,62"
+    stroke="#606880" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <!-- S bottom curve -->
+  <path d="M 84,62 C 71,69 77,83 91,78"
+    stroke="#606880" stroke-width="2.5" stroke-linecap="round" fill="none"/>
 </svg>

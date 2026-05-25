@@ -274,17 +274,17 @@ body.has-items #empty-hint { display: none; }
 }
 
 .header-brand-mark {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
   display: inline-grid;
   place-items: center;
   position: relative;
 }
 
 .header-brand-logo {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   display: block;
   position: relative;
@@ -346,10 +346,19 @@ body.has-items #empty-hint { display: none; }
   justify-content: center;
   border: 1px solid rgba(0,0,0,0.16);
   background: rgba(255,255,255,0.72);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--muted);
+  color: var(--muted, #6a6a6e);
+}
+
+/* Nombre de empresa en el botón */
+.btn-company-name {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 /* ── Dock centrado ── */
 #dock {
