@@ -23,7 +23,7 @@ export function createMesaRect(item) {
   // Sillas perimetrales (calculadas según longitud, sep 0.60m)
   const sep = item.chairSep ?? 0.60;
   const sideChairs = Math.max(1, Math.floor(L / sep));
-  const offsetZ = W/2 + 0.32;
+  const offsetZ = W/2 + 0.52;
   for (let i = 0; i < sideChairs; i++) {
     const t = (i + 0.5) / sideChairs;
     const x = -L/2 + t * L;

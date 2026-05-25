@@ -205,11 +205,17 @@ function ensureItemSettingsHandle() {
     const id = Number(itemSettingsHandle.dataset.itemId || 0);
     const item = A?.items.find(entry => entry.id === id);
     if (item) {
-      document.dispatchEvent(new CustomEvent('escale:scene-overlay-open', {
-        detail: { kind: 'detail', key: `item-${item.id}` }
+      if (!A.selectedIds?.has?.(item.id) || A.selectedIds.size !== 1) {
+        A.select?.(item.id);
+      }
+      const rect = itemSettingsHandle.getBoundingClientRect();
+      document.dispatchEvent(new CustomEvent('escale:item-settings-menu', {
+        detail: {
+          itemId: item.id,
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2
+        }
       }));
-      A.select?.(item.id);
-      showDetail(item);
     }
   });
   document.body.appendChild(itemSettingsHandle);

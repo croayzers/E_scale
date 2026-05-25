@@ -108,25 +108,14 @@
 #dock-items #dock-inventory-btn.inventory-ready::before {
   content: '';
   position: absolute;
-  inset: -2px;
-  border-radius: 12px;
-  padding: 2px;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg 248deg,
-    var(--inventory-orbit-start) 252deg 302deg,
-    var(--inventory-orbit-end) 306deg 334deg,
-    transparent 338deg 360deg
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  animation: inventoryOrbit 2.4s linear infinite;
+  top: 4px;
+  right: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.96);
+  background: linear-gradient(135deg, var(--inventory-orbit-start), var(--inventory-orbit-end));
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.38), 0 0 12px rgba(245, 158, 11, 0.42);
   pointer-events: none;
 }
 
@@ -134,11 +123,6 @@
   box-shadow:
     0 4px 12px rgba(37,99,235,0.4),
     0 0 20px -4px color-mix(in srgb, var(--inventory-orbit-start) 72%, transparent);
-}
-
-@keyframes inventoryOrbit {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 #dock-items .dock-sep {
@@ -284,12 +268,28 @@ body.has-items #empty-hint { display: none; }
 #dock {
   left: 50% !important;
   transform: translateX(-50%) !important;
-  bottom: 70px !important;
+  bottom: 18px !important;
   z-index: 34;
 }
 
 #catalog-modal {
-  bottom: 142px !important;
+  bottom: 90px !important;
+}
+
+#catalog-grid {
+  max-height: 286px;
+  overflow-y: auto;
+  padding-right: 4px;
+  grid-auto-rows: minmax(126px, auto);
+  overscroll-behavior: contain;
+}
+
+#catalog-grid::-webkit-scrollbar { width: 6px; }
+#catalog-grid::-webkit-scrollbar-track { background: transparent; }
+#catalog-grid::-webkit-scrollbar-thumb { background: rgba(10,10,11,0.18); border-radius: 999px; }
+
+.cat-card {
+  min-height: 126px;
 }
 
 #dock-items button.active {

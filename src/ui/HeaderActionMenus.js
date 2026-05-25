@@ -84,15 +84,15 @@ function refreshPrintMenu() {
 
   if (hasPro) {
     note.textContent = insights?.hasSceneItems
-      ? 'PDF, inventario y planning listos para exportar.'
-      : 'Disponible para cuando empieces a colocar elementos.';
+      ? 'PDF, CSV y planning listos para exportar.'
+      : 'Imprime PNG cuando quieras. PDF, CSV y planning se activan al preparar la escena.';
     note.classList.remove('is-upsell');
     return;
   }
 
   note.textContent = insights?.hasSceneItems
-    ? 'Disponible en PRO: PDF con vista previa, inventario CSV y planning compartible.'
-    : 'Estas acciones se desbloquean en PRO cuando prepares el planning.';
+    ? 'Imprimir PNG esta disponible. PRO desbloquea PDF con vista previa, CSV y planning compartible.'
+    : 'Imprimir PNG esta disponible para Lite. PDF, CSV y planning son PRO.';
   note.classList.add('is-upsell');
 }
 
@@ -182,6 +182,12 @@ function handlePrintAction(action, button) {
   const featureKey = button?.dataset?.proFeature || '';
   closeMenus();
 
+  if (action === 'print-png') {
+    document.dispatchEvent(new CustomEvent('escale:inventory-close'));
+    ExportManager.printPng({ view: button?.dataset?.printView || '2d' });
+    return;
+  }
+
   if (featureKey && !SubscriptionManager.hasFeature(featureKey)) {
     SubscriptionManager.ensureFeature(featureKey);
     return;
@@ -194,6 +200,11 @@ function handlePrintAction(action, button) {
 
   if (action === 'inventory') {
     ExportManager.openModal({ kind: 'inventory' });
+    return;
+  }
+
+  if (action === 'csv') {
+    ExportManager.downloadInventoryCsv();
     return;
   }
 

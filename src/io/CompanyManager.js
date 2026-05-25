@@ -353,7 +353,7 @@ function syncAccessUi() {
       ? 'Puedes actualizar el nombre o seguir con esta cuenta local en este equipo.'
       : 'Crearemos una cuenta local en este equipo y vincularemos tus datos al correo.')
     : (storedAccount?.password
-      ? 'Introduce tu contraseña o usa Google o Microsoft si ya entras con esos proveedores.'
+      ? 'Introduce tu contraseña o usa Google si ya entras con ese proveedor.'
       : hint.description);
 
   summary.textContent = profile
@@ -367,7 +367,7 @@ function syncAccessUi() {
   submitLabel.textContent = mode === 'register' ? 'Crear cuenta' : 'Iniciar sesión';
 
   setButtonRecommended('access-google', hint.primaryProvider === 'google');
-  setButtonRecommended('access-microsoft', hint.primaryProvider === 'azure');
+  setButtonRecommended('access-microsoft', false);
   setButtonRecommended('access-submit', hint.primaryProvider === 'email');
   syncAccessPlanBadge();
   syncAccessPasswordUi();
@@ -396,7 +396,7 @@ function syncAuthUi() {
     statusText.textContent = displayName
       ? `${displayName} · ${AppState.company.authEmail || 'Cuenta local'}`
       : (AppState.company.authEmail || 'Cuenta local');
-    accountHint.textContent = 'En esta fase el acceso es local y no sale a Google ni Microsoft. La app usa este correo para recuperar tus datos guardados.';
+    accountHint.textContent = 'La app usa este correo para recuperar tus datos guardados. Google se activa con Supabase Auth en produccion.';
     footerMeta.textContent = `Modo local · ${providerName}`;
     signOutButton?.classList.remove('hidden');
     switchButton?.classList.remove('hidden');
@@ -607,14 +607,15 @@ async function handleAccessChoice(kind) {
   const fullName = cleanText(document.getElementById('access-name')?.value || AppState.company.authDisplayName);
   const password = String(document.getElementById('access-password')?.value || '');
   const mode = currentAccessMode();
+  const oauthProvider = kind === 'google';
 
-  if (!email) {
+  if (!email && !oauthProvider) {
     alert('Escribe primero tu correo para continuar.');
     document.getElementById('access-email')?.focus();
     return;
   }
 
-  if (mode === 'register' && !fullName) {
+  if (mode === 'register' && !fullName && !oauthProvider) {
     alert('Escribe tu nombre completo para continuar.');
     document.getElementById('access-name')?.focus();
     return;
@@ -629,11 +630,18 @@ async function handleAccessChoice(kind) {
   const profile = findStoredProfile(email);
 
   try {
-    await AuthManager.mockSignIn(kind === 'microsoft' ? 'azure' : kind, email, {
-      fullName,
-      password,
-      createAccount: mode === 'register'
-    });
+    const result = kind === 'google'
+      ? await AuthManager.signInWithGoogle({
+        email,
+        fullName,
+        createAccount: mode === 'register'
+      })
+      : await AuthManager.mockSignIn(kind === 'microsoft' ? 'azure' : kind, email, {
+        fullName,
+        password,
+        createAccount: mode === 'register'
+      });
+    if (result?.redirecting) return;
   } catch (error) {
     alert(error.message || 'No se pudo iniciar sesion.');
     return;

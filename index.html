@@ -11,6 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 </script>
@@ -58,7 +59,7 @@
         <span class="access-social-logo access-social-logo-google" aria-hidden="true">G</span>
         <span>Google</span>
       </button>
-      <button id="access-microsoft" class="access-social-btn company-auth-btn" type="button">
+      <button id="access-microsoft" class="access-social-btn company-auth-btn hidden" type="button" aria-hidden="true" tabindex="-1">
         <span class="access-social-logo access-social-logo-microsoft" aria-hidden="true">
           <span></span><span></span><span></span><span></span>
         </span>
@@ -97,7 +98,7 @@
 
     <div class="access-meta">
       <div id="access-title" class="sr-only">Pon tu correo para continuar</div>
-      <p id="access-description" class="sr-only">Usa Google, Microsoft o continúa con email.</p>
+      <p id="access-description" class="sr-only">Usa Google o continúa con email.</p>
       <p id="access-profile-summary" class="access-profile-summary">Introduce tu correo para recuperar datos guardados en este equipo.</p>
     </div>
 
@@ -332,6 +333,19 @@
     <div class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">Imprimir y exportar</div>
     <div class="hdr-popover-meta">Preview antes de descargar</div>
   </div>
+  <div class="print-lite-block">
+    <div class="menu-section-label">Imprimir PNG</div>
+    <div class="print-view-actions">
+      <button class="btn ghost" type="button" data-print-action="print-png" data-print-view="2d">
+        <i data-lucide="square" class="w-3.5 h-3.5"></i>
+        <span>2D</span>
+      </button>
+      <button class="btn ghost" type="button" data-print-action="print-png" data-print-view="3d">
+        <i data-lucide="box" class="w-3.5 h-3.5"></i>
+        <span>3D</span>
+      </button>
+    </div>
+  </div>
   <div id="print-menu-note" class="hdr-popover-note">Disponible para cuando empieces a colocar elementos.</div>
   <div class="hdr-popover-actions">
     <button class="menu-action" type="button" data-print-action="pdf" data-pro-feature="pdfExport">
@@ -342,11 +356,11 @@
       </span>
       <span class="menu-action-tag">PRO</span>
     </button>
-    <button class="menu-action" type="button" data-print-action="inventory" data-pro-feature="companyReporting">
-      <span class="menu-action-icon"><i data-lucide="files" class="w-4 h-4"></i></span>
+    <button class="menu-action" type="button" data-print-action="csv" data-pro-feature="companyReporting">
+      <span class="menu-action-icon"><i data-lucide="table" class="w-4 h-4"></i></span>
       <span class="menu-action-copy">
-        <strong>Exportar Inventario</strong>
-        <small>PDF + CSV empresa e inventario</small>
+        <strong>Exporta CSV</strong>
+        <small>Inventario con datos de empresa</small>
       </span>
       <span class="menu-action-tag">PRO</span>
     </button>
@@ -550,7 +564,7 @@
 </div>
 
 <!-- STATUS BAR -->
-<div class="status-bar glass">
+<div class="status-bar glass" style="display:none">
   <span class="blink-dot" style="background:#3a9c4d"></span>
   <span id="status-mode">ISO Â· 45Â°</span>
   <span style="color:var(--muted)">|</span>

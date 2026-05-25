@@ -367,6 +367,159 @@ function downloadPreview() {
   });
 }
 
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function waitFrame() {
+  return new Promise(resolve => requestAnimationFrame(() => resolve()));
+}
+
+function setExportCamera(view) {
+  const mode = view === '3d' ? 'iso' : 'top';
+  SceneManager.setCamera(mode);
+  document.getElementById('cam-top')?.classList.toggle('active', mode === 'top');
+  document.getElementById('cam-iso')?.classList.toggle('active', mode === 'iso');
+}
+
+function enableExportCotas() {
+  AppState.showCotas = true;
+  const toggle = document.getElementById('cotas-toggle');
+  if (toggle) toggle.checked = true;
+  SceneManager.drawCotas();
+}
+
+async function captureSceneDataUrl(view) {
+  setExportCamera(view);
+  enableExportCotas();
+  await waitFrame();
+  SceneManager.renderer.render(SceneManager.scene, SceneManager.activeCam);
+  await waitFrame();
+
+  const src = SceneManager.renderer.domElement;
+  const out = document.createElement('canvas');
+  out.width = src.width;
+  out.height = src.height;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#f5f3ee';
+  ctx.fillRect(0, 0, out.width, out.height);
+  ctx.drawImage(src, 0, 0);
+  return out.toDataURL('image/png');
+}
+
+async function composePrintCanvas(imageDataUrl, view) {
+  const image = await loadImage(imageDataUrl);
+  const company = AppState.company || {};
+  const now = new Date();
+  const eventName = document.getElementById('inventory-event-name')?.value?.trim() || '';
+
+  const out = document.createElement('canvas');
+  out.width = 1800;
+  out.height = 1200;
+  const ctx = out.getContext('2d');
+
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, out.width, out.height);
+
+  ctx.save();
+  ctx.globalAlpha = 0.1;
+  ctx.filter = 'blur(1.2px)';
+  ctx.translate(out.width / 2, out.height / 2);
+  ctx.rotate(-Math.PI / 10);
+  ctx.fillStyle = '#0f172a';
+  ctx.font = '900 170px Inter Tight, Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('E_scale', 0, 28);
+  ctx.restore();
+
+  const margin = 58;
+  const headerH = 116;
+  const footerH = 70;
+  const brandPrimary = company.colorPrimary || '#2563EB';
+  const brandSecondary = company.colorSecondary || '#64748B';
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, out.width, headerH);
+  ctx.fillStyle = brandPrimary;
+  ctx.fillRect(0, headerH - 4, out.width, 4);
+
+  ctx.fillStyle = '#0f172a';
+  ctx.font = '800 34px Inter Tight, Arial, sans-serif';
+  ctx.fillText(company.name || 'E-scale', margin, 48);
+  ctx.font = '500 18px Inter Tight, Arial, sans-serif';
+  ctx.fillStyle = '#64748b';
+  const info = [
+    eventName ? `Evento: ${eventName}` : '',
+    company.venue ? `Lugar: ${company.venue}` : '',
+    company.email || ''
+  ].filter(Boolean).join('  ·  ');
+  ctx.fillText(info || 'Planificador de espacios profesional', margin, 82);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = brandSecondary;
+  ctx.font = '800 24px Inter Tight, Arial, sans-serif';
+  ctx.fillText(view === '3d' ? 'Captura 3D' : 'Captura 2D', out.width - margin, 45);
+  ctx.font = '500 16px Inter Tight, Arial, sans-serif';
+  ctx.fillStyle = '#64748b';
+  ctx.fillText(now.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }), out.width - margin, 76);
+
+  const imageArea = {
+    x: margin,
+    y: headerH + 34,
+    w: out.width - margin * 2,
+    h: out.height - headerH - footerH - 58
+  };
+  const imageRatio = image.width / image.height;
+  const areaRatio = imageArea.w / imageArea.h;
+  const drawW = imageRatio > areaRatio ? imageArea.w : imageArea.h * imageRatio;
+  const drawH = imageRatio > areaRatio ? imageArea.w / imageRatio : imageArea.h;
+  const drawX = imageArea.x + (imageArea.w - drawW) / 2;
+  const drawY = imageArea.y + (imageArea.h - drawH) / 2;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(imageArea.x - 1, imageArea.y - 1, imageArea.w + 2, imageArea.h + 2);
+  ctx.drawImage(image, drawX, drawY, drawW, drawH);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, out.height - footerH, out.width, footerH);
+  ctx.fillStyle = '#64748b';
+  ctx.textAlign = 'left';
+  ctx.font = '600 16px Inter Tight, Arial, sans-serif';
+  ctx.fillText('E-scale', margin, out.height - 30);
+  ctx.textAlign = 'right';
+  ctx.fillText(`${getInventoryTotalItems(AppState.items)} elementos · ${getInventoryTotalPax(AppState.items)} PAX`, out.width - margin, out.height - 30);
+
+  return out;
+}
+
+async function printPng({ view = '2d' } = {}) {
+  try {
+    document.dispatchEvent(new CustomEvent('escale:inventory-close'));
+    const normalizedView = String(view).toLowerCase() === '3d' ? '3d' : '2d';
+    const imageDataUrl = await captureSceneDataUrl(normalizedView);
+    const canvas = await composePrintCanvas(imageDataUrl, normalizedView);
+    const company = AppState.company || {};
+    const safeName = (company.name || 'escale')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      downloadBlob(blob, `${safeName || 'escale'}_captura_${normalizedView}_${Date.now()}.png`);
+    }, 'image/png');
+  } catch (error) {
+    console.error(error);
+    alert('No se pudo generar la captura PNG.');
+  }
+}
+
 async function renderPreview(result, modeLabel) {
   if (previewState?.url) URL.revokeObjectURL(previewState.url);
 
@@ -659,7 +812,14 @@ function buildInventoryCsvDownload(modeLabel) {
   };
 }
 
+function downloadInventoryCsv() {
+  const csv = buildInventoryCsvDownload('CSV');
+  downloadBlob(csv.blob, csv.filename);
+}
+
 export const ExportManager = {
   init,
-  openModal
+  openModal,
+  printPng,
+  downloadInventoryCsv
 };

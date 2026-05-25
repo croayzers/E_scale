@@ -49,6 +49,14 @@ function init() {
   document.addEventListener('pointerdown', onPlacementDocumentPointerDown, true);
   document.addEventListener('escale:catalog-placement-start', onPlacementStart);
   document.addEventListener('escale:catalog-placement-end', onPlacementEnd);
+  document.addEventListener('escale:item-settings-menu', event => {
+    const item = AppState.items.find(entry => entry.id === Number(event.detail?.itemId));
+    if (!item) return;
+    if (!AppState.selectedIds.has(item.id) || AppState.selectedIds.size !== 1) {
+      AppState.select(item.id);
+    }
+    showContextMenu(event.detail?.x || window.innerWidth / 2, event.detail?.y || window.innerHeight / 2, item);
+  });
   document.addEventListener('escale:zones-ui-changed', () => {
     syncPlacementCursor();
     updateCursorReadout();
@@ -485,6 +493,9 @@ function onContextMenu(e) {
 function showContextMenu(x, y, item) {
   const menu = document.getElementById('context-menu');
   if (!menu) return;
+  document.dispatchEvent(new CustomEvent('escale:scene-overlay-open', {
+    detail: { kind: 'context', key: `item-${item.id}` }
+  }));
   menu.innerHTML = buildContextMenuHTML(item);
   menu.classList.add('visible');
   const w = menu.offsetWidth, h = menu.offsetHeight;

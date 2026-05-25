@@ -242,6 +242,19 @@ const SCHEMA_CATALOG = {
     rectItem('altavoz_grande', 'Altavoz grande', 'ambient', { width: 0.7, length: 0.7, height: 1.6, color: '#111827', icon: 'speaker' }),
     rectItem('microfono_pie', 'Microfono con pie', 'ambient', { width: 0.35, length: 0.35, height: 1.6, color: '#0F172A', icon: 'mic-2' }),
     rectItem('bateria', 'Bateria', 'ambient', { width: 1.8, length: 2.2, height: 1.2, color: '#991B1B', icon: 'drum' }),
+    {
+      id: 'maceton_decorativo',
+      name: 'Macetón',
+      category: 'ambient',
+      type: 'ambiente',
+      subtype: 'planta',
+      dims: { height: 1.55 },
+      color: '#2f6a3f',
+      potColor: '#7a4a28',
+      icon: 'flower-2',
+      chairs: 0,
+      defaultRotation: 0
+    },
     roundItem('maceta_ambiente', 'Macetas', 'ambient', { diameter: 0.8, height: 1, color: '#8B5E3C', icon: 'flower-2' }),
     arrowItem('flecha_arriba', 'Flecha arriba', 90),
     arrowItem('flecha_abajo', 'Flecha abajo', -90),
@@ -372,6 +385,16 @@ function moveFreeBarsToHospitality(data) {
   ]);
 }
 
+function removeDeprecatedDefinitions(data) {
+  CATEGORY_KEYS.forEach(key => {
+    data[key] = (data[key] || []).filter(item => (
+      item.type !== 'mesaSerpentina'
+      && item.id !== 'mesa_serpentina'
+      && !String(item.id || '').toLowerCase().includes('serpentina')
+    ));
+  });
+}
+
 function appendBlueprints(data) {
   Object.entries(SCHEMA_CATALOG).forEach(([key, items]) => {
     data[key] = uniqueById([...(data[key] || []), ...deepClone(items)]);
@@ -382,6 +405,7 @@ export function buildCatalogData(baseData = {}) {
   const data = ensureCatalogShape(baseData);
   decorateExistingDefinitions(data);
   moveFreeBarsToHospitality(data);
+  removeDeprecatedDefinitions(data);
   appendBlueprints(data);
   return data;
 }

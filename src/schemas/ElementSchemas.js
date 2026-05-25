@@ -35,7 +35,7 @@ export const ELEMENT_SCHEMAS = [
       autoChildren: {
         enabled: true,
         placement: 'around',
-        offset: 0.36,
+        offset: 0.5,
         startAngle: 0,
         childSchemaId: 'chair.catering'
       }
@@ -71,7 +71,7 @@ export const ELEMENT_SCHEMAS = [
         key: 'chairOffset',
         label: 'Offset sillas',
         path: 'autoChildren.offset',
-        default: 0.36,
+        default: 0.5,
         min: 0,
         max: 3,
         step: 0.02,

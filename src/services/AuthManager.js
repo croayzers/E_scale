@@ -1,4 +1,5 @@
 import { AppState } from '../core/AppState.js';
+import { ServiceConfig } from './ServiceConfig.js';
 
 const LOCAL_AUTH_KEY = 'escale_auth_local';
 const LOCAL_AUTH_USERS_KEY = 'escale_auth_users_local';
@@ -6,6 +7,8 @@ const GOOGLE_DOMAINS = new Set(['gmail.com', 'googlemail.com']);
 const MICROSOFT_DOMAINS = new Set(['outlook.com', 'hotmail.com', 'live.com', 'msn.com']);
 
 let currentSession = null;
+let supabaseClient = null;
+let supabaseSubscription = null;
 
 function cleanEmail(value) {
   return String(value || '').trim().toLowerCase();
@@ -141,11 +144,56 @@ function exposeTokenGetter() {
   };
 }
 
+function getSupabaseClient() {
+  const config = ServiceConfig.getService('supabase');
+  const enabled = Boolean(config?.enabled && config?.url && config?.anonKey);
+  if (!enabled) return null;
+  if (supabaseClient) return supabaseClient;
+  if (!window.supabase?.createClient) {
+    throw new Error('Supabase Auth no esta disponible. Revisa el script @supabase/supabase-js o el bundle de la app.');
+  }
+  supabaseClient = window.supabase.createClient(config.url, config.anonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  });
+  return supabaseClient;
+}
+
+function normalizeSupabaseSession(session) {
+  if (!session?.user) return null;
+  const user = session.user;
+  const metadata = user.user_metadata || {};
+  const provider = user.app_metadata?.provider || metadata.provider || 'email';
+  return {
+    local: false,
+    provider,
+    access_token: session.access_token || '',
+    refresh_token: session.refresh_token || '',
+    user: {
+      id: user.id,
+      email: user.email || '',
+      app_metadata: { ...(user.app_metadata || {}), provider },
+      user_metadata: {
+        ...metadata,
+        fullName: cleanText(metadata.fullName || metadata.full_name || metadata.name || metadata.display_name || '')
+      }
+    }
+  };
+}
+
 function hydrateAuthState(session) {
   currentSession = session || null;
   const user = session?.user || null;
   const provider = String(session?.provider || user?.app_metadata?.provider || '');
-  const fullName = cleanText(session?.user?.user_metadata?.fullName || '');
+  const fullName = cleanText(
+    session?.user?.user_metadata?.fullName
+    || session?.user?.user_metadata?.full_name
+    || session?.user?.user_metadata?.name
+    || ''
+  );
 
   AppState.company.authUserId = user?.id || '';
   AppState.company.authEmail = user?.email || '';
@@ -169,6 +217,28 @@ function hydrateAuthState(session) {
 }
 
 async function init() {
+  try {
+    const client = getSupabaseClient();
+    if (client) {
+      const { data, error } = await client.auth.getSession();
+      if (error) console.warn('[AuthManager] No se pudo recuperar la sesion Supabase:', error.message);
+
+      const cloudSession = normalizeSupabaseSession(data?.session);
+      hydrateAuthState(cloudSession || readLocalSession());
+
+      if (!supabaseSubscription) {
+        const { data: listener } = client.auth.onAuthStateChange((_event, session) => {
+          hydrateAuthState(normalizeSupabaseSession(session) || readLocalSession());
+        });
+        supabaseSubscription = listener?.subscription || null;
+      }
+
+      return currentSession;
+    }
+  } catch (error) {
+    console.warn('[AuthManager] Supabase Auth no disponible, usando modo local:', error);
+  }
+
   const localSession = readLocalSession();
   hydrateAuthState(localSession);
   return localSession;
@@ -183,7 +253,7 @@ function suggestProvider(email) {
       primaryProvider: 'email',
       domain: '',
       title: 'Pon tu correo para continuar',
-      description: 'Luego podras elegir Google, Microsoft o entrar con correo.'
+      description: 'Luego podras elegir Google o entrar con correo.'
     };
   }
 
@@ -198,10 +268,10 @@ function suggestProvider(email) {
 
   if (MICROSOFT_DOMAINS.has(domain)) {
     return {
-      primaryProvider: 'azure',
+      primaryProvider: 'email',
       domain,
-      title: 'Cuenta Microsoft detectada',
-      description: 'Perfecto para Outlook personal o Microsoft 365. Tambien puedes seguir por correo.'
+      title: 'Correo detectado',
+      description: 'Microsoft queda oculto por ahora. Puedes entrar con correo o usar Google.'
     };
   }
 
@@ -264,8 +334,36 @@ async function mockSignIn(provider, email, options = {}) {
   return { data: { session }, error: null };
 }
 
+async function signInWithGoogle(options = {}) {
+  const client = getSupabaseClient();
+  if (client) {
+    const redirectTo = options.redirectTo || `${window.location.origin}${window.location.pathname}`;
+    const { data, error } = await client.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent'
+        }
+      }
+    });
+    if (error) throw error;
+    return { data, error: null, redirecting: true };
+  }
+
+  const email = cleanEmail(options.email);
+  if (!email) throw new Error('En modo local necesitas indicar un correo para simular Google.');
+  return mockSignIn('google', email, options);
+}
+
 async function signOut() {
   saveLocalSession(null);
+  try {
+    await getSupabaseClient()?.auth?.signOut();
+  } catch (error) {
+    console.warn('[AuthManager] No se pudo cerrar la sesion Supabase:', error);
+  }
   hydrateAuthState(null);
 }
 
@@ -281,6 +379,7 @@ export const AuthManager = {
   init,
   suggestProvider,
   mockSignIn,
+  signInWithGoogle,
   signOut,
   getSession,
   isAuthenticated,
