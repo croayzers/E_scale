@@ -6,6 +6,8 @@
    item.color:      hex
    ───────────────────────────────────────────────────────── */
 
+import { createChair } from './chair.js';
+
 export function createMesaCurva(item) {
   const g = new THREE.Group();
   const rIn   = item.dims?.radioInt  ?? 2.0;
@@ -32,9 +34,12 @@ export function createMesaCurva(item) {
   g.add(top);
 
   // Faldón: misma forma pero extruido hasta el suelo
+  // buildArcStrip centra la geometría en Y=0 (de -H/2 a +H/2),
+  // por eso desplazamos +H/2 para que descanse sobre el suelo (0 → H).
   const skirtGeo = buildArcStrip(rIn, rOut, ang, segs, H);
   const skirt = new THREE.Mesh(skirtGeo, clothMat);
-  skirt.position.y = 0;
+  skirt.position.y = H / 2;
+  skirt.castShadow = true;
   skirt.userData.baseColor = 0xc9c5bd;
   g.add(skirt);
 
@@ -42,15 +47,19 @@ export function createMesaCurva(item) {
   const arcLen = (rIn + rOut) / 2 * ang;
   const nChairs = Math.max(1, Math.floor(arcLen / sep));
 
+  // La silla canónica (chair.js) tiene el respaldo en +Z y mira hacia -Z por defecto.
+  // Para que mire hacia un ángulo `a` en el plano XZ usamos: rotY = Math.PI/2 - a
+  // (mismo convenio que mesa.js para mesas redondas).
+  // faceOut=true  → sillas exteriores miran HACIA el centro (inward = hacia la mesa)
+  // faceOut=false → sillas interiores miran LEJOS del centro (outward = hacia la mesa)
   const placeChair = (radius, faceOut) => {
     for (let i = 0; i < nChairs; i++) {
       const t = (i + 0.5) / nChairs;
-      const a = -ang/2 + t * ang;
+      const a = -ang / 2 + t * ang;
       const x = Math.cos(a) * radius;
       const z = Math.sin(a) * radius;
-      const chair = makeChair();
+      const chair = createChair();
       chair.position.set(x, 0, z);
-      // Mirar hacia centro (interna) o hacia fuera (externa)
       chair.rotation.y = faceOut ? (Math.PI / 2 - a) : (-Math.PI / 2 - a);
       g.add(chair);
     }
@@ -96,20 +105,6 @@ function buildArcStrip(rIn, rOut, ang, segs, thickness) {
   geo.rotateX(-Math.PI / 2);
   geo.translate(0, thickness/2, 0);
   return geo;
-}
-
-function makeChair() {
-  const c = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ color: 0x55524d, roughness: 0.55, flatShading: true });
-  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.05, 0.42), mat);
-  seat.position.y = 0.45; seat.castShadow = true;
-  seat.userData.baseColor = 0x55524d;
-  c.add(seat);
-  const back = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.5, 0.04), mat.clone());
-  back.position.set(0, 0.7, -0.19); back.castShadow = true;
-  back.userData.baseColor = 0x55524d;
-  c.add(back);
-  return c;
 }
 
 function parseHex(h) { return parseInt((h || '#4a4744').replace('#',''),16); }

@@ -64,7 +64,7 @@ export function createBarraLibre(item) {
     new THREE.BoxGeometry(L + 0.04, 0.06, W + 0.04),
     baseMat
   );
-  base.position.y = 0.03;
+  base.position.y = 0.04;   // sube 1 cm para que su cara inferior (y=0.01) no coincida con body (y=0)
   base.castShadow = true;
   base.userData.baseColor = 0x2a2a2c;
   g.add(base);

@@ -30,8 +30,6 @@ export function createBuffet(item) {
   const skirtMat = new THREE.MeshStandardMaterial({
     color: 0xc9c5bd,
     roughness: 0.9,
-    transparent: true,
-    opacity: 0.95,
     flatShading: true
   });
   const skirt = new THREE.Mesh(skirtGeo, skirtMat);
@@ -39,24 +37,6 @@ export function createBuffet(item) {
   skirt.castShadow = true;
   skirt.userData.baseColor = 0xc9c5bd;
   group.add(skirt);
-
-  // 4 Patas finas
-  const legMat = new THREE.MeshStandardMaterial({
-    color: COLORS.metal,
-    roughness: 0.4,
-    metalness: 0.7,
-    flatShading: true
-  });
-  const legGeo = new THREE.CylinderGeometry(0.025, 0.025, H, 6);
-  const off = 0.08;
-  [[-L/2+off,  W/2-off], [ L/2-off,  W/2-off],
-   [-L/2+off, -W/2+off], [ L/2-off, -W/2+off]].forEach(([x, z]) => {
-    const leg = new THREE.Mesh(legGeo, legMat.clone());
-    leg.position.set(x, H/2, z);
-    leg.castShadow = true;
-    leg.userData.baseColor = COLORS.metal;
-    group.add(leg);
-  });
 
   // Toldo street-food
   const toldoGeo = new THREE.BoxGeometry(L + 0.4, 0.04, W + 0.6);

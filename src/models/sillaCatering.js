@@ -73,9 +73,9 @@ function buildChiavari(W, D, SH, TH, color) {
   seat.userData.baseColor = color; seat.userData.isMain = true;
   g.add(seat);
 
-  // Barra superior del respaldo (cilindro horizontal curvo → usamos BoxGeometry)
+  // Barra superior del respaldo — en +Z (misma convención que chair.js: respaldo en +Z)
   const topBar = new THREE.Mesh(new THREE.BoxGeometry(W - 0.04, 0.03, 0.03), mat.clone());
-  topBar.position.set(0, TH - 0.02, -D/2 + 0.03);
+  topBar.position.set(0, TH - 0.02, D/2 - 0.03);
   topBar.castShadow = true;
   topBar.userData.baseColor = color;
   g.add(topBar);
@@ -87,7 +87,7 @@ function buildChiavari(W, D, SH, TH, color) {
     const t = i / 4;
     const x = -(W/2 - 0.05) + t * (W - 0.10);
     const bar = new THREE.Mesh(barGeo, mat.clone());
-    bar.position.set(x, SH + barH/2 + 0.02, -D/2 + 0.025);
+    bar.position.set(x, SH + barH/2 + 0.02, D/2 - 0.025);
     bar.castShadow = true;
     bar.userData.baseColor = color;
     g.add(bar);
@@ -121,9 +121,9 @@ function buildTiffany(W, D, SH, TH, color) {
   seat.userData.baseColor = color; seat.userData.baseOpacity = 0.55; seat.userData.isMain = true;
   g.add(seat);
 
-  // Respaldo plano
+  // Respaldo plano — en +Z (convención canónica: respaldo en +Z, frente en -Z)
   const back = new THREE.Mesh(new THREE.BoxGeometry(W - 0.04, TH - SH - 0.04, 0.025), mat.clone());
-  back.position.set(0, SH + (TH - SH)/2, -D/2 + 0.015);
+  back.position.set(0, SH + (TH - SH)/2, D/2 - 0.015);
   back.castShadow = true;
   back.userData.baseColor = color; back.userData.baseOpacity = 0.55;
   g.add(back);
@@ -153,10 +153,10 @@ function buildTolix(W, D, SH, TH, color) {
   seat.userData.baseColor = color; seat.userData.isMain = true;
   g.add(seat);
 
-  // Respaldo plano curvado (caja simple)
+  // Respaldo plano curvado — en +Z (convención canónica: respaldo en +Z, frente en -Z)
   const backH = TH - SH - 0.05;
   const back = new THREE.Mesh(new THREE.BoxGeometry(W - 0.04, backH, 0.03), mat.clone());
-  back.position.set(0, SH + backH/2 + 0.02, -D/2 + 0.02);
+  back.position.set(0, SH + backH/2 + 0.02, D/2 - 0.02);
   back.castShadow = true;
   back.userData.baseColor = color;
   g.add(back);
