@@ -616,27 +616,47 @@ function hexToRgba(hex, alpha = 1) {
 }
 
 function makeZoneLabelSprite(text, color, options = {}) {
-  const { fontSize = 120, textColor } = options;
+  const { fontSize = 120, textColor, sqm } = options;
+  const sqmFontSize = Math.round(fontSize / 2);
+  const pad = 16;
+  const canvasW = 700;
+
+  let canvasH, nameY, sqmY;
+  if (sqm != null) {
+    nameY  = pad + fontSize * 0.5;
+    sqmY   = nameY + fontSize * 0.5 + fontSize * 0.15 + sqmFontSize * 0.5;
+    canvasH = Math.ceil(sqmY + sqmFontSize * 0.5 + pad);
+  } else {
+    canvasH = 180;
+    nameY   = canvasH / 2;
+  }
+
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
-  canvas.width = 700;
-  canvas.height = 180;
+  canvas.width = canvasW;
+  canvas.height = canvasH;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.font = `600 ${fontSize}px "Inter Tight", sans-serif`;
+  ctx.clearRect(0, 0, canvasW, canvasH);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = textColor || hexToRgba(color, 0.48);
-  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  const fill = textColor || hexToRgba(color, 0.48);
+
+  ctx.font = `600 ${fontSize}px "Inter Tight", sans-serif`;
+  ctx.fillStyle = fill;
+  ctx.fillText(text, canvasW / 2, nameY);
+
+  if (sqm != null) {
+    ctx.font = `500 ${sqmFontSize}px "Inter Tight", sans-serif`;
+    ctx.fillStyle = fill;
+    ctx.globalAlpha = 0.72;
+    ctx.fillText(`${sqm} m²`, canvasW / 2, sqmY);
+    ctx.globalAlpha = 1;
+  }
 
   const texture = new THREE.CanvasTexture(canvas);
-  const material = new THREE.SpriteMaterial({
-    map: texture,
-    transparent: true,
-    depthTest: false
-  });
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
   const sprite = new THREE.Sprite(material);
-  sprite.scale.set(4.8, 1.22, 1);
+  sprite.scale.set(4.8, 4.8 * (canvasH / canvasW), 1);
   sprite.position.set(0, 0.085, 0);
   sprite.renderOrder = 40;
   return sprite;
@@ -691,10 +711,11 @@ function createZoneSymbol(item) {
   group.add(makeZoneGrid(item));
 
   if (item.labelText && item.showLabel !== false) {
+    const sqm = ((item.dims?.length ?? 4) * (item.dims?.width ?? 4)).toFixed(1);
     group.add(makeZoneLabelSprite(
       item.labelText,
       item.borderColor || item.color || '#22c55e',
-      { fontSize: item.fontSize ?? 120, textColor: item.textColor || '#000000' }
+      { fontSize: item.fontSize ?? 120, textColor: item.textColor || '#000000', sqm }
     ));
   }
 
