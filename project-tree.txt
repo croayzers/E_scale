@@ -168,6 +168,7 @@ PROJECT STRUCTURE
 │   ├── migrations/
 │   │   └── add_owner_user_id.sql
 │   └── schema.sql
+├── Supabase tablas/
 ├── vercel.json
 └── __pycache__/
     └── dashboard_api.cpython-312.pyc

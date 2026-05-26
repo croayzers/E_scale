@@ -91,7 +91,9 @@ function buildZoneItem(anchor, point) {
       shadows: false
     },
     showLabel: true,
-    locked: false
+    locked: false,
+    textColor: '#000000',
+    fontSize: 120
   };
 }
 
@@ -389,7 +391,7 @@ function renderZoneMenu() {
         const zone = AppState.items.find(z => z.id === id && z.type === 'zone');
         if (!zone) return;
         const newDisabled = !zone.disabled;
-        AppState.update(id, { disabled: newDisabled }, { skipDetailRebuild: true });
+        AppState.update(id, { disabled: newDisabled, locked: newDisabled }, { skipDetailRebuild: true });
         if (newDisabled) AppState.deselect();
       });
     });

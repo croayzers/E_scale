@@ -317,14 +317,14 @@ function showDetail(item) {
 
       <label class="block mb-3">
         <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color texto</span>
-        <input id="zone-detail-text-color" type="color" value="${item.textColor || item.borderColor || '#22c55e'}" class="input-field" style="padding:2px;height:36px"/>
+        <input id="zone-detail-text-color" type="color" value="${item.textColor || '#000000'}" class="input-field" style="padding:2px;height:36px"/>
       </label>
 
       <label class="block mb-3">
         <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Tamaño texto</span>
         <div class="flex items-center gap-2">
-          <input id="zone-detail-font-size" type="range" min="20" max="120" step="4" value="${item.fontSize ?? 58}" class="flex-1"/>
-          <span class="mono text-[10px]" id="zone-font-size-val">${item.fontSize ?? 58}px</span>
+          <input id="zone-detail-font-size" type="range" min="20" max="120" step="4" value="${item.fontSize ?? 120}" class="flex-1"/>
+          <span class="mono text-[10px]" id="zone-font-size-val">${item.fontSize ?? 120}px</span>
         </div>
       </label>
 

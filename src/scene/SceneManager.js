@@ -609,7 +609,7 @@ function hexToRgba(hex, alpha = 1) {
 }
 
 function makeZoneLabelSprite(text, color, options = {}) {
-  const { fontSize = 58, textColor } = options;
+  const { fontSize = 120, textColor } = options;
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   canvas.width = 700;
@@ -651,7 +651,7 @@ function createZoneSymbol(item) {
     group.add(makeZoneLabelSprite(
       item.labelText,
       item.borderColor || item.color || '#22c55e',
-      { fontSize: item.fontSize ?? 58, textColor: item.textColor }
+      { fontSize: item.fontSize ?? 120, textColor: item.textColor || '#000000' }
     ));
   }
 
@@ -1202,6 +1202,7 @@ function updatePlanViewMode() {
   planMesh.position.y = isTop ? 0.005 : 0.018;
   planMesh.renderOrder = isTop ? 1 : 3;
   planMesh.material.depthWrite = false;
+  planMesh.material.depthTest = !isTop;
   planMesh.material.needsUpdate = true;
 }
 
