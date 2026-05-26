@@ -6,7 +6,9 @@
       "PowerShell(cd D:\\\\App\\\\E_scale; Start-Process python -ArgumentList \"-m\", \"http.server\", \"8080\" -WindowStyle Hidden; Start-Sleep -Milliseconds 1500; $r = [System.Net.WebClient]::new\\(\\).DownloadString\\(\"http://localhost:8080/src/ui/CatalogModal.js\"\\); \"Status: OK, length: $\\($r.Length\\)\")",
       "PowerShell($wc = [System.Net.WebClient]::new\\(\\); $r1 = $wc.DownloadString\\(\"http://localhost:8080/src/core/LayerManager.js\"\\); $r2 = $wc.DownloadString\\(\"http://localhost:8080/src/scene/SelectionManager.js\"\\); $r3 = $wc.DownloadString\\(\"http://localhost:8080/src/scene/InteractionManager.js\"\\); \"LayerManager: $\\($r1.Length\\) bytes\"; \"SelectionManager: $\\($r2.Length\\) bytes\"; \"InteractionManager: $\\($r3.Length\\) bytes\")",
       "Bash(Get-ChildItem -Path \"x:\\\\App\\\\E_scale\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(node generate-tree-json.js)",
+      "Bash(node -e ' *)"
     ]
   }
 }

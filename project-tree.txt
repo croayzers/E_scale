@@ -12,7 +12,9 @@ PROJECT STRUCTURE
 ├── admin/
 │   ├── admin.css
 │   ├── admin.js
-│   └── index.html
+│   ├── index.html
+│   ├── project-tree.json
+│   └── thumb.js
 ├── api/
 │   ├── analytics/
 │   │   └── capture.js
@@ -68,6 +70,7 @@ PROJECT STRUCTURE
 │   ├── SAAS_ROADMAP.md
 │   └── SCHEMA_ARCHITECTURE.md
 ├── elements.json
+├── generate-tree-json.js
 ├── generate-tree.js
 ├── hooks/
 ├── index.html

@@ -1,0 +1,1216 @@
+{
+  "name": "E-scale",
+  "path": ".",
+  "type": "dir",
+  "generated": "2026-05-26T19:46:56.307Z",
+  "children": [
+    {
+      "name": "admin",
+      "path": "admin",
+      "type": "dir",
+      "children": [
+        {
+          "name": "admin.css",
+          "path": "admin/admin.css",
+          "type": "file",
+          "ext": "css",
+          "size": 20704
+        },
+        {
+          "name": "admin.js",
+          "path": "admin/admin.js",
+          "type": "file",
+          "ext": "js",
+          "size": 38733
+        },
+        {
+          "name": "index.html",
+          "path": "admin/index.html",
+          "type": "file",
+          "ext": "html",
+          "size": 28579
+        },
+        {
+          "name": "thumb.js",
+          "path": "admin/thumb.js",
+          "type": "file",
+          "ext": "js",
+          "size": 17296
+        }
+      ]
+    },
+    {
+      "name": "api",
+      "path": "api",
+      "type": "dir",
+      "children": [
+        {
+          "name": "analytics",
+          "path": "api/analytics",
+          "type": "dir",
+          "children": [
+            {
+              "name": "capture.js",
+              "path": "api/analytics/capture.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1319
+            }
+          ]
+        },
+        {
+          "name": "app",
+          "path": "api/app",
+          "type": "dir",
+          "children": [
+            {
+              "name": "bootstrap.js",
+              "path": "api/app/bootstrap.js",
+              "type": "file",
+              "ext": "js",
+              "size": 2962
+            },
+            {
+              "name": "company-sync.js",
+              "path": "api/app/company-sync.js",
+              "type": "file",
+              "ext": "js",
+              "size": 2685
+            },
+            {
+              "name": "export-sync.js",
+              "path": "api/app/export-sync.js",
+              "type": "file",
+              "ext": "js",
+              "size": 2562
+            }
+          ]
+        },
+        {
+          "name": "billing",
+          "path": "api/billing",
+          "type": "dir",
+          "children": [
+            {
+              "name": "checkout.js",
+              "path": "api/billing/checkout.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1624
+            },
+            {
+              "name": "portal.js",
+              "path": "api/billing/portal.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1156
+            },
+            {
+              "name": "webhook.js",
+              "path": "api/billing/webhook.js",
+              "type": "file",
+              "ext": "js",
+              "size": 9987
+            }
+          ]
+        },
+        {
+          "name": "email",
+          "path": "api/email",
+          "type": "dir",
+          "children": [
+            {
+              "name": "send-export.js",
+              "path": "api/email/send-export.js",
+              "type": "file",
+              "ext": "js",
+              "size": 909
+            },
+            {
+              "name": "send-share.js",
+              "path": "api/email/send-share.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1019
+            }
+          ]
+        },
+        {
+          "name": "public-config.js",
+          "path": "api/public-config.js",
+          "type": "file",
+          "ext": "js",
+          "size": 360
+        }
+      ]
+    },
+    {
+      "name": "brand",
+      "path": "brand",
+      "type": "dir",
+      "children": [
+        {
+          "name": "brand.json",
+          "path": "brand/brand.json",
+          "type": "file",
+          "ext": "json",
+          "size": 613
+        },
+        {
+          "name": "Logo_horizontal.png",
+          "path": "brand/Logo_horizontal.png",
+          "type": "file",
+          "ext": "png",
+          "size": 35296
+        },
+        {
+          "name": "logo_txt.png",
+          "path": "brand/logo_txt.png",
+          "type": "file",
+          "ext": "png",
+          "size": 5864
+        },
+        {
+          "name": "logo.png",
+          "path": "brand/logo.png",
+          "type": "file",
+          "ext": "png",
+          "size": 30001
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "path": "config",
+      "type": "dir",
+      "children": [
+        {
+          "name": "app.config.json",
+          "path": "config/app.config.json",
+          "type": "file",
+          "ext": "json",
+          "size": 6790
+        }
+      ]
+    },
+    {
+      "name": "dashboard_sharepoint_mock",
+      "path": "dashboard_sharepoint_mock",
+      "type": "dir",
+      "children": [
+        {
+          "name": "_previews",
+          "path": "dashboard_sharepoint_mock/_previews",
+          "type": "dir",
+          "children": [
+            {
+              "name": "catalogos.png",
+              "path": "dashboard_sharepoint_mock/_previews/catalogos.png",
+              "type": "file",
+              "ext": "png",
+              "size": 108901
+            },
+            {
+              "name": "dashboard.png",
+              "path": "dashboard_sharepoint_mock/_previews/dashboard.png",
+              "type": "file",
+              "ext": "png",
+              "size": 148084
+            },
+            {
+              "name": "diccionario.png",
+              "path": "dashboard_sharepoint_mock/_previews/diccionario.png",
+              "type": "file",
+              "ext": "png",
+              "size": 167844
+            },
+            {
+              "name": "dispositivos.png",
+              "path": "dashboard_sharepoint_mock/_previews/dispositivos.png",
+              "type": "file",
+              "ext": "png",
+              "size": 244500
+            },
+            {
+              "name": "empresas.png",
+              "path": "dashboard_sharepoint_mock/_previews/empresas.png",
+              "type": "file",
+              "ext": "png",
+              "size": 263767
+            },
+            {
+              "name": "exportaciones.png",
+              "path": "dashboard_sharepoint_mock/_previews/exportaciones.png",
+              "type": "file",
+              "ext": "png",
+              "size": 255312
+            },
+            {
+              "name": "formula_errors.ndjson",
+              "path": "dashboard_sharepoint_mock/_previews/formula_errors.ndjson",
+              "type": "file",
+              "ext": "ndjson",
+              "size": 60
+            },
+            {
+              "name": "inspect_dashboard.ndjson",
+              "path": "dashboard_sharepoint_mock/_previews/inspect_dashboard.ndjson",
+              "type": "file",
+              "ext": "ndjson",
+              "size": 2531
+            },
+            {
+              "name": "inventario.png",
+              "path": "dashboard_sharepoint_mock/_previews/inventario.png",
+              "type": "file",
+              "ext": "png",
+              "size": 196791
+            },
+            {
+              "name": "logos.png",
+              "path": "dashboard_sharepoint_mock/_previews/logos.png",
+              "type": "file",
+              "ext": "png",
+              "size": 230858
+            },
+            {
+              "name": "lugares.png",
+              "path": "dashboard_sharepoint_mock/_previews/lugares.png",
+              "type": "file",
+              "ext": "png",
+              "size": 239533
+            },
+            {
+              "name": "suscripciones.png",
+              "path": "dashboard_sharepoint_mock/_previews/suscripciones.png",
+              "type": "file",
+              "ext": "png",
+              "size": 261478
+            }
+          ]
+        },
+        {
+          "name": "logos",
+          "path": "dashboard_sharepoint_mock/logos",
+          "type": "dir",
+          "children": [
+            {
+              "name": "rafa-corp_CMP-20260521212010-5709E8.png",
+              "path": "dashboard_sharepoint_mock/logos/rafa-corp_CMP-20260521212010-5709E8.png",
+              "type": "file",
+              "ext": "png",
+              "size": 1487
+            }
+          ]
+        },
+        {
+          "name": "build_dashboard_workbook.mjs",
+          "path": "dashboard_sharepoint_mock/build_dashboard_workbook.mjs",
+          "type": "file",
+          "ext": "mjs",
+          "size": 19087
+        },
+        {
+          "name": "Escale_Dashboard_Base.xlsx",
+          "path": "dashboard_sharepoint_mock/Escale_Dashboard_Base.xlsx",
+          "type": "file",
+          "ext": "xlsx",
+          "size": 187384
+        }
+      ]
+    },
+    {
+      "name": "docs",
+      "path": "docs",
+      "type": "dir",
+      "children": [
+        {
+          "name": "examples",
+          "path": "docs/examples",
+          "type": "dir",
+          "children": [
+            {
+              "name": "next-app",
+              "path": "docs/examples/next-app",
+              "type": "dir",
+              "children": [
+                {
+                  "name": "components",
+                  "path": "docs/examples/next-app/components",
+                  "type": "dir",
+                  "children": [
+                    {
+                      "name": "Login.tsx",
+                      "path": "docs/examples/next-app/components/Login.tsx",
+                      "type": "file",
+                      "ext": "tsx",
+                      "size": 12207
+                    },
+                    {
+                      "name": "PlanBadge.tsx",
+                      "path": "docs/examples/next-app/components/PlanBadge.tsx",
+                      "type": "file",
+                      "ext": "tsx",
+                      "size": 824
+                    }
+                  ]
+                },
+                {
+                  "name": "lib",
+                  "path": "docs/examples/next-app/lib",
+                  "type": "dir",
+                  "children": [
+                    {
+                      "name": "supabase-browser.ts",
+                      "path": "docs/examples/next-app/lib/supabase-browser.ts",
+                      "type": "file",
+                      "ext": "ts",
+                      "size": 637
+                    }
+                  ]
+                },
+                {
+                  "name": ".env.local.example",
+                  "path": "docs/examples/next-app/.env.local.example",
+                  "type": "file",
+                  "ext": "example",
+                  "size": 130
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "NEXTJS_LOGIN_BLUEPRINT.md",
+          "path": "docs/NEXTJS_LOGIN_BLUEPRINT.md",
+          "type": "file",
+          "ext": "md",
+          "size": 4380
+        },
+        {
+          "name": "PLATFORM_SETUP.md",
+          "path": "docs/PLATFORM_SETUP.md",
+          "type": "file",
+          "ext": "md",
+          "size": 3799
+        },
+        {
+          "name": "SAAS_ROADMAP.md",
+          "path": "docs/SAAS_ROADMAP.md",
+          "type": "file",
+          "ext": "md",
+          "size": 7606
+        },
+        {
+          "name": "SCHEMA_ARCHITECTURE.md",
+          "path": "docs/SCHEMA_ARCHITECTURE.md",
+          "type": "file",
+          "ext": "md",
+          "size": 6067
+        }
+      ]
+    },
+    {
+      "name": "hooks",
+      "path": "hooks",
+      "type": "dir",
+      "children": []
+    },
+    {
+      "name": "lib",
+      "path": "lib",
+      "type": "dir",
+      "children": [
+        {
+          "name": "env.js",
+          "path": "lib/env.js",
+          "type": "file",
+          "ext": "js",
+          "size": 3763
+        },
+        {
+          "name": "http.js",
+          "path": "lib/http.js",
+          "type": "file",
+          "ext": "js",
+          "size": 1093
+        },
+        {
+          "name": "plans.js",
+          "path": "lib/plans.js",
+          "type": "file",
+          "ext": "js",
+          "size": 916
+        },
+        {
+          "name": "resend.js",
+          "path": "lib/resend.js",
+          "type": "file",
+          "ext": "js",
+          "size": 1251
+        },
+        {
+          "name": "stripe.js",
+          "path": "lib/stripe.js",
+          "type": "file",
+          "ext": "js",
+          "size": 979
+        },
+        {
+          "name": "supabase.js",
+          "path": "lib/supabase.js",
+          "type": "file",
+          "ext": "js",
+          "size": 22506
+        }
+      ]
+    },
+    {
+      "name": "qa",
+      "path": "qa",
+      "type": "dir",
+      "children": []
+    },
+    {
+      "name": "src",
+      "path": "src",
+      "type": "dir",
+      "children": [
+        {
+          "name": "core",
+          "path": "src/core",
+          "type": "dir",
+          "children": [
+            {
+              "name": "AppState.js",
+              "path": "src/core/AppState.js",
+              "type": "file",
+              "ext": "js",
+              "size": 11913
+            },
+            {
+              "name": "BrandTokens.js",
+              "path": "src/core/BrandTokens.js",
+              "type": "file",
+              "ext": "js",
+              "size": 4144
+            },
+            {
+              "name": "ElementLibrary.js",
+              "path": "src/core/ElementLibrary.js",
+              "type": "file",
+              "ext": "js",
+              "size": 4982
+            },
+            {
+              "name": "InventoryRules.js",
+              "path": "src/core/InventoryRules.js",
+              "type": "file",
+              "ext": "js",
+              "size": 3180
+            },
+            {
+              "name": "LayerManager.js",
+              "path": "src/core/LayerManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 6697
+            },
+            {
+              "name": "PlanCatalog.js",
+              "path": "src/core/PlanCatalog.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1934
+            }
+          ]
+        },
+        {
+          "name": "io",
+          "path": "src/io",
+          "type": "dir",
+          "children": [
+            {
+              "name": "CompanyManager.js",
+              "path": "src/io/CompanyManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 34997
+            },
+            {
+              "name": "DashboardSync.js",
+              "path": "src/io/DashboardSync.js",
+              "type": "file",
+              "ext": "js",
+              "size": 5766
+            },
+            {
+              "name": "ExportManager.js",
+              "path": "src/io/ExportManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 30008
+            },
+            {
+              "name": "PlanManager.js",
+              "path": "src/io/PlanManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 20438
+            },
+            {
+              "name": "PlanningRegistry.js",
+              "path": "src/io/PlanningRegistry.js",
+              "type": "file",
+              "ext": "js",
+              "size": 3302
+            },
+            {
+              "name": "ShareManager.js",
+              "path": "src/io/ShareManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 22860
+            },
+            {
+              "name": "TemplateManager.js",
+              "path": "src/io/TemplateManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 35035
+            }
+          ]
+        },
+        {
+          "name": "models",
+          "path": "src/models",
+          "type": "dir",
+          "children": [
+            {
+              "name": "schema",
+              "path": "src/models/schema",
+              "type": "dir",
+              "children": [
+                {
+                  "name": "SchemaBuilders.js",
+                  "path": "src/models/schema/SchemaBuilders.js",
+                  "type": "file",
+                  "ext": "js",
+                  "size": 61123
+                },
+                {
+                  "name": "SchemaModelFactory.js",
+                  "path": "src/models/schema/SchemaModelFactory.js",
+                  "type": "file",
+                  "ext": "js",
+                  "size": 1938
+                }
+              ]
+            },
+            {
+              "name": "ambiente.js",
+              "path": "src/models/ambiente.js",
+              "type": "file",
+              "ext": "js",
+              "size": 6801
+            },
+            {
+              "name": "arbol.js",
+              "path": "src/models/arbol.js",
+              "type": "file",
+              "ext": "js",
+              "size": 2695
+            },
+            {
+              "name": "arbusto.js",
+              "path": "src/models/arbusto.js",
+              "type": "file",
+              "ext": "js",
+              "size": 2069
+            },
+            {
+              "name": "barraLibre.js",
+              "path": "src/models/barraLibre.js",
+              "type": "file",
+              "ext": "js",
+              "size": 5755
+            },
+            {
+              "name": "buffet.js",
+              "path": "src/models/buffet.js",
+              "type": "file",
+              "ext": "js",
+              "size": 4070
+            },
+            {
+              "name": "cableLuces.js",
+              "path": "src/models/cableLuces.js",
+              "type": "file",
+              "ext": "js",
+              "size": 3172
+            },
+            {
+              "name": "carpa.js",
+              "path": "src/models/carpa.js",
+              "type": "file",
+              "ext": "js",
+              "size": 6147
+            },
+            {
+              "name": "carpaBeduina.js",
+              "path": "src/models/carpaBeduina.js",
+              "type": "file",
+              "ext": "js",
+              "size": 4894
+            },
+            {
+              "name": "carpaCuadrada.js",
+              "path": "src/models/carpaCuadrada.js",
+              "type": "file",
+              "ext": "js",
+              "size": 3541
+            },
+            {
+              "name": "carpaDomo.js",
+              "path": "src/models/carpaDomo.js",
+              "type": "file",
+              "ext": "js",
+              "size": 3713
+            },
+            {
+              "name": "carpaHelpers.js",
+              "path": "src/models/carpaHelpers.js",
+              "type": "file",
+              "ext": "js",
+              "size": 3947
+            },
+            {
+              "name": "carpaPabellon.js",
+              "path": "src/models/carpaPabellon.js",
+              "type": "file",
+              "ext": "js",
+              "size": 4607
+            },
+            {
+              "name": "carpaSailcloth.js",
+              "path": "src/models/carpaSailcloth.js",
+              "type": "file",
+              "ext": "js",
+              "size": 4253
+            },
+            {
+              "name": "carpaStar.js",
+              "path": "src/models/carpaStar.js",
+              "type": "file",
+              "ext": "js",
+              "size": 4574
+            },
+            {
+              "name": "carpaTipi.js",
+              "path": "src/models/carpaTipi.js",
+              "type": "file",
+              "ext": "js",
+              "size": 4031
+            },
+            {
+              "name": "carpaTransparente.js",
+              "path": "src/models/carpaTransparente.js",
+              "type": "file",
+              "ext": "js",
+              "size": 5057
+            },
+            {
+              "name": "chair.js",
+              "path": "src/models/chair.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1621
+            },
+            {
+              "name": "colors.js",
+              "path": "src/models/colors.js",
+              "type": "file",
+              "ext": "js",
+              "size": 773
+            },
+            {
+              "name": "index.js",
+              "path": "src/models/index.js",
+              "type": "file",
+              "ext": "js",
+              "size": 3449
+            },
+            {
+              "name": "mesa.js",
+              "path": "src/models/mesa.js",
+              "type": "file",
+              "ext": "js",
+              "size": 5061
+            },
+            {
+              "name": "mesaCocktail.js",
+              "path": "src/models/mesaCocktail.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1800
+            },
+            {
+              "name": "mesaCurva.js",
+              "path": "src/models/mesaCurva.js",
+              "type": "file",
+              "ext": "js",
+              "size": 4577
+            },
+            {
+              "name": "mesaImperial.js",
+              "path": "src/models/mesaImperial.js",
+              "type": "file",
+              "ext": "js",
+              "size": 481
+            },
+            {
+              "name": "mesaRect.js",
+              "path": "src/models/mesaRect.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1826
+            },
+            {
+              "name": "mesaSerpentina.js",
+              "path": "src/models/mesaSerpentina.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1641
+            },
+            {
+              "name": "poste.js",
+              "path": "src/models/poste.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1387
+            },
+            {
+              "name": "room.js",
+              "path": "src/models/room.js",
+              "type": "file",
+              "ext": "js",
+              "size": 2687
+            },
+            {
+              "name": "sillaCatering.js",
+              "path": "src/models/sillaCatering.js",
+              "type": "file",
+              "ext": "js",
+              "size": 7160
+            },
+            {
+              "name": "sillaLineal.js",
+              "path": "src/models/sillaLineal.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1659
+            }
+          ]
+        },
+        {
+          "name": "scene",
+          "path": "src/scene",
+          "type": "dir",
+          "children": [
+            {
+              "name": "InteractionManager.js",
+              "path": "src/scene/InteractionManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 57218
+            },
+            {
+              "name": "SceneManager.js",
+              "path": "src/scene/SceneManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 49366
+            },
+            {
+              "name": "SelectionManager.js",
+              "path": "src/scene/SelectionManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 5900
+            },
+            {
+              "name": "SnapManager.js",
+              "path": "src/scene/SnapManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 2520
+            }
+          ]
+        },
+        {
+          "name": "schemas",
+          "path": "src/schemas",
+          "type": "dir",
+          "children": [
+            {
+              "name": "CatalogBlueprints.js",
+              "path": "src/schemas/CatalogBlueprints.js",
+              "type": "file",
+              "ext": "js",
+              "size": 19961
+            },
+            {
+              "name": "CatalogCategories.js",
+              "path": "src/schemas/CatalogCategories.js",
+              "type": "file",
+              "ext": "js",
+              "size": 852
+            },
+            {
+              "name": "ChildrenEngine.js",
+              "path": "src/schemas/ChildrenEngine.js",
+              "type": "file",
+              "ext": "js",
+              "size": 7227
+            },
+            {
+              "name": "ElementSchemas.js",
+              "path": "src/schemas/ElementSchemas.js",
+              "type": "file",
+              "ext": "js",
+              "size": 22988
+            },
+            {
+              "name": "ParamDefinitions.js",
+              "path": "src/schemas/ParamDefinitions.js",
+              "type": "file",
+              "ext": "js",
+              "size": 6385
+            },
+            {
+              "name": "SchemaItemFactory.js",
+              "path": "src/schemas/SchemaItemFactory.js",
+              "type": "file",
+              "ext": "js",
+              "size": 935
+            },
+            {
+              "name": "SchemaRegistry.js",
+              "path": "src/schemas/SchemaRegistry.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1203
+            },
+            {
+              "name": "SchemaUtils.js",
+              "path": "src/schemas/SchemaUtils.js",
+              "type": "file",
+              "ext": "js",
+              "size": 2860
+            }
+          ]
+        },
+        {
+          "name": "services",
+          "path": "src/services",
+          "type": "dir",
+          "children": [
+            {
+              "name": "AnalyticsManager.js",
+              "path": "src/services/AnalyticsManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 865
+            },
+            {
+              "name": "AuthManager.js",
+              "path": "src/services/AuthManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 11677
+            },
+            {
+              "name": "BrandConfig.js",
+              "path": "src/services/BrandConfig.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1605
+            },
+            {
+              "name": "CloudApi.js",
+              "path": "src/services/CloudApi.js",
+              "type": "file",
+              "ext": "js",
+              "size": 3773
+            },
+            {
+              "name": "CloudSync.js",
+              "path": "src/services/CloudSync.js",
+              "type": "file",
+              "ext": "js",
+              "size": 6889
+            },
+            {
+              "name": "MessageManager.js",
+              "path": "src/services/MessageManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 4842
+            },
+            {
+              "name": "ServiceConfig.js",
+              "path": "src/services/ServiceConfig.js",
+              "type": "file",
+              "ext": "js",
+              "size": 3540
+            },
+            {
+              "name": "SubscriptionManager.js",
+              "path": "src/services/SubscriptionManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 8269
+            },
+            {
+              "name": "SupportManager.js",
+              "path": "src/services/SupportManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 690
+            }
+          ]
+        },
+        {
+          "name": "ui",
+          "path": "src/ui",
+          "type": "dir",
+          "children": [
+            {
+              "name": "CatalogModal.js",
+              "path": "src/ui/CatalogModal.js",
+              "type": "file",
+              "ext": "js",
+              "size": 32482
+            },
+            {
+              "name": "Dock.js",
+              "path": "src/ui/Dock.js",
+              "type": "file",
+              "ext": "js",
+              "size": 2767
+            },
+            {
+              "name": "HeaderActionMenus.js",
+              "path": "src/ui/HeaderActionMenus.js",
+              "type": "file",
+              "ext": "js",
+              "size": 9890
+            },
+            {
+              "name": "InventoryPanel.js",
+              "path": "src/ui/InventoryPanel.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1826
+            },
+            {
+              "name": "PlansModal.js",
+              "path": "src/ui/PlansModal.js",
+              "type": "file",
+              "ext": "js",
+              "size": 7372
+            },
+            {
+              "name": "ProButtonManager.js",
+              "path": "src/ui/ProButtonManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 1249
+            },
+            {
+              "name": "PropertyRenderer.js",
+              "path": "src/ui/PropertyRenderer.js",
+              "type": "file",
+              "ext": "js",
+              "size": 11147
+            },
+            {
+              "name": "TextSanitizer.js",
+              "path": "src/ui/TextSanitizer.js",
+              "type": "file",
+              "ext": "js",
+              "size": 4368
+            },
+            {
+              "name": "UIManager.js",
+              "path": "src/ui/UIManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 92760
+            },
+            {
+              "name": "ZoneManager.js",
+              "path": "src/ui/ZoneManager.js",
+              "type": "file",
+              "ext": "js",
+              "size": 22709
+            }
+          ]
+        },
+        {
+          "name": "main.js",
+          "path": "src/main.js",
+          "type": "file",
+          "ext": "js",
+          "size": 19628
+        }
+      ]
+    },
+    {
+      "name": "styles",
+      "path": "styles",
+      "type": "dir",
+      "children": [
+        {
+          "name": "base.css",
+          "path": "styles/base.css",
+          "type": "file",
+          "ext": "css",
+          "size": 3119
+        },
+        {
+          "name": "components.css",
+          "path": "styles/components.css",
+          "type": "file",
+          "ext": "css",
+          "size": 61179
+        },
+        {
+          "name": "dock.css",
+          "path": "styles/dock.css",
+          "type": "file",
+          "ext": "css",
+          "size": 9875
+        },
+        {
+          "name": "layout.css",
+          "path": "styles/layout.css",
+          "type": "file",
+          "ext": "css",
+          "size": 3000
+        }
+      ]
+    },
+    {
+      "name": "supabase",
+      "path": "supabase",
+      "type": "dir",
+      "children": [
+        {
+          "name": "migrations",
+          "path": "supabase/migrations",
+          "type": "dir",
+          "children": [
+            {
+              "name": "add_owner_user_id.sql",
+              "path": "supabase/migrations/add_owner_user_id.sql",
+              "type": "file",
+              "ext": "sql",
+              "size": 977
+            }
+          ]
+        },
+        {
+          "name": "schema.sql",
+          "path": "supabase/schema.sql",
+          "type": "file",
+          "ext": "sql",
+          "size": 10436
+        }
+      ]
+    },
+    {
+      "name": "Supabase tablas",
+      "path": "Supabase tablas",
+      "type": "dir",
+      "children": []
+    },
+    {
+      "name": ".env.example",
+      "path": ".env.example",
+      "type": "file",
+      "ext": "example",
+      "size": 1194
+    },
+    {
+      "name": ".gitignore",
+      "path": ".gitignore",
+      "type": "file",
+      "ext": "",
+      "size": 62
+    },
+    {
+      "name": "dashboard_api.py",
+      "path": "dashboard_api.py",
+      "type": "file",
+      "ext": "py",
+      "size": 18930
+    },
+    {
+      "name": "elements.json",
+      "path": "elements.json",
+      "type": "file",
+      "ext": "json",
+      "size": 12899
+    },
+    {
+      "name": "generate-tree-json.js",
+      "path": "generate-tree-json.js",
+      "type": "file",
+      "ext": "js",
+      "size": 1740
+    },
+    {
+      "name": "generate-tree.js",
+      "path": "generate-tree.js",
+      "type": "file",
+      "ext": "js",
+      "size": 906
+    },
+    {
+      "name": "index.html",
+      "path": "index.html",
+      "type": "file",
+      "ext": "html",
+      "size": 59450
+    },
+    {
+      "name": "Mejoras.yml",
+      "path": "Mejoras.yml",
+      "type": "file",
+      "ext": "yml",
+      "size": 4206
+    },
+    {
+      "name": "README.md",
+      "path": "README.md",
+      "type": "file",
+      "ext": "md",
+      "size": 4651
+    },
+    {
+      "name": "server.py",
+      "path": "server.py",
+      "type": "file",
+      "ext": "py",
+      "size": 539
+    },
+    {
+      "name": "vercel.json",
+      "path": "vercel.json",
+      "type": "file",
+      "ext": "json",
+      "size": 1397
+    }
+  ]
+}

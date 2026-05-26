@@ -27,6 +27,9 @@ async function init() {
   bindTopbar();
   showSection('capas');
   updateStatus();
+  document.getElementById('ep-close')?.addEventListener('click', () => {
+    document.getElementById('elem-preview-panel')?.classList.add('hidden');
+  });
 }
 
 async function loadConfig() {
@@ -171,6 +174,7 @@ function showSection(id) {
   document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
   document.getElementById('sec-' + id)?.classList.add('active');
   document.querySelector(`.sidebar-item[data-section="${id}"]`)?.classList.add('active');
+  if (id === 'proyecto') renderProyecto();
 }
 
 function bindTopbar() {
@@ -201,38 +205,61 @@ function renderCapas() {
   const layers = _cfg.layers || {};
   const host = document.getElementById('sec-capas-list');
   if (!host) return;
-  host.innerHTML = Object.entries(layers).map(([key, val]) => `
-    <div class="toggle-row">
-      <div>
-        <div class="toggle-label">${val.label || key}</div>
-        <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)">${key}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)">
-          Vis
-          <label class="toggle-switch">
-            <input type="checkbox" data-layer="${key}" data-prop="visible" ${val.visible ? 'checked' : ''}/>
-            <span class="toggle-track"></span>
-          </label>
-        </label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)">
-          Lock
-          <label class="toggle-switch">
-            <input type="checkbox" data-layer="${key}" data-prop="locked" ${val.locked ? 'checked' : ''}/>
-            <span class="toggle-track"></span>
-          </label>
-        </label>
-        <input type="text" data-layer="${key}" data-prop="label" value="${val.label || key}"
-          style="width:110px;font-size:12px" placeholder="Etiqueta"/>
-      </div>
-    </div>
-  `).join('');
 
-  host.querySelectorAll('input[data-layer]').forEach(inp => {
-    inp.addEventListener('change', () => {
+  const header = `
+    <div class="layers-header">
+      <span>Color</span>
+      <span>Etiqueta</span>
+      <span>Clave</span>
+      <span>Botón</span>
+      <span style="text-align:center">Vis</span>
+      <span style="text-align:center">Lock</span>
+    </div>`;
+
+  const rows = Object.entries(layers).map(([key, val]) => {
+    const color = val.color || '#667eea';
+    const btnStyle = val.buttonStyle || 'ghost';
+    return `
+      <div class="layer-row">
+        <div class="layer-color-wrap" title="Color de capa">
+          <span class="layer-color-swatch" id="swatch-${key}" style="background:${color}"></span>
+          <input type="color" class="layer-color-picker" data-layer="${key}" data-prop="color" value="${color}"/>
+        </div>
+        <input type="text" class="layer-label-input" data-layer="${key}" data-prop="label"
+          value="${esc(val.label || key)}" placeholder="Etiqueta"/>
+        <span class="layer-key-mono">${key}</span>
+        <select class="layer-btn-sel" data-layer="${key}" data-prop="buttonStyle">
+          <option value="ghost"${btnStyle === 'ghost' ? ' selected' : ''}>Ghost</option>
+          <option value="primary"${btnStyle === 'primary' ? ' selected' : ''}>Primary</option>
+          <option value="subtle"${btnStyle === 'subtle' ? ' selected' : ''}>Subtle</option>
+        </select>
+        <label class="toggle-switch" style="margin:0 auto">
+          <input type="checkbox" data-layer="${key}" data-prop="visible" ${val.visible ? 'checked' : ''}/>
+          <span class="toggle-track"></span>
+        </label>
+        <label class="toggle-switch" style="margin:0 auto">
+          <input type="checkbox" data-layer="${key}" data-prop="locked" ${val.locked ? 'checked' : ''}/>
+          <span class="toggle-track"></span>
+        </label>
+      </div>`;
+  }).join('');
+
+  host.innerHTML = header + rows;
+
+  host.querySelectorAll('[data-layer]').forEach(inp => {
+    const evt = (inp.tagName === 'SELECT' || inp.type === 'checkbox') ? 'change' : 'input';
+    inp.addEventListener(evt, () => {
       const { layer, prop } = inp.dataset;
       if (!_cfg.layers[layer]) _cfg.layers[layer] = {};
-      _cfg.layers[layer][prop] = inp.type === 'checkbox' ? inp.checked : inp.value;
+      if (inp.type === 'checkbox') {
+        _cfg.layers[layer][prop] = inp.checked;
+      } else if (inp.type === 'color') {
+        _cfg.layers[layer][prop] = inp.value;
+        const swatch = document.getElementById(`swatch-${layer}`);
+        if (swatch) swatch.style.background = inp.value;
+      } else {
+        _cfg.layers[layer][prop] = inp.value;
+      }
       markDirty();
     });
   });
@@ -330,14 +357,49 @@ function elemItemHTML(el, catKey, catOptions) {
       <select class="elem-cat-sel" data-elem-id="${esc(el.id)}" title="Mover a categoría">
         ${catOptions.replace(`value="${catKey}"`, `value="${catKey}" selected`)}
       </select>
+      <button class="elem-preview-btn" data-elem-id="${esc(el.id)}" draggable="false" title="Vista previa">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
     </div>
   `;
+}
+
+function showElemPreview(id) {
+  const el = _elemsById[id];
+  const panel = document.getElementById('elem-preview-panel');
+  if (!panel) return;
+  if (!el) { panel.classList.add('hidden'); return; }
+
+  const svg = typeof thumbSVG === 'function' ? thumbSVG(el) : '<svg viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="60" fill="#e6e2da" rx="6"/></svg>';
+  const type = [el.type, el.subtype].filter(Boolean).join(' · ');
+  const dims = el.dims ? Object.entries(el.dims).map(([k, v]) => `${k}: ${v}`).join(' · ') : '';
+  const catLabel = (_cfg.dock?.categories || []).find(c => c.key === (el.category || ''))?.label || (el.category || '');
+
+  document.getElementById('ep-thumb').innerHTML = svg;
+  document.getElementById('ep-meta').innerHTML = `
+    <div class="ep-name">${esc(el.name || id)}</div>
+    ${type ? `<div class="ep-row">${esc(type)}</div>` : ''}
+    ${dims ? `<div class="ep-row">${esc(dims)}</div>` : ''}
+    ${catLabel ? `<div class="ep-row ep-cat">${esc(catLabel)}</div>` : ''}
+    <div class="ep-id">${esc(id)}</div>
+  `;
+  panel.classList.remove('hidden');
 }
 
 function bindElementTree(host) {
   let dragId   = null;  // id of dragged element
   let dragSrc  = null;  // source .elem-item node
   let dragCat  = null;  // source category key
+
+  // ── Preview buttons ────────────────────────────────────────
+  host.querySelectorAll('.elem-preview-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      showElemPreview(btn.dataset.elemId);
+    });
+  });
 
   // ── Category select ────────────────────────────────────────
   host.querySelectorAll('.elem-cat-sel').forEach(sel => {
@@ -679,15 +741,105 @@ function setMsgCfg(key, prop, val) {
 
 // ── Texto y colores ────────────────────────────────────────────
 
+const FONT_ROLES = [
+  {
+    id: 'typo-display', path: 'typography.displayFont',
+    label: 'Display / titulares',
+    fonts: [
+      { name: 'Fraunces',           css: "'Fraunces', Georgia, serif" },
+      { name: 'Playfair Display',   css: "'Playfair Display', Georgia, serif" },
+      { name: 'DM Serif Display',   css: "'DM Serif Display', Georgia, serif" },
+      { name: 'Cormorant',          css: "'Cormorant', Georgia, serif" },
+      { name: 'Lora',               css: "'Lora', Georgia, serif" },
+      { name: 'Merriweather',       css: "'Merriweather', Georgia, serif" },
+      { name: 'EB Garamond',        css: "'EB Garamond', Georgia, serif" },
+      { name: 'Libre Baskerville',  css: "'Libre Baskerville', Georgia, serif" },
+      { name: 'Spectral',           css: "'Spectral', Georgia, serif" },
+      { name: 'Bodoni Moda',        css: "'Bodoni Moda', Georgia, serif" },
+    ]
+  },
+  {
+    id: 'typo-body', path: 'typography.bodyFont',
+    label: 'Cuerpo / interfaz',
+    fonts: [
+      { name: 'Inter Tight',       css: "'Inter Tight', 'Inter', system-ui, sans-serif" },
+      { name: 'Inter',             css: "'Inter', system-ui, sans-serif" },
+      { name: 'Manrope',           css: "'Manrope', system-ui, sans-serif" },
+      { name: 'Work Sans',         css: "'Work Sans', system-ui, sans-serif" },
+      { name: 'DM Sans',           css: "'DM Sans', system-ui, sans-serif" },
+      { name: 'Nunito',            css: "'Nunito', system-ui, sans-serif" },
+      { name: 'Outfit',            css: "'Outfit', system-ui, sans-serif" },
+      { name: 'Plus Jakarta Sans', css: "'Plus Jakarta Sans', system-ui, sans-serif" },
+      { name: 'Karla',             css: "'Karla', system-ui, sans-serif" },
+    ]
+  },
+  {
+    id: 'typo-mono', path: 'typography.monoFont',
+    label: 'Monoespaciada',
+    fonts: [
+      { name: 'JetBrains Mono',  css: "'JetBrains Mono', 'Fira Code', monospace" },
+      { name: 'Fira Code',       css: "'Fira Code', monospace" },
+      { name: 'Source Code Pro', css: "'Source Code Pro', monospace" },
+      { name: 'IBM Plex Mono',   css: "'IBM Plex Mono', monospace" },
+      { name: 'Roboto Mono',     css: "'Roboto Mono', monospace" },
+      { name: 'Space Mono',      css: "'Space Mono', monospace" },
+      { name: 'Inconsolata',     css: "'Inconsolata', monospace" },
+    ]
+  }
+];
+
+function loadGoogleFont(fontName) {
+  if (!fontName) return;
+  const id = 'gf-' + fontName.replace(/\s+/g, '-').toLowerCase();
+  if (document.getElementById(id)) return;
+  const link = document.createElement('link');
+  link.id   = id;
+  link.rel  = 'stylesheet';
+  link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/\s+/g, '+')}:wght@300;400;500;600&display=swap`;
+  document.head.appendChild(link);
+}
+
 function renderTexto() {
   const t = _cfg.typography || {};
   const c = _cfg.colors     || {};
   const b = _cfg.buttons    || {};
 
-  setVal('typo-display', t.displayFont || '');
-  setVal('typo-body',    t.bodyFont    || '');
-  setVal('typo-mono',    t.monoFont    || '');
-  setVal('btn-radius',   b.borderRadius || '8px');
+  setVal('btn-radius', b.borderRadius || '8px');
+
+  // Font pickers
+  const pickersHost = document.getElementById('sec-typo-pickers');
+  if (pickersHost) {
+    pickersHost.innerHTML = FONT_ROLES.map(role => {
+      const currentCss = t[role.path.split('.')[1]] || role.fonts[0].css;
+      const optionsHTML = role.fonts.map(f =>
+        `<option value="${esc(f.css)}"${f.css === currentCss ? ' selected' : ''}>${esc(f.name)}</option>`
+      ).join('');
+      return `
+        <div class="font-picker-item">
+          <div class="font-picker-label">${esc(role.label)}</div>
+          <div class="font-picker-controls">
+            <select class="font-picker-sel" data-font-path="${role.path}"
+              data-preview-id="${role.id}-preview">${optionsHTML}</select>
+            <div class="font-preview-sample" id="${role.id}-preview"
+              style="font-family:${currentCss}">Aa Bb Cc — Diseño de espacios — 1234</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    pickersHost.querySelectorAll('.font-picker-sel').forEach(sel => {
+      // Preload the currently selected font
+      loadGoogleFont(sel.options[sel.selectedIndex]?.text || '');
+      sel.addEventListener('change', () => {
+        const cssVal   = sel.value;
+        const fontName = sel.options[sel.selectedIndex]?.text || '';
+        loadGoogleFont(fontName);
+        const preview = document.getElementById(sel.dataset.previewId);
+        if (preview) preview.style.fontFamily = cssVal;
+        setNestedCfg(sel.dataset.fontPath, cssVal);
+        markDirty();
+      });
+    });
+  }
 
   ['primary','secondary','accent','surface','text'].forEach(k => {
     const txt  = document.getElementById(`color-${k}`);
@@ -701,9 +853,6 @@ function renderTexto() {
     pick.addEventListener('input', () => { txt.value = pick.value; if (prev) prev.style.background = pick.value; });
   });
 
-  bindField('typo-display',    v => setNestedCfg('typography.displayFont', v));
-  bindField('typo-body',       v => setNestedCfg('typography.bodyFont', v));
-  bindField('typo-mono',       v => setNestedCfg('typography.monoFont', v));
   bindField('color-primary',   v => setNestedCfg('colors.primary', v));
   bindField('color-secondary', v => setNestedCfg('colors.secondary', v));
   bindField('color-accent',    v => setNestedCfg('colors.accent', v));
@@ -713,11 +862,157 @@ function renderTexto() {
 
   document.getElementById('btn-preview-colors')?.addEventListener('click', () => {
     const root = document.documentElement;
-    if (c.surface)  root.style.setProperty('--bg', c.surface);
-    if (c.text)     root.style.setProperty('--text', c.text);
-    if (t.displayFont) root.style.setProperty('--font-display', t.displayFont);
-    if (t.bodyFont)    root.style.setProperty('--font-body',    t.bodyFont);
+    const cc = _cfg.colors || {};
+    const ct = _cfg.typography || {};
+    if (cc.surface)    root.style.setProperty('--bg', cc.surface);
+    if (cc.text)       root.style.setProperty('--text', cc.text);
+    if (ct.displayFont) root.style.setProperty('--font-display', ct.displayFont);
+    if (ct.bodyFont)    root.style.setProperty('--font-body', ct.bodyFont);
     toast('Previsualización aplicada al dashboard');
+  });
+}
+
+// ── Project Tree ───────────────────────────────────────────────
+
+let _ptreeData   = null;
+let _ptreeLoaded = false;
+
+const PT_EXT = {
+  js:   { fg: '#9b7800', bg: 'rgba(240,219,79,0.18)' },
+  mjs:  { fg: '#9b7800', bg: 'rgba(240,219,79,0.18)' },
+  cjs:  { fg: '#9b7800', bg: 'rgba(240,219,79,0.18)' },
+  ts:   { fg: '#1a56c0', bg: 'rgba(49,120,198,0.15)' },
+  tsx:  { fg: '#1a56c0', bg: 'rgba(49,120,198,0.15)' },
+  css:  { fg: '#1a3fb5', bg: 'rgba(38,77,228,0.13)' },
+  html: { fg: '#b03018', bg: 'rgba(227,76,38,0.13)' },
+  json: { fg: '#7c5a28', bg: 'rgba(165,127,78,0.16)' },
+  md:   { fg: '#2550a0', bg: 'rgba(48,96,176,0.12)' },
+  py:   { fg: '#1e5490', bg: 'rgba(53,114,165,0.14)' },
+  sql:  { fg: '#905800', bg: 'rgba(160,96,0,0.13)' },
+  png:  { fg: '#6930c0', bg: 'rgba(124,58,237,0.12)' },
+  jpg:  { fg: '#6930c0', bg: 'rgba(124,58,237,0.12)' },
+  jpeg: { fg: '#6930c0', bg: 'rgba(124,58,237,0.12)' },
+  svg:  { fg: '#b04800', bg: 'rgba(255,109,0,0.12)' },
+  yml:  { fg: '#4a5568', bg: 'rgba(74,85,104,0.12)' },
+  yaml: { fg: '#4a5568', bg: 'rgba(74,85,104,0.12)' },
+  xlsx: { fg: '#1a6838', bg: 'rgba(33,115,70,0.12)' },
+  txt:  { fg: '#718096', bg: 'rgba(113,128,150,0.1)' },
+  env:  { fg: '#8B4513', bg: 'rgba(139,69,19,0.12)' },
+};
+
+function ptExtColor(ext) {
+  return PT_EXT[ext] || { fg: '#718096', bg: 'rgba(113,128,150,0.1)' };
+}
+
+function ptFormatSize(bytes) {
+  if (!bytes || bytes === 0) return '';
+  if (bytes < 1024)    return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1048576).toFixed(1)} MB`;
+}
+
+function ptCountFiles(node) {
+  if (node.type === 'file') return 1;
+  return (node.children || []).reduce((s, c) => s + ptCountFiles(c), 0);
+}
+
+function ptCountDirs(node) {
+  if (node.type === 'file') return 0;
+  return 1 + (node.children || []).reduce((s, c) => s + ptCountDirs(c), 0);
+}
+
+// Inline SVG icons to avoid Lucide dependency inside dynamically generated HTML
+const PT_SVG_DIR  = `<svg class="pt-icon pt-icon-dir" viewBox="0 0 16 16" fill="none"><path d="M1.5 4C1.5 3.17 2.17 2.5 3 2.5h4l1.5 1.5H13c.83 0 1.5.67 1.5 1.5V12c0 .83-.67 1.5-1.5 1.5H3c-.83 0-1.5-.67-1.5-1.5V4z" fill="currentColor"/></svg>`;
+const PT_SVG_FILE = `<svg class="pt-icon pt-icon-file" viewBox="0 0 16 16" fill="none"><path d="M3 1.5h7l3 3V14c0 .83-.67 1.5-1.5 1.5H3C2.17 15.5 1.5 14.83 1.5 14V3C1.5 2.17 2.17 1.5 3 1.5z" stroke="currentColor" stroke-width="1.1" fill="none"/><path d="M10 1.5V4c0 .28.22.5.5.5H13" stroke="currentColor" stroke-width="1.1" fill="none"/></svg>`;
+
+function ptBuildHTML(nodes, level = 0, searchTerm = '') {
+  if (!nodes || nodes.length === 0) return '';
+  const indent = 8 + level * 16;
+
+  return nodes.map(node => {
+    if (node.type === 'dir') {
+      const total   = ptCountFiles(node);
+      const autoOpen = !searchTerm && level < 2;
+      const childHTML = ptBuildHTML(node.children || [], level + 1, searchTerm);
+      if (searchTerm && childHTML === '') return ''; // prune empty dirs when filtering
+      return `<details class="pt-dir" data-path="${esc(node.path)}" ${autoOpen || searchTerm ? 'open' : ''}>
+  <summary class="pt-row pt-dir-row" style="padding-left:${indent}px" title="${esc(node.path)}">
+    <span class="pt-chevron"></span>${PT_SVG_DIR}<span class="pt-name">${esc(node.name)}</span>
+    <span class="pt-badge pt-count">${total}</span>
+  </summary>
+  <div class="pt-children">${childHTML}</div>
+</details>`;
+    }
+
+    if (searchTerm && !node.path.toLowerCase().includes(searchTerm.toLowerCase())) return '';
+    const c    = ptExtColor(node.ext);
+    const size = ptFormatSize(node.size);
+    const extLabel = node.ext ? node.ext : '·';
+    return `<div class="pt-row pt-file-row" data-path="${esc(node.path)}" style="padding-left:${indent + 18}px" title="${esc(node.path)}">
+  ${PT_SVG_FILE}
+  <span class="pt-ext-badge" style="color:${c.fg};background:${c.bg}">${esc(extLabel)}</span>
+  <span class="pt-name">${esc(node.name)}</span>
+  ${size ? `<span class="pt-size">${size}</span>` : ''}
+</div>`;
+  }).join('');
+}
+
+async function renderProyecto() {
+  if (_ptreeLoaded) return;
+  _ptreeLoaded = true;
+
+  const container = document.getElementById('ptree-container');
+  const genTime   = document.getElementById('ptree-gen-time');
+  const statsEl   = document.getElementById('ptree-stats');
+  if (!container) return;
+
+  container.innerHTML = '<div class="ptree-loading">Cargando árbol del proyecto…</div>';
+
+  try {
+    const r = await fetch('project-tree.json', { cache: 'no-cache' });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    _ptreeData = await r.json();
+
+    if (genTime && _ptreeData.generated) {
+      genTime.textContent = new Date(_ptreeData.generated).toLocaleString('es-ES');
+    }
+
+    const totalFiles = ptCountFiles(_ptreeData) - 1; // root node itself
+    const totalDirs  = ptCountDirs(_ptreeData) - 1;
+    if (statsEl) statsEl.textContent = `${totalFiles} archivos · ${totalDirs} carpetas`;
+
+    container.innerHTML = ptBuildHTML(_ptreeData.children || []);
+  } catch (_) {
+    container.innerHTML = `<div class="ptree-empty">
+      <p>No se encontró <code>admin/project-tree.json</code>.</p>
+      <p>Ejecuta desde la raíz del proyecto:</p>
+      <code>node generate-tree-json.js</code>
+    </div>`;
+  }
+
+  // Search
+  const searchEl = document.getElementById('ptree-search');
+  searchEl?.addEventListener('input', () => {
+    const term = searchEl.value.trim();
+    if (!_ptreeData) return;
+    container.innerHTML = ptBuildHTML(_ptreeData.children || [], 0, term);
+    if (term) container.querySelectorAll('details').forEach(d => d.open = true);
+  });
+
+  // Expand / collapse
+  document.getElementById('ptree-expand-all')?.addEventListener('click', () => {
+    container.querySelectorAll('details').forEach(d => d.open = true);
+  });
+  document.getElementById('ptree-collapse-all')?.addEventListener('click', () => {
+    container.querySelectorAll('details').forEach(d => d.open = false);
+  });
+
+  // Refresh hint
+  document.getElementById('ptree-refresh-btn')?.addEventListener('click', () => {
+    _ptreeLoaded = false;
+    _ptreeData   = null;
+    container.innerHTML = '<div class="ptree-loading">Recargando…</div>';
+    renderProyecto();
   });
 }
 

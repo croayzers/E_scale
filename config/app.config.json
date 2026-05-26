@@ -8,19 +8,19 @@
   },
 
   "layers": {
-    "zones":       { "visible": true, "locked": false, "label": "Zonas" },
-    "chairs":      { "visible": true, "locked": false, "label": "Sillas" },
-    "tables":      { "visible": true, "locked": false, "label": "Mesas" },
-    "decor":       { "visible": true, "locked": false, "label": "Carpas" },
-    "bars":        { "visible": true, "locked": false, "label": "Buffet" },
-    "structures":  { "visible": true, "locked": false, "label": "Estructuras" },
-    "ambient":     { "visible": true, "locked": false, "label": "Ambiente" },
-    "scenography": { "visible": true, "locked": false, "label": "Escenografía" },
-    "services":    { "visible": true, "locked": false, "label": "Servicios" },
-    "staff":       { "visible": true, "locked": false, "label": "Personal" },
-    "hospitality": { "visible": true, "locked": false, "label": "Hostelería" },
-    "decoration":  { "visible": true, "locked": false, "label": "Decoración" },
-    "lighting":    { "visible": true, "locked": false, "label": "Iluminación" }
+    "zones":       { "visible": true, "locked": false, "label": "Zonas",       "color": "#667eea", "buttonStyle": "ghost" },
+    "chairs":      { "visible": true, "locked": false, "label": "Sillas",      "color": "#f59e0b", "buttonStyle": "ghost" },
+    "tables":      { "visible": true, "locked": false, "label": "Mesas",       "color": "#10b981", "buttonStyle": "ghost" },
+    "decor":       { "visible": true, "locked": false, "label": "Carpas",      "color": "#d69e2e", "buttonStyle": "ghost" },
+    "bars":        { "visible": true, "locked": false, "label": "Buffet",      "color": "#e53e3e", "buttonStyle": "ghost" },
+    "structures":  { "visible": true, "locked": false, "label": "Estructuras", "color": "#718096", "buttonStyle": "ghost" },
+    "ambient":     { "visible": true, "locked": false, "label": "Ambiente",    "color": "#48bb78", "buttonStyle": "ghost" },
+    "scenography": { "visible": true, "locked": false, "label": "Escenografía","color": "#9f7aea", "buttonStyle": "ghost" },
+    "services":    { "visible": true, "locked": false, "label": "Servicios",   "color": "#4299e1", "buttonStyle": "ghost" },
+    "staff":       { "visible": true, "locked": false, "label": "Personal",    "color": "#ed8936", "buttonStyle": "ghost" },
+    "hospitality": { "visible": true, "locked": false, "label": "Hostelería",  "color": "#76e4f7", "buttonStyle": "ghost" },
+    "decoration":  { "visible": true, "locked": false, "label": "Decoración",  "color": "#f687b3", "buttonStyle": "ghost" },
+    "lighting":    { "visible": true, "locked": false, "label": "Iluminación", "color": "#fbd38d", "buttonStyle": "ghost" }
   },
 
   "dock": {
