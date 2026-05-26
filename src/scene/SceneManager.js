@@ -176,6 +176,13 @@ function rebuildGrids() {
     g.geometry.dispose();
     (Array.isArray(g.material) ? g.material : [g.material]).forEach(m => m?.dispose?.());
   });
+  gridHelper = null;
+  gridMain = null;
+
+  const hasActiveZoneGrids = _appState?.items?.some(
+    item => item.type === 'zone' && item.gridConfig && item.gridConfig.enabled !== false
+  );
+  if (hasActiveZoneGrids) return;
 
   const sX = Math.max(20, _appState?.grid?.extentX ?? _appState?.grid?.extent ?? 60);
   const sZ = Math.max(20, _appState?.grid?.extentZ ?? _appState?.grid?.extent ?? 60);
@@ -768,6 +775,7 @@ function spawn(item) {
   meshes.set(item.id, group);
   scene.add(group);
   if (_appState?.showCotas) drawCotas();
+  if (item.type === 'zone') rebuildGrids();
 }
 
 function rebuild(item) {

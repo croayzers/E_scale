@@ -208,9 +208,11 @@ export const AppState = {
     const idx = this.items.findIndex(i => i.id === id);
     if (idx < 0) return;
     this.pushHistory();
+    const removedType = this.items[idx]?.type;
     SceneManager.removeItem(id);
     this.items.splice(idx, 1);  // primero eliminar del array
     SceneManager.redrawCotas(); // luego redibujar ya sin el item eliminado
+    if (removedType === 'zone') SceneManager.rebuildGrids();
     this.selectedIds.delete(id);
     if (this.selectedId === id) {
       this.selectedId = this.selectedIds.size ? [...this.selectedIds].pop() : null;

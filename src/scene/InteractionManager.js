@@ -107,13 +107,33 @@ function getDragPoint() {
   return point;
 }
 
+function getSnapConfigForPoint(x, z) {
+  const zones = AppState.items.filter(item => item.type === 'zone');
+  for (const zone of zones) {
+    const cfg = zone.gridConfig;
+    if (!cfg || cfg.enabled === false) continue;
+    const halfL = (zone.dims?.length || 4) / 2;
+    const halfW = (zone.dims?.width || 4) / 2;
+    if (Math.abs(x - zone.x) <= halfL && Math.abs(z - zone.z) <= halfW) {
+      return {
+        spacing: cfg.subSize ?? AppState.snap.spacing,
+        offsetX: zone.x + (cfg.offsetX || 0),
+        offsetZ: zone.z + (cfg.offsetZ || 0)
+      };
+    }
+  }
+  return {
+    spacing: AppState.grid?.subSize ?? AppState.snap.spacing,
+    offsetX: AppState.grid?.offsetX ?? 0,
+    offsetZ: AppState.grid?.offsetZ ?? 0
+  };
+}
+
 function applySnap(point) {
   if (!point) return null;
   const next = point.clone();
   if (AppState.snap.enabled) {
-    const spacing = AppState.grid?.subSize ?? AppState.snap.spacing;
-    const offsetX = AppState.grid?.offsetX ?? 0;
-    const offsetZ = AppState.grid?.offsetZ ?? 0;
+    const { spacing, offsetX, offsetZ } = getSnapConfigForPoint(next.x, next.z);
     next.x = offsetX + Math.round((next.x - offsetX) / spacing) * spacing;
     next.z = offsetZ + Math.round((next.z - offsetZ) / spacing) * spacing;
   }
@@ -438,9 +458,7 @@ function onPointerMove(e) {
       const off = dragging.offsets[id];
       let nx = point.x + off.x, nz = point.z + off.z;
       if (AppState.snap.enabled) {
-        const s = AppState.grid?.subSize ?? AppState.snap.spacing;
-        const offsetX = AppState.grid?.offsetX ?? 0;
-        const offsetZ = AppState.grid?.offsetZ ?? 0;
+        const { spacing: s, offsetX, offsetZ } = getSnapConfigForPoint(nx, nz);
         nx = offsetX + Math.round((nx - offsetX) / s) * s;
         nz = offsetZ + Math.round((nz - offsetZ) / s) * s;
       }
