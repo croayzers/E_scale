@@ -1,6 +1,8 @@
 PROJECT STRUCTURE
 
 ├── .chrome-cdp/
+├── .claude/
+│   └── settings.local.json
 ├── .codex-artifacts/
 │   ├── elements-inventory-glow.png
 │   └── pro-menu-exclusive.png
@@ -78,6 +80,7 @@ PROJECT STRUCTURE
 │   │   ├── BrandTokens.js
 │   │   ├── ElementLibrary.js
 │   │   ├── InventoryRules.js
+│   │   ├── LayerManager.js
 │   │   └── PlanCatalog.js
 │   ├── io/
 │   │   ├── CompanyManager.js
@@ -123,6 +126,7 @@ PROJECT STRUCTURE
 │   ├── scene/
 │   │   ├── InteractionManager.js
 │   │   ├── SceneManager.js
+│   │   ├── SelectionManager.js
 │   │   └── SnapManager.js
 │   ├── schemas/
 │   │   ├── CatalogBlueprints.js

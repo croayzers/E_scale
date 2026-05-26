@@ -2345,3 +2345,131 @@ body.planning-select-mode #scene-canvas {
 body.zone-placing #scene-canvas {
   cursor: crosshair !important;
 }
+
+/* ============== LAYER PANEL ============== */
+.layer-panel {
+  position: fixed;
+  left: 12px;
+  top: 68px;
+  z-index: 28;
+  width: 186px;
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 8px 24px -8px rgba(10,10,11,0.22);
+  user-select: none;
+}
+
+.layer-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid rgba(10,10,11,0.07);
+}
+
+.layer-panel-title {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted, #888);
+}
+
+.layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 0;
+}
+
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  transition: background 120ms;
+  cursor: pointer;
+}
+.layer-item:hover { background: rgba(10,10,11,0.05); }
+.layer-item.active { background: rgba(37,99,235,0.10); }
+
+.layer-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.layer-name-btn {
+  flex: 1;
+  text-align: left;
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink, #1a1a1c);
+  padding: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.layer-vis-btn,
+.layer-lock-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--muted, #888);
+  border-radius: 5px;
+  flex-shrink: 0;
+  transition: background 120ms, color 120ms;
+}
+.layer-vis-btn:hover,
+.layer-lock-btn:hover {
+  background: rgba(10,10,11,0.08);
+  color: var(--ink, #1a1a1c);
+}
+
+.layer-panel-footer {
+  border-top: 1px solid rgba(10,10,11,0.07);
+  padding: 6px 8px;
+}
+
+.layer-move-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 5px 6px;
+  border: 1px solid rgba(10,10,11,0.10);
+  border-radius: 7px;
+  background: none;
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink, #1a1a1c);
+  cursor: pointer;
+  transition: background 120ms;
+}
+.layer-move-btn:hover { background: rgba(10,10,11,0.07); }
+
+/* ── Format mode: cursor pincel en canvas ── */
+body.format-mode-active #scene-canvas {
+  cursor: crosshair !important;
+}
+
+/* ── Format mode: borde naranja en botón activo ── */
+body.format-mode-active #btn-format-tool {
+  background: rgba(234,88,12,0.14);
+  border-color: #ea580c;
+  color: #ea580c;
+}

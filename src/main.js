@@ -1,7 +1,9 @@
 import { AppState } from './core/AppState.js';
 import { ElementLibrary } from './core/ElementLibrary.js';
+import { LayerManager } from './core/LayerManager.js';
 import { SceneManager } from './scene/SceneManager.js';
 import { InteractionManager } from './scene/InteractionManager.js';
+import { SelectionManager } from './scene/SelectionManager.js';
 import { SnapManager } from './scene/SnapManager.js';
 import { UIManager } from './ui/UIManager.js';
 import { InventoryPanel } from './ui/InventoryPanel.js';
@@ -51,6 +53,7 @@ async function bootstrap() {
   await ElementLibrary.load();
 
   await safeInit('InteractionManager', () => InteractionManager.init());
+  await safeInit('LayerManager', () => LayerManager.init());
   await safeInit('SnapManager', () => SnapManager.init());
   await safeInit('PlanManager', () => PlanManager.init());
   await safeInit('CompanyManager', () => CompanyManager.init());
@@ -63,6 +66,10 @@ async function bootstrap() {
   await safeInit('PlansModal', () => PlansModal.init());
   await safeInit('ZoneManager', () => ZoneManager.init());
   await safeInit('InventoryPanel', () => InventoryPanel.init());
+
+  // Exponer al window para acceso desde consola y botones inline
+  window.InteractionManager = InteractionManager;
+  window.SelectionManager   = SelectionManager;
 
   const welcomeModal = document.getElementById('welcome-modal');
   const inventoryPanel = document.getElementById('inventory-panel');

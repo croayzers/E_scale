@@ -2,11 +2,12 @@
    INTERACTION MANAGER — drag, rotación, menú, box-select, lock
    ───────────────────────────────────────────────────────── */
 
-import { AppState }     from '../core/AppState.js';
-import { SceneManager } from './SceneManager.js';
-import { UIManager }    from '../ui/UIManager.js';
-import { CatalogModal } from '../ui/CatalogModal.js';
-import { ZoneManager }  from '../ui/ZoneManager.js';
+import { AppState }          from '../core/AppState.js';
+import { SceneManager }      from './SceneManager.js';
+import { UIManager }         from '../ui/UIManager.js';
+import { CatalogModal }      from '../ui/CatalogModal.js';
+import { ZoneManager }       from '../ui/ZoneManager.js';
+import { SelectionManager }  from './SelectionManager.js';
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
@@ -22,6 +23,7 @@ let shiftDown = false;
 let placementIndicator = null;
 let copiedItemTemplate = null;
 let placementPreviewVisible = false;
+let formatModeActive = false;  // herramienta pincel de formato
 
 function init() {
   const canvas = document.getElementById('scene-canvas');
@@ -351,6 +353,13 @@ function onPointerDown(e) {
   }
 
   const item = getIntersectedItem();
+
+  // ── Herramienta formato activa: click copia formato del item ──
+  if (formatModeActive && item) {
+    SelectionManager.copyItemFormat(item);
+    AppState.select(item.id);
+    return;
+  }
 
   // Click en vacío + Shift → empezar box-select
   if (!item && shiftDown) {
@@ -1347,17 +1356,50 @@ function handleContextAction(action, value, id) {
   }
 }
 
+function toggleFormatMode(active) {
+  formatModeActive = active !== undefined ? active : !formatModeActive;
+  document.body.classList.toggle('format-mode-active', formatModeActive);
+  document.dispatchEvent(new CustomEvent('escale:format-mode-changed', {
+    detail: { active: formatModeActive }
+  }));
+}
+
 function onKeyDown(e) {
   if (e.key === 'Shift') shiftDown = true;
   const activeTag = document.activeElement?.tagName;
   if (['INPUT', 'SELECT', 'TEXTAREA'].includes(activeTag) || document.activeElement?.isContentEditable) return;
 
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); AppState.undo(); return; }
+  // ── Ctrl+Z: Undo ──
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+    e.preventDefault(); AppState.undo(); return;
+  }
+
+  // ── Ctrl+D: Duplicar selección ──
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+    e.preventDefault();
+    SelectionManager.duplicateSelected();
+    return;
+  }
+
+  // ── Ctrl+Alt+V: Aplicar formato a selección ──
+  if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'v') {
+    e.preventDefault();
+    SelectionManager.applyCopiedFormatToSelection();
+    return;
+  }
+
+  // ── Ctrl+C: copiar formato (si pincel activo) o copiar item ──
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+    if (formatModeActive && AppState.selectedId !== null) {
+      const item = AppState.items.find(i => i.id === AppState.selectedId);
+      if (item) { SelectionManager.copyItemFormat(item); e.preventDefault(); return; }
+    }
     if (copySelectedItem()) e.preventDefault();
     return;
   }
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+
+  // ── Ctrl+V: pegar item ──
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'v') {
     if (activateCopiedPlacement()) e.preventDefault();
     return;
   }
@@ -1367,9 +1409,24 @@ function onKeyDown(e) {
     return;
   }
 
+  // ── Ctrl+A: seleccionar todos visibles y no bloqueados en capa activa ──
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
     e.preventDefault();
-    AppState.selectMany(AppState.items.map(i => i.id));
+    const lm = window.LayerManager;
+    const activeLayerId = lm?.activeLayerId || null;
+    const ids = AppState.items
+      .filter(i => {
+        if (i.locked) return false;
+        if (lm) {
+          const layer = lm.getItemLayer(i);
+          if (layer && !layer.visible) return false;
+          if (layer && layer.locked) return false;
+          if (activeLayerId && (i.layerId || 'principal') !== activeLayerId) return false;
+        }
+        return true;
+      })
+      .map(i => i.id);
+    AppState.selectMany(ids);
     return;
   }
 
@@ -1379,14 +1436,18 @@ function onKeyDown(e) {
     return;
   }
 
+  // ── Delete / Backspace: borrar selección ──
   if ((e.key === 'Delete' || e.key === 'Backspace') && AppState.selectedIds.size > 0) {
     [...AppState.selectedIds].forEach(id => {
       const it = AppState.items.find(i => i.id === id);
       if (it && !it.locked) AppState.remove(id);
     });
+    return;
   }
 
+  // ── Escape: cancelar herramienta activa o limpiar selección ──
   if (e.key === 'Escape') {
+    if (formatModeActive) { toggleFormatMode(false); return; }
     if (CatalogModal.hasPendingPlacement()) {
       CatalogModal.clearPendingPlacement();
       return;
@@ -1396,6 +1457,7 @@ function onKeyDown(e) {
       syncPlacementCursor();
       return;
     }
+    SelectionManager.clearSameStyleMarks();
     AppState.deselect();
     hideContextMenu();
     window.PlanManager?.cancelCalibration?.();
@@ -1437,4 +1499,8 @@ function rotateSelectionStep() {
   }
 }
 
-export const InteractionManager = { init };
+export const InteractionManager = {
+  init,
+  toggleFormatMode,
+  get formatModeActive() { return formatModeActive; }
+};

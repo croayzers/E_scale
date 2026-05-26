@@ -794,38 +794,74 @@ function rotateItem(id, rotY) {
 
 function highlightSelection() {
   if (!_appState) return;
-  const sel = _appState.items.find(i => i.id === _appState.selectedId);
   const selectedSet = _appState.selectedIds || new Set();
+
+  // Pull same-style marks from SelectionManager if available
+  const markedSameStyle = window.SelectionManager?.markedSameStyleIds || new Set();
+
+  // Pull layer state from LayerManager if available
+  const lm = window.LayerManager;
+
   meshes.forEach((g, id) => {
     const it = _appState.items.find(x => x.id === id);
+    const isSelected   = selectedSet.has(id);
+    const isMarked     = markedSameStyle.has(id);
+    const isLocked     = Boolean(it?.locked);
+    const layerLocked  = lm ? !lm.isItemEditable(it) && !isLocked : false;
+    const isCarpa      = it && isCarpaType(it.type);
+
     g.traverse(child => {
-      if (child.isMesh && child.userData.baseColor !== undefined) {
-        const isSelected = selectedSet.has(id);
-        const isSimilar = sel && sel.type === 'mesa' && it && it.type === 'mesa'
-                          && it.dims.diameter === sel.dims.diameter && !selectedSet.has(id);
-        const isCarpa = it && isCarpaType(it.type);
+      if (!child.isMesh || child.userData.baseColor === undefined) return;
 
-        eachMaterial(child, material => {
-          if (isCarpa) {
-            if (typeof material.opacity === 'number') {
-              material.opacity = isSelected
-                ? Math.min(1, (child.userData.baseOpacity || material.opacity || 1) * 1.5)
-                : (child.userData.baseOpacity ?? material.opacity);
-            }
-            if (material.color?.setHex) material.color.setHex(isSelected ? 0x8b5a2b : child.userData.baseColor);
-            return;
+      eachMaterial(child, material => {
+        // ── Carpas: tint opacity/color on select ──
+        if (isCarpa) {
+          const baseOp = child.userData.baseOpacity ?? material.opacity ?? 1;
+          if (typeof material.opacity === 'number') {
+            material.opacity = isSelected
+              ? Math.min(1, baseOp * 1.5)
+              : isLocked || layerLocked ? baseOp * 0.45 : baseOp;
+            material.needsUpdate = true;
           }
-
-          if ('emissive' in material && material.emissive) {
-            material.emissive = new THREE.Color(isSelected ? 0xffffff : isSimilar ? 0xd4ff3a : 0x000000);
-            material.emissiveIntensity = isSelected ? 0.18 : isSimilar ? 0.10 : 0;
-          }
-
           if (material.color?.setHex) {
-            material.color.setHex(isSelected ? 0x2a2a2c : child.userData.baseColor);
+            material.color.setHex(isSelected ? 0x8b5a2b : child.userData.baseColor);
           }
-        });
-      }
+          return;
+        }
+
+        // ── Emissive highlight (blue select, yellow mark) ──
+        if ('emissive' in material && material.emissive) {
+          let emColor = 0x000000;
+          let emIntensity = 0;
+          if (isSelected) {
+            emColor = 0x3b82f6; // blue-500
+            emIntensity = 0.22;
+          } else if (isMarked) {
+            emColor = 0xd4ff3a; // yellow-lime
+            emIntensity = 0.18;
+          }
+          material.emissive = new THREE.Color(emColor);
+          material.emissiveIntensity = emIntensity;
+        }
+
+        // ── Base color (restore or tint for lock) ──
+        if (material.color?.setHex) {
+          material.color.setHex(child.userData.baseColor);
+        }
+
+        // ── Locked items: reduce opacity ──
+        if (material.transparent !== undefined) {
+          const baseOp = child.userData.baseOpacity ?? 1;
+          if (isLocked || layerLocked) {
+            material.transparent = true;
+            material.opacity = baseOp * 0.45;
+          } else {
+            material.opacity = baseOp;
+            if (baseOp >= 1) material.transparent = false;
+          }
+          material.needsUpdate = true;
+        }
+      });
     });
   });
 }
