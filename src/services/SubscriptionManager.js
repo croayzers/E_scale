@@ -193,19 +193,28 @@ async function openCheckout(planCode = 'pro') {
 }
 
 async function openCustomerPortal() {
-  const response = await CloudApi.openCustomerPortal({
-    organizationId: AppState.company.organizationId,
-    customerId: AppState.company.billingCustomerId,
-    returnUrl: window.location.href
-  });
+  try {
+    const response = await CloudApi.openCustomerPortal({
+      organizationId: AppState.company.organizationId,
+      customerId: AppState.company.billingCustomerId,
+      returnUrl: window.location.href
+    });
 
-  if (response?.url) {
-    window.location.href = response.url;
-    return true;
+    if (response?.url) {
+      window.location.href = response.url;
+      return true;
+    }
+
+    alert('El portal de cliente todavia no esta disponible en este entorno.');
+    return false;
+  } catch (error) {
+    const goToCheckout = window.confirm(
+      'No se encontró una suscripción activa de Stripe asociada a tu cuenta.\n\n' +
+      '¿Quieres iniciar el proceso de suscripción PRO ahora?'
+    );
+    if (goToCheckout) return openCheckout('pro');
+    return false;
   }
-
-  alert('El portal de cliente todavia no esta disponible en este entorno.');
-  return false;
 }
 
 function showUpgradePrompt(featureKey) {
