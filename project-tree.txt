@@ -27,7 +27,7 @@ PROJECT STRUCTURE
 ├── brand/
 │   ├── brand.json
 │   ├── logo.png
-│   └── Logo_Txt.png
+│   └── logo_txt.png
 ├── dashboard_api.py
 ├── dashboard_sharepoint_mock/
 │   ├── build_dashboard_workbook.mjs
