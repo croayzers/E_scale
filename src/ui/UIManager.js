@@ -310,9 +310,27 @@ function showDetail(item) {
         <input id="zone-detail-fill-disabled" type="checkbox" ${item.fillEnabled === false ? 'checked' : ''}/>
       </label>
 
-      <label class="flex items-center justify-between mb-4 cursor-pointer">
+      <label class="flex items-center justify-between mb-3 cursor-pointer">
         <span class="mono text-[10px] uppercase tracking-widest" style="color:var(--muted)">Bloquear zona</span>
         <input id="zone-detail-lock" type="checkbox" ${item.locked ? 'checked' : ''}/>
+      </label>
+
+      <label class="block mb-3">
+        <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color texto</span>
+        <input id="zone-detail-text-color" type="color" value="${item.textColor || item.borderColor || '#22c55e'}" class="input-field" style="padding:2px;height:36px"/>
+      </label>
+
+      <label class="block mb-3">
+        <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Tamaño texto</span>
+        <div class="flex items-center gap-2">
+          <input id="zone-detail-font-size" type="range" min="20" max="120" step="4" value="${item.fontSize ?? 58}" class="flex-1"/>
+          <span class="mono text-[10px]" id="zone-font-size-val">${item.fontSize ?? 58}px</span>
+        </div>
+      </label>
+
+      <label class="flex items-center justify-between mb-4 cursor-pointer">
+        <span class="mono text-[10px] uppercase tracking-widest" style="color:var(--muted)">Mostrar texto</span>
+        <input id="zone-detail-show-label" type="checkbox" ${item.showLabel !== false ? 'checked' : ''}/>
       </label>
 
       <div class="rule"></div>
@@ -365,6 +383,18 @@ function showDetail(item) {
     });
     content.querySelector('#zone-detail-lock')?.addEventListener('change', event => {
       if (Boolean(item.locked) !== Boolean(event.target.checked)) A.toggleLock(item.id);
+    });
+    content.querySelector('#zone-detail-text-color')?.addEventListener('input', event => {
+      updateZone({ textColor: event.target.value });
+    });
+    content.querySelector('#zone-detail-font-size')?.addEventListener('input', event => {
+      const v = parseInt(event.target.value);
+      const lbl = content.querySelector('#zone-font-size-val');
+      if (lbl) lbl.textContent = v + 'px';
+      updateZone({ fontSize: v });
+    });
+    content.querySelector('#zone-detail-show-label')?.addEventListener('change', event => {
+      updateZone({ showLabel: event.target.checked });
     });
     panel.querySelector('[data-act="dup"]')?.addEventListener('click', () => A.duplicate(item.id));
     panel.querySelector('[data-act="del"]')?.addEventListener('click', () => A.remove(item.id));

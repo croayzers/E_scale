@@ -128,6 +128,8 @@ export const AppState = {
     subSize: 0.25,
     opacity: 15,
     extent: 60,
+    extentX: 60,
+    extentZ: 60,
     offsetX: 0,
     offsetZ: 0,
     locked: false

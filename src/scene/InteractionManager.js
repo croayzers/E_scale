@@ -92,7 +92,7 @@ function getIntersectedItem() {
   let firstNonCarpa = null, firstCarpa = null;
   for (const hit of intersects) {
     const item = resolveItem(hit.object);
-    if (!item) continue;
+    if (!item || item.disabled) continue;
     if (!String(item.type || '').startsWith('carpa') && !firstNonCarpa) firstNonCarpa = item;
     if (String(item.type || '').startsWith('carpa') && !firstCarpa) firstCarpa = item;
     if (firstNonCarpa) break;

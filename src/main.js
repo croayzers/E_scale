@@ -404,8 +404,17 @@ async function bootstrap() {
     pulseGuideTarget(document.getElementById('btn-grid-menu'), btnMovePlan);
   });
   document.getElementById('guide-catalog-btn')?.addEventListener('click', () => {
-    pulseGuideTarget(document.getElementById('dock'));
-    document.querySelector('#dock-items button[data-dock-kind="category"]')?.click();
+    document.getElementById('plan-guide')?.classList.add('hidden');
+    CatalogModal.open('tables');
+  });
+
+  document.getElementById('grid-extent-x')?.addEventListener('change', e => {
+    AppState.grid.extentX = Math.max(10, parseFloat(e.target.value) || 60);
+    SceneManager.rebuildGrids();
+  });
+  document.getElementById('grid-extent-z')?.addEventListener('change', e => {
+    AppState.grid.extentZ = Math.max(10, parseFloat(e.target.value) || 60);
+    SceneManager.rebuildGrids();
   });
 
   document.getElementById('lock-all-struct')?.addEventListener('click', () => {

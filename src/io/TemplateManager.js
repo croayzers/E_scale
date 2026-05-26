@@ -154,7 +154,9 @@ async function scanFolder() {
     if (handle.kind !== 'file' || !name.endsWith('.escale.json')) continue;
     try {
       const data  = JSON.parse(await (await handle.getFile()).text());
-      const kind  = data.kind || 'full';
+      const kind  = name.includes('Base') ? 'base'
+                  : name.includes('Planning') ? 'planning'
+                  : (data.kind || 'full');
       const entry = { name: data.name || name.replace(/\.escale\.json$/, ''), filename: name, handle, kind, createdAt: data.createdAt || null };
       if (kind === 'base')          cachedTemplates.base.push(entry);
       else if (kind === 'planning') cachedTemplates.planning.push(entry);
@@ -725,17 +727,22 @@ async function init() {
     document.getElementById('welcome-modal').style.display = 'none'; load();
   });
 
-  // Pills
-  document.getElementById('tpl-base-btn')?.addEventListener('click', e => { e.stopPropagation(); togglePillPanel('base'); });
-  document.getElementById('tpl-planning-btn')?.addEventListener('click', e => { e.stopPropagation(); togglePillPanel('planning'); });
+  // Pills — auto-pick folder if none selected yet
+  document.getElementById('tpl-base-btn')?.addEventListener('click', async e => {
+    e.stopPropagation();
+    if (!dirHandle) { await pickFolder(); if (!dirHandle) return; }
+    togglePillPanel('base');
+  });
+  document.getElementById('tpl-planning-btn')?.addEventListener('click', async e => {
+    e.stopPropagation();
+    if (!dirHandle) { await pickFolder(); if (!dirHandle) return; }
+    togglePillPanel('planning');
+  });
   document.getElementById('tpl-base-filter')?.addEventListener('input', e => renderTemplateList('base', e.target.value));
   document.getElementById('tpl-planning-filter')?.addEventListener('input', e => renderTemplateList('planning', e.target.value));
 
-  // Folder row (clic en la cabecera para cambiar carpeta)
-  document.getElementById('tpl-folder-row')?.addEventListener('click', () => void pickFolder());
-
   // Cerrar panels al click fuera
-  document.addEventListener('click', e => { if (!e.target.closest('.tpl-pill-wrap') && !e.target.closest('.tpl-folder-row')) closePillPanels(); });
+  document.addEventListener('click', e => { if (!e.target.closest('.tpl-pill-wrap')) closePillPanels(); });
 
   // Modo selección
   document.getElementById('planning-sel-confirm')?.addEventListener('click', () => void confirmPlanningSelection());

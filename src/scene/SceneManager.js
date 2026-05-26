@@ -154,39 +154,46 @@ function init() {
   animate();
 }
 
-function rebuildGrids() {
-  if (gridHelper) {
-    scene.remove(gridHelper);
-    gridHelper.geometry.dispose();
-    (Array.isArray(gridHelper.material) ? gridHelper.material : [gridHelper.material]).forEach(material => material?.dispose?.());
+function buildRectGridGeo(sX, sZ, divX, divZ) {
+  const verts = [];
+  for (let i = 0; i <= divX; i++) {
+    const x = -sX / 2 + i * (sX / divX);
+    verts.push(x, 0, -sZ / 2, x, 0, sZ / 2);
   }
-  if (gridMain) {
-    scene.remove(gridMain);
-    gridMain.geometry.dispose();
-    (Array.isArray(gridMain.material) ? gridMain.material : [gridMain.material]).forEach(material => material?.dispose?.());
+  for (let j = 0; j <= divZ; j++) {
+    const z = -sZ / 2 + j * (sZ / divZ);
+    verts.push(-sX / 2, 0, z, sX / 2, 0, z);
   }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  return geo;
+}
 
-  const size = Math.max(20, _appState?.grid?.extent ?? 60);
+function rebuildGrids() {
+  [gridHelper, gridMain].forEach(g => {
+    if (!g) return;
+    scene.remove(g);
+    g.geometry.dispose();
+    (Array.isArray(g.material) ? g.material : [g.material]).forEach(m => m?.dispose?.());
+  });
+
+  const sX = Math.max(20, _appState?.grid?.extentX ?? _appState?.grid?.extent ?? 60);
+  const sZ = Math.max(20, _appState?.grid?.extentZ ?? _appState?.grid?.extent ?? 60);
   const subSize = Math.max(0.05, _appState?.grid?.subSize ?? _appState?.snap?.spacing ?? 0.25);
   const mainSize = Math.max(subSize, _appState?.grid?.majorSize ?? 1);
   const visibility = Math.max(0, Math.min(100, _appState?.grid?.opacity ?? 55)) / 100;
-  const fineDivisions = Math.min(1600, Math.max(1, Math.round(size / subSize)));
-  const mainDivisions = Math.min(800, Math.max(1, Math.round(size / mainSize)));
 
-  gridHelper = new THREE.GridHelper(size, fineDivisions, 0x1a1a1c, 0x1a1a1c);
-  (Array.isArray(gridHelper.material) ? gridHelper.material : [gridHelper.material]).forEach(material => {
-    material.opacity = visibility * 0.28;
-    material.transparent = true;
-    material.needsUpdate = true;
-  });
+  const divXFine = Math.min(1600, Math.max(1, Math.round(sX / subSize)));
+  const divZFine = Math.min(1600, Math.max(1, Math.round(sZ / subSize)));
+  const divXMain = Math.min(800, Math.max(1, Math.round(sX / mainSize)));
+  const divZMain = Math.min(800, Math.max(1, Math.round(sZ / mainSize)));
+
+  const fineMat = new THREE.LineBasicMaterial({ color: 0x1a1a1c, transparent: true, opacity: visibility * 0.28 });
+  gridHelper = new THREE.LineSegments(buildRectGridGeo(sX, sZ, divXFine, divZFine), fineMat);
   scene.add(gridHelper);
 
-  gridMain = new THREE.GridHelper(size, mainDivisions, 0x1a1a1c, 0x1a1a1c);
-  (Array.isArray(gridMain.material) ? gridMain.material : [gridMain.material]).forEach(material => {
-    material.opacity = visibility * 0.62;
-    material.transparent = true;
-    material.needsUpdate = true;
-  });
+  const mainMat = new THREE.LineBasicMaterial({ color: 0x1a1a1c, transparent: true, opacity: visibility * 0.62 });
+  gridMain = new THREE.LineSegments(buildRectGridGeo(sX, sZ, divXMain, divZMain), mainMat);
   scene.add(gridMain);
   applyGridOffsets();
 }
@@ -601,17 +608,18 @@ function hexToRgba(hex, alpha = 1) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function makeZoneLabelSprite(text, color) {
+function makeZoneLabelSprite(text, color, options = {}) {
+  const { fontSize = 58, textColor } = options;
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   canvas.width = 700;
   canvas.height = 180;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.font = '600 58px "Inter Tight", sans-serif';
+  ctx.font = `600 ${fontSize}px "Inter Tight", sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = hexToRgba(color, 0.48);
+  ctx.fillStyle = textColor || hexToRgba(color, 0.48);
   ctx.fillText(text, canvas.width / 2, canvas.height / 2);
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -639,8 +647,12 @@ function createZoneSymbol(item) {
 
   addFlatRect(group, length, width, fillColor, fillOpacity, borderColor);
 
-  if (item.labelText) {
-    group.add(makeZoneLabelSprite(item.labelText, item.borderColor || item.color || '#22c55e'));
+  if (item.labelText && item.showLabel !== false) {
+    group.add(makeZoneLabelSprite(
+      item.labelText,
+      item.borderColor || item.color || '#22c55e',
+      { fontSize: item.fontSize ?? 58, textColor: item.textColor }
+    ));
   }
 
   return group;

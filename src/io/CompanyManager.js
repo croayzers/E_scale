@@ -443,9 +443,12 @@ function syncCompanyButton() {
   const empty = document.getElementById('btn-company-logo-empty');
   const formName = cleanText(document.getElementById('company-name')?.value || '');
   const name = cleanText(AppState.company?.name || formName);
+  const email = AppState.company?.authEmail || '';
+  const domain = email.split('@')[1] || '';
+  const displayName = name || domain;
   const logo = AppState.company?.logo || '';
 
-  if (label) label.textContent = name || 'Mi empresa';
+  if (label) label.textContent = displayName || 'Mi empresa';
   if (preview) {
     preview.classList.toggle('hidden', !logo);
     if (logo) preview.src = logo;
@@ -729,13 +732,7 @@ async function savePending() {
   saveCompanyState();
   syncBrandUI();
 
-  // Feedback inline — el modal se queda abierto
-  const feedback = document.getElementById('company-save-feedback');
-  if (feedback) {
-    feedback.classList.remove('hidden');
-    clearTimeout(feedback._hideTimer);
-    feedback._hideTimer = setTimeout(() => feedback.classList.add('hidden'), 2800);
-  }
+  document.getElementById('company-modal')?.classList.remove('visible');
 
   // Notificar al gate requireReady (si estaba esperando)
   document.dispatchEvent(new CustomEvent('escale:company-modal-closed'));

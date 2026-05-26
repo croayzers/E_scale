@@ -57,6 +57,14 @@ function setPdfColor(pdf, rgb, mode = 'text') {
   else pdf.setTextColor(rgb[0], rgb[1], rgb[2]);
 }
 
+function getCompanyDisplayName(company) {
+  const name = (company?.name || '').trim();
+  if (name) return name;
+  const email = company?.authEmail || '';
+  const domain = email.split('@')[1] || '';
+  return domain || 'E-scale';
+}
+
 function init() {
   document.getElementById('btn-export')?.addEventListener('click', openModal);
   document.getElementById('export-cancel')?.addEventListener('click', closeModal);
@@ -142,8 +150,27 @@ function openPreviewShell(message = 'Preparando vista previa...') {
 
 async function export3D() {
   closeModal();
-  openPreviewShell();
+  setExportCamera('3d');
+  UIManager.hideDetail?.();
+  UIManager.hideTooltip?.();
+  showPhotoModeOverlay();
+}
 
+function showPhotoModeOverlay() {
+  const overlay = document.getElementById('photo-mode-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
+  document.getElementById('photo-capture-btn')?.addEventListener('click', capturePhoto, { once: true });
+  document.getElementById('photo-cancel-btn')?.addEventListener('click', hidePhotoModeOverlay, { once: true });
+}
+
+function hidePhotoModeOverlay() {
+  document.getElementById('photo-mode-overlay')?.classList.add('hidden');
+}
+
+async function capturePhoto() {
+  hidePhotoModeOverlay();
+  openPreviewShell();
   try {
     const imageDataUrl = await captureHighResSceneDataUrl('3d');
     await buildAndPreview(imageDataUrl, buildModeLabel('3D', 'Vista isometrica'));
@@ -505,7 +532,7 @@ async function composePrintCanvas(imageDataUrl, view) {
 
   ctx.fillStyle = '#0f172a';
   ctx.font = '800 34px Inter Tight, Arial, sans-serif';
-  ctx.fillText(company.name || 'E-scale', margin, 48);
+  ctx.fillText(getCompanyDisplayName(company), margin, 48);
   ctx.font = '500 18px Inter Tight, Arial, sans-serif';
   ctx.fillStyle = '#64748b';
   const info = [
@@ -564,7 +591,7 @@ async function _doPrintPng({ view = '2d' } = {}) {
     const imageDataUrl = await captureSceneDataUrl(normalizedView);
     const canvas = await composePrintCanvas(imageDataUrl, normalizedView);
     const company = AppState.company || {};
-    const safeName = (company.name || 'escale')
+    const safeName = getCompanyDisplayName(company)
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
@@ -670,11 +697,12 @@ async function buildPdfBlob(imageDataUrl, modeLabel) {
     }
   }
 
-  if (company.name) {
+  const displayName = getCompanyDisplayName(company);
+  if (displayName) {
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(13);
     setPdfColor(pdf, brandPrimary);
-    pdf.text(company.name, headX, margin + 6);
+    pdf.text(displayName, headX, margin + 6);
   }
 
   pdf.setFont('helvetica', 'normal');

@@ -171,6 +171,12 @@ function handleCanvasPointerDown(point) {
   hideZoneTip();
   renderZoneMenu();
   emitZoneUiChange('zone-created');
+
+  const zoneName = placed.labelText || `Zona ${placed.id}`;
+  if (confirm(`¿Bloquear ZONA "${zoneName}" para evitar desplazarla durante la edición?\n\nPuedes reactivarla desde el menú Zonas.`)) {
+    AppState.update(placed.id, { disabled: true, locked: true }, { skipDetailRebuild: true });
+  }
+
   return true;
 }
 
@@ -266,14 +272,21 @@ function bindZoneEditor(zone) {
 }
 
 function zoneListMarkup(zone, active) {
+  const statusLabel = zone.disabled ? ' · deshabilitada' : zone.locked ? ' · bloqueada' : '';
+  const toggleLabel = zone.disabled ? 'Habilitar' : 'Deshabilitar';
   return `
-    <button class="zone-chip ${active ? 'active' : ''}" type="button" data-zone-id="${zone.id}">
-      <span class="zone-chip-swatch" style="background:${zone.fillEnabled === false ? 'transparent' : zone.color};border-color:${zone.borderColor || zone.color}"></span>
-      <span class="zone-chip-copy">
-        <strong>${zone.labelText || `Zona ${zone.id}`}</strong>
-        <small>${(zone.dims?.length || 0).toFixed(1)} × ${(zone.dims?.width || 0).toFixed(1)} m${zone.locked ? ' · bloqueada' : ''}</small>
-      </span>
-    </button>
+    <div class="zone-chip-row">
+      <button class="zone-chip ${active ? 'active' : ''} ${zone.disabled ? 'is-disabled' : ''}" type="button" data-zone-id="${zone.id}">
+        <span class="zone-chip-swatch" style="background:${zone.fillEnabled === false ? 'transparent' : zone.color};border-color:${zone.borderColor || zone.color}"></span>
+        <span class="zone-chip-copy">
+          <strong>${zone.labelText || `Zona ${zone.id}`}</strong>
+          <small>${(zone.dims?.length || 0).toFixed(1)} × ${(zone.dims?.width || 0).toFixed(1)} m${statusLabel}</small>
+        </span>
+      </button>
+      <button class="zone-disable-btn ${zone.disabled ? 'is-active' : ''}" type="button" data-zone-disable="${zone.id}" title="${toggleLabel} zona">
+        ${toggleLabel}
+      </button>
+    </div>
   `;
 }
 
@@ -367,6 +380,17 @@ function renderZoneMenu() {
     list.querySelectorAll('[data-zone-id]').forEach(button => {
       button.addEventListener('click', () => {
         AppState.select(Number(button.dataset.zoneId));
+      });
+    });
+    list.querySelectorAll('[data-zone-disable]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const id = Number(btn.dataset.zoneDisable);
+        const zone = AppState.items.find(z => z.id === id && z.type === 'zone');
+        if (!zone) return;
+        const newDisabled = !zone.disabled;
+        AppState.update(id, { disabled: newDisabled }, { skipDetailRebuild: true });
+        if (newDisabled) AppState.deselect();
       });
     });
   }
