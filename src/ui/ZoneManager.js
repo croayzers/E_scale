@@ -295,6 +295,7 @@ function zoneListMarkup(zone, active) {
       <button class="zone-disable-btn ${zone.disabled ? 'is-active' : ''}" type="button" data-zone-disable="${zone.id}" title="${toggleLabel} zona">
         ${toggleLabel}
       </button>
+      <button class="zone-delete-btn" type="button" data-zone-delete="${zone.id}" title="Eliminar zona">×</button>
     </div>
   `;
 }
@@ -513,6 +514,12 @@ function renderZoneMenu() {
         const newDisabled = !zone.disabled;
         AppState.update(id, { disabled: newDisabled, locked: newDisabled }, { skipDetailRebuild: true });
         if (newDisabled) AppState.deselect();
+      });
+    });
+    list.querySelectorAll('[data-zone-delete]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        AppState.remove(Number(btn.dataset.zoneDelete));
       });
     });
   }

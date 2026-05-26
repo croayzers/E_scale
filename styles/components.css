@@ -248,6 +248,30 @@
   color: rgba(var(--brand-primary-rgb), 1);
 }
 
+.zone-delete-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 140ms;
+  align-self: center;
+}
+
+.zone-delete-btn:hover {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.07);
+  color: #ef4444;
+}
+
 .zone-chip {
   width: 100%;
   display: flex;
