@@ -67,7 +67,7 @@ function surfaceItem(id, name, category, {
     category,
     type: 'schemaSurface',
     schemaId: 'surface.generic',
-    dims: { width, length, height: 0.03 },
+    dims: { width, length, height: 0.1 },
     color,
     borderColor,
     icon,
@@ -368,11 +368,11 @@ function decorateExistingDefinitions(data) {
     return item;
   });
 
-  data.bars = data.bars.map(item => (
-    item.type === 'buffet'
-      ? { ...item, schemaId: item.schemaId || 'buffet.station' }
-      : item
-  ));
+  data.bars = data.bars.map(item => {
+    if (item.type === 'buffet') return { ...item, schemaId: item.schemaId || 'buffet.station' };
+    if (item.type === 'buffetCarro') return { ...item, schemaId: item.schemaId || 'buffet.cart' };
+    return item;
+  });
 }
 
 function moveFreeBarsToHospitality(data) {

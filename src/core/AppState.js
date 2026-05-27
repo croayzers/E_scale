@@ -77,7 +77,7 @@ export const AppState = {
   selectedIds: new Set(),     // multiselección
   nextId: 1,
   camera: 'iso',
-  showCotas: true,
+  showCotas: false,
   shadows: true,
   inventoryCollapsed: false,
   workMode: null,   // 'base' | 'planning' — elegido en el modal de inicio
@@ -181,14 +181,6 @@ export const AppState = {
     SceneManager.drawCotas();
     UIManager.refresh();
     UIManager.refreshUndoBadge?.();
-    if (this.selectedIds.size === 1) {
-      const it = this.items.find(i => i.id === this.selectedId);
-      if (it) UIManager.showDetail?.(it); else UIManager.hideDetail?.();
-    } else if (this.selectedIds.size > 1) {
-      UIManager.showMultiDetail?.([...this.selectedIds]);
-    } else {
-      UIManager.hideDetail?.();
-    }
     this._suppressHistory = false;
     this.emitSceneInsights('undo');
   },
@@ -231,9 +223,6 @@ export const AppState = {
     Object.assign(item, patch);
     SceneManager.rebuild(item);
     UIManager.refresh();
-    if (this.selectedId === id && this.selectedIds.size === 1 && !opts.skipDetailRebuild) {
-      UIManager.showDetail?.(item);
-    }
     if (item.type === 'carpa' && UIManager.updateCarpaPostsCount) {
       UIManager.updateCarpaPostsCount(item);
     }
@@ -275,9 +264,6 @@ export const AppState = {
     SceneManager.rebuild(replacement);
     SceneManager.highlightSelection();
     UIManager.refresh();
-    if (this.selectedId === id && this.selectedIds.size === 1 && !opts.skipDetailRebuild) {
-      UIManager.showDetail?.(replacement);
-    }
     this.emitSceneInsights('replace');
   },
 
@@ -300,14 +286,6 @@ export const AppState = {
     }
     this.selectedId = this.selectedIds.size ? [...this.selectedIds].pop() : null;
     SceneManager.highlightSelection();
-    if (this.selectedIds.size === 1) {
-      const item = this.items.find(i => i.id === this.selectedId);
-      if (item) UIManager.showDetail?.(item);
-    } else if (this.selectedIds.size > 1) {
-      UIManager.showMultiDetail?.([...this.selectedIds]);
-    } else {
-      UIManager.hideDetail?.();
-    }
     this.emitSceneInsights('select');
   },
 
@@ -316,12 +294,6 @@ export const AppState = {
     ids.forEach(id => this.selectedIds.add(id));
     this.selectedId = this.selectedIds.size ? [...this.selectedIds].pop() : null;
     SceneManager.highlightSelection();
-    if (this.selectedIds.size === 1) {
-      const item = this.items.find(i => i.id === this.selectedId);
-      if (item) UIManager.showDetail?.(item);
-    } else if (this.selectedIds.size > 1) {
-      UIManager.showMultiDetail?.([...this.selectedIds]);
-    }
     this.emitSceneInsights('select-many');
   },
 
@@ -339,9 +311,6 @@ export const AppState = {
     if (!item) return;
     item.locked = !item.locked;
     UIManager.refresh();
-    if (this.selectedIds.size === 1 && this.selectedId === id) {
-      UIManager.showDetail?.(item);
-    }
     this.emitSceneInsights('toggle-lock');
   },
 

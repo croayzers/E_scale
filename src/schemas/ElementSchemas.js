@@ -378,6 +378,34 @@ export const ELEMENT_SCHEMAS = [
     ]
   },
   {
+    id: 'buffet.cart',
+    family: 'buffet',
+    match: item => item.schemaId === 'buffet.cart',
+    metadata: {
+      label: 'Buffet carro',
+      icon: 'shopping-cart',
+      category: 'bars'
+    },
+    builder: { preset: 'buffetCart' },
+    ui: { dynamic: true },
+    defaults: {
+      dims: { length: 3, width: 1.5, height: 1 },
+      color: '#E8E4DF',
+      labelText: 'Buffet carro',
+      visual: { materialPreset: 'fabric', opacity: 1, shadows: true }
+    },
+    params: [
+      StandardParams.length({ default: 3, min: 1, max: 6, step: 0.1 }),
+      StandardParams.width({ default: 1.5, min: 0.8, max: 3, step: 0.05 }),
+      StandardParams.height({ default: 1.0, min: 0.6, max: 1.6, step: 0.01 }),
+      StandardParams.rotation(),
+      StandardParams.color({ default: '#E8E4DF' }),
+      StandardParams.text({ label: 'Rotulo' }),
+      StandardParams.opacity(),
+      StandardParams.shadow()
+    ]
+  },
+  {
     id: 'stage.platform',
     family: 'stage',
     match: item => item.schemaId === 'stage.platform' || item.type === 'schemaStage',

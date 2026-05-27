@@ -14,6 +14,7 @@ const pointer = new THREE.Vector2();
 let dragging = null;          // { ids:[], offsets:{id:{x,z}} } o single legacy
 let mouseDown = false;
 let mouseDownPos = null;
+let pendingClickItem = null;
 let mouseDownTime = 0;
 let boxSelecting = null;      // { startX, startY, additive }
 
@@ -402,8 +403,8 @@ function onPointerDown(e) {
       return;
     }
     if (item.locked) {
-      // seleccionable pero no movible/duplicable
       AppState.select(item.id, shiftDown);
+      if (!shiftDown) pendingClickItem = item;
       return;
     }
     {
@@ -412,6 +413,7 @@ function onPointerDown(e) {
         const itemLayer = lm.getItemLayer(item);
         if (itemLayer && itemLayer.locked) {
           AppState.select(item.id, shiftDown);
+          if (!shiftDown) pendingClickItem = item;
           lm.flashLockWarning(itemLayer.id);
           lm.showLockedLayerToast(
             `Elemento bloqueado · Pertenece a la capa "${itemLayer.name}"`
@@ -425,6 +427,7 @@ function onPointerDown(e) {
       return;
     }
     AppState.select(item.id, shiftDown);
+    if (!shiftDown) pendingClickItem = item;
 
     const point = getDragPoint();
     if (point && AppState.selectedIds.size > 0) {
@@ -519,6 +522,16 @@ function onPointerUp(e) {
     SceneManager.setControlsEnabled(true);
     UIManager.refresh();
   }
+
+  if (pendingClickItem) {
+    const dx = Math.abs(e.clientX - (mouseDownPos?.x ?? e.clientX));
+    const dy = Math.abs(e.clientY - (mouseDownPos?.y ?? e.clientY));
+    const item = pendingClickItem;
+    pendingClickItem = null;
+    if (dx < 5 && dy < 5) {
+      showContextMenu(e.clientX, e.clientY, item);
+    }
+  }
 }
 
 function onContextMenu(e) {
@@ -582,6 +595,7 @@ const TYPE_LABELS = {
   sillaCatering: 'Silla',
   sillaLineal: 'Lineal de sillas',
   buffet: 'Buffet',
+  buffetCarro: 'Buffet carro',
   barraLibre: 'Barra libre',
   carpa: 'Carpa clasica',
   carpaCuadrada: 'Carpa cuadrada',
@@ -718,16 +732,6 @@ function getSubtypeOptions(item) {
       ['standard', 'Estandar'],
       ['napoleon', 'Napoleon'],
       ['presi', 'Presidencial']
-    ];
-  }
-  if (item.type === 'buffet') {
-    return [
-      ['arroces', 'Arroces'],
-      ['feria', 'Feria'],
-      ['quesos', 'Quesos'],
-      ['italiano', 'Italiano'],
-      ['huevos', 'Huevos'],
-      ['jamon', 'Jamon']
     ];
   }
   if (item.type === 'sillaCatering' || item.type === 'sillaLineal') {
@@ -1009,6 +1013,14 @@ function buildUnifiedContextMenuHTML(item) {
 
       ${tableAssignmentHTML(item)}
 
+      ${(item.type === 'buffet' || item.type === 'buffetCarro') ? `
+        <div class="ctx-block">
+          <div class="ctx-label">Rótulo</div>
+          <label class="ctx-field ctx-field-full">
+            <input type="text" data-field="labelText" value="${escapeAttr(item.labelText || '')}" class="ctx-input" placeholder="Buffet ..."/>
+          </label>
+        </div>` : ''}
+
       <div class="ctx-block">
         <div class="ctx-label">Medidas editables</div>
         ${dimensionFieldsHTML(item)}
@@ -1124,25 +1136,21 @@ function buildContextMenuHTML(item) {
   }
 
   if (item.type === 'buffet') {
-    const cats = [
-      ['arroces','Arroces'],['feria','Feria'],['quesos','Quesos'],
-      ['italiano','Italiano'],['huevos','Huevos'],['jamon','Jamón']
-    ];
     return `
       <div class="ctx-section">
         <div class="ctx-label">Buffet · ID ${item.id}${item.locked ? ' · 🔒' : ''}</div>
         <div class="mt-2">
+          <label class="ctx-field ctx-field-full">
+            <span>Rótulo</span>
+            <input type="text" data-field="labelText" value="${escapeAttr(item.labelText || 'Buffet')}" class="ctx-input" placeholder="Buffet ..."/>
+          </label>
+        </div>
+        <div class="mt-3">
           <div class="ctx-label">Longitud</div>
           <div class="pill-group">
             <div data-action="length" data-value="1.8" class="pill ${item.dims.length===1.8?'active':''}">1.8m</div>
             <div data-action="length" data-value="3.6" class="pill ${item.dims.length===3.6?'active':''}">3.6m</div>
             <div data-action="length" data-value="5.5" class="pill ${item.dims.length===5.5?'active':''}">5.5m</div>
-          </div>
-        </div>
-        <div class="mt-3">
-          <div class="ctx-label">Categoría</div>
-          <div class="grid grid-cols-2 gap-1">
-            ${cats.map(([v,l]) => `<div data-action="bufftype" data-value="${v}" class="pill ${item.subtype===v?'active':''}">${l}</div>`).join('')}
           </div>
         </div>
         <div class="ctx-divider"></div>
@@ -1260,6 +1268,11 @@ function handleContextField(field, value, id) {
 
   if (field === 'tableName') {
     applyContextPatch(id, { tableName: String(value || '').trim() }, false);
+    return;
+  }
+
+  if (field === 'labelText') {
+    applyContextPatch(id, { labelText: String(value || '') }, false);
     return;
   }
 

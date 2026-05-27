@@ -195,22 +195,23 @@ export default {
   ],
   "bars": [
     {
-      "id": "buffet_arroces_360",
-      "name": "Buffet Arroces",
+      "id": "buffet_360",
+      "name": "Buffet",
       "category": "bars",
       "type": "buffet",
-      "subtype": "arroces",
       "dims": { "length": 3.6 },
+      "labelText": "Buffet",
       "chairs": 0,
       "defaultRotation": 0
     },
     {
-      "id": "buffet_feria",
-      "name": "Buffet Feria",
+      "id": "buffet_carro",
+      "name": "Buffet carro",
       "category": "bars",
-      "type": "buffet",
-      "subtype": "feria",
-      "dims": { "length": 3.6 },
+      "type": "buffetCarro",
+      "dims": { "length": 3.0, "width": 1.5, "height": 1.0 },
+      "labelText": "Buffet carro",
+      "color": "#E8E4DF",
       "chairs": 0,
       "defaultRotation": 0
     },

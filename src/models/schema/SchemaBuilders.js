@@ -557,6 +557,54 @@ function buildBuffet(item, view) {
   return group;
 }
 
+function buildBuffetCarro(item, view) {
+  const group = new THREE.Group();
+  const L = item.dims?.length ?? 3;
+  const W = item.dims?.width ?? 1.5;
+  const H = item.dims?.height ?? 1.0;
+  const color = item.color || '#E8E4DF';
+  const accent = '#4B5563';
+
+  if (view === 'top') {
+    addTopFootprint(group, item, L, W, color, 0.18);
+    addTopLabel(group, item.labelText || 'Buffet carro');
+    return group;
+  }
+
+  // base frame
+  const base = addBox(group, { size: [L, 0.08, W], position: [0, 0.08, 0], color: accent, preset: 'matte' });
+  markMain(base, color);
+
+  // main body / shelf unit
+  const body = addBox(group, { size: [L, H * 0.55, W * 0.92], position: [0, H * 0.28 + 0.08, 0], color, preset: 'fabric' });
+  markMain(body, color);
+
+  // top tray surface
+  addBox(group, { size: [L + 0.04, 0.05, W + 0.04], position: [0, H * 0.58 + 0.08, 0], color: '#D1D5DB', preset: 'matte' });
+
+  // mid shelf
+  addBox(group, { size: [L - 0.06, 0.03, W * 0.88], position: [0, H * 0.38, 0], color: '#D4D0CB', preset: 'matte' });
+
+  // back panel / sneeze guard frame
+  addBox(group, { size: [L, H * 0.38, 0.025], position: [0, H * 0.62 + 0.12, W / 2 - 0.015], color: '#B0CAD8', preset: 'glass' });
+
+  // legs (4 corners)
+  const lh = 0.18;
+  const offX = L / 2 - 0.08;
+  const offZ = W / 2 - 0.08;
+  [[offX, offZ], [-offX, offZ], [offX, -offZ], [-offX, -offZ]].forEach(([x, z]) => {
+    addBox(group, { size: [0.05, lh, 0.05], position: [x, lh / 2, z], color: accent, preset: 'metal' });
+  });
+
+  // wheel hubs (bottom)
+  [[offX, offZ], [-offX, offZ], [offX, -offZ], [-offX, -offZ]].forEach(([x, z]) => {
+    addSphere(group, { radius: 0.045, position: [x, 0.045, z], color: '#374151', preset: 'matte' });
+  });
+
+  addLabel(group, item.labelText || 'Buffet carro', H + 0.45);
+  return group;
+}
+
 function buildStage(item, view) {
   const group = new THREE.Group();
   const W = item.dims?.width ?? 4;
@@ -1865,18 +1913,31 @@ function buildSurface(item, view) {
   const group = new THREE.Group();
   const W = item.dims?.width ?? 3;
   const L = item.dims?.length ?? 3;
+  const H = item.dims?.height ?? 0.1;
   const color = item.color || '#6F8E57';
   const borderColor = item.borderColor || '#2F5A29';
   const defId = item.catalogDefinitionId || '';
 
+  if (view !== 'top') {
+    const box = new THREE.Mesh(
+      new THREE.BoxGeometry(L, H, W),
+      makeStandardMaterial(color, item.visual?.materialPreset || 'matte', item.visual?.opacity ?? 0.92)
+    );
+    box.position.y = H / 2;
+    box.receiveShadow = true;
+    box.castShadow = true;
+    markMain(box, color);
+    group.add(box);
+    // skip decorative detail additions in 3D — return after box
+    return group;
+  }
+
   const fill = new THREE.Mesh(
     new THREE.PlaneGeometry(L, W),
-    view === 'top'
-      ? makeTopFill(color, item.visual?.opacity ?? 0.65)
-      : makeStandardMaterial(color, item.visual?.materialPreset || 'matte', item.visual?.opacity ?? 0.92)
+    makeTopFill(color, item.visual?.opacity ?? 0.65)
   );
   fill.rotation.x = -Math.PI / 2;
-  fill.position.y = view === 'top' ? 0.04 : 0.01;
+  fill.position.y = 0.04;
   fill.receiveShadow = true;
   markMain(fill, color);
   group.add(fill);
@@ -1888,56 +1949,6 @@ function buildSurface(item, view) {
   border.rotation.x = -Math.PI / 2;
   border.position.y = fill.position.y + 0.002;
   group.add(border);
-
-  if (view !== 'top') {
-    if (defId === 'cesped') {
-      const count = Math.min(22, Math.max(6, Math.floor(L * W * 1.4)));
-      for (let i = 0; i < count; i++) {
-        addBox(group, {
-          size: [0.04, 0.06 + Math.abs(Math.sin(i * 2.3)) * 0.04, 0.04],
-          position: [Math.sin(i * 137.5) * L * 0.44, 0.03, Math.cos(i * 137.5) * W * 0.44],
-          color: i % 3 === 0 ? '#22C55E' : '#16A34A', preset: 'matte'
-        });
-      }
-    } else if (defId === 'arena') {
-      const rows = Math.max(2, Math.round(W / 1.2));
-      for (let i = 0; i < rows; i++) {
-        addBox(group, {
-          size: [L * 0.88, 0.025, 0.07],
-          position: [0, 0.012, -W / 2 + (i + 0.5) * (W / rows)],
-          color: '#D4B483', preset: 'matte'
-        });
-      }
-    } else if (defId === 'tierra') {
-      const count = Math.min(14, Math.max(5, Math.floor(L * W * 0.9)));
-      for (let i = 0; i < count; i++) {
-        addSphere(group, {
-          radius: 0.04 + Math.abs(Math.sin(i * 1.7)) * 0.06,
-          position: [Math.sin(i * 137.5) * L * 0.42, 0.03, Math.cos(i * 137.5) * W * 0.42],
-          color: i % 2 === 0 ? '#92400E' : '#78350F', preset: 'matte'
-        });
-      }
-    } else if (defId === 'cemento') {
-      const gX = Math.max(1, Math.round(L / 1.5));
-      const gZ = Math.max(1, Math.round(W / 1.5));
-      for (let i = 1; i < gX; i++) {
-        addBox(group, { size: [0.022, 0.016, W], position: [-L / 2 + (L * i) / gX, 0.008, 0], color: '#9CA3AF', preset: 'matte' });
-      }
-      for (let i = 1; i < gZ; i++) {
-        addBox(group, { size: [L, 0.016, 0.022], position: [0, 0.008, -W / 2 + (W * i) / gZ], color: '#9CA3AF', preset: 'matte' });
-      }
-    } else if (defId === 'agua_piscina') {
-      [0.28, 0.52, 0.74].forEach(t => {
-        const ring = new THREE.Mesh(
-          new THREE.RingGeometry(Math.min(L, W) * t * 0.36, Math.min(L, W) * t * 0.36 + 0.045, 36),
-          new THREE.MeshBasicMaterial({ color: 0xBAE6FD, transparent: true, opacity: 0.42, side: THREE.DoubleSide })
-        );
-        ring.rotation.x = -Math.PI / 2;
-        ring.position.y = 0.02;
-        group.add(ring);
-      });
-    }
-  }
 
   if (item.labelText) addTopLabel(group, item.labelText);
   return group;
@@ -2273,6 +2284,7 @@ export const SCHEMA_BUILDERS = {
   chairDining: buildChair,
   chairLine: buildChairLine,
   buffetStation: buildBuffet,
+  buffetCart: buildBuffetCarro,
   stagePlatform: buildStage,
   genericRectProp: buildGenericRect,
   genericRoundProp: buildGenericRound,
