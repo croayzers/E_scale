@@ -1617,7 +1617,7 @@ function refreshUndoBadge() {
   const badge = document.getElementById('undo-badge');
   if (!badge || !A) return;
   const n = A.history.length;
-  badge.textContent = `(${n}/${A.HISTORY_LIMIT})`;
+  badge.textContent = `(${n}/${A._getUndoLimit?.() ?? 5})`;
   badge.style.opacity = n === 0 ? '0.4' : '1';
   badge.style.color = n > 0 ? 'var(--ink)' : '';
 }

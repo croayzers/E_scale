@@ -2,7 +2,7 @@
   "name": "E-scale",
   "path": ".",
   "type": "dir",
-  "generated": "2026-05-26T19:46:56.307Z",
+  "generated": "2026-05-27T15:06:59.697Z",
   "children": [
     {
       "name": "admin",
@@ -14,21 +14,28 @@
           "path": "admin/admin.css",
           "type": "file",
           "ext": "css",
-          "size": 20704
+          "size": 29913
         },
         {
           "name": "admin.js",
           "path": "admin/admin.js",
           "type": "file",
           "ext": "js",
-          "size": 38733
+          "size": 47414
+        },
+        {
+          "name": "elements-bundle.js",
+          "path": "admin/elements-bundle.js",
+          "type": "file",
+          "ext": "js",
+          "size": 10048
         },
         {
           "name": "index.html",
           "path": "admin/index.html",
           "type": "file",
           "ext": "html",
-          "size": 28579
+          "size": 44198
         },
         {
           "name": "thumb.js",
@@ -125,6 +132,13 @@
               "type": "file",
               "ext": "js",
               "size": 909
+            },
+            {
+              "name": "send-feedback.js",
+              "path": "api/email/send-feedback.js",
+              "type": "file",
+              "ext": "js",
+              "size": 3270
             },
             {
               "name": "send-share.js",
@@ -486,21 +500,21 @@
               "path": "src/core/AppState.js",
               "type": "file",
               "ext": "js",
-              "size": 11913
+              "size": 10942
             },
             {
               "name": "BrandTokens.js",
               "path": "src/core/BrandTokens.js",
               "type": "file",
               "ext": "js",
-              "size": 4144
+              "size": 4150
             },
             {
               "name": "ElementLibrary.js",
               "path": "src/core/ElementLibrary.js",
               "type": "file",
               "ext": "js",
-              "size": 4982
+              "size": 4954
             },
             {
               "name": "InventoryRules.js",
@@ -514,14 +528,35 @@
               "path": "src/core/LayerManager.js",
               "type": "file",
               "ext": "js",
-              "size": 6697
+              "size": 11887
             },
             {
               "name": "PlanCatalog.js",
               "path": "src/core/PlanCatalog.js",
               "type": "file",
               "ext": "js",
-              "size": 1934
+              "size": 4925
+            }
+          ]
+        },
+        {
+          "name": "data",
+          "path": "src/data",
+          "type": "dir",
+          "children": [
+            {
+              "name": "elementsData.js",
+              "path": "src/data/elementsData.js",
+              "type": "file",
+              "ext": "js",
+              "size": 16137
+            },
+            {
+              "name": "planFeatures.js",
+              "path": "src/data/planFeatures.js",
+              "type": "file",
+              "ext": "js",
+              "size": 6189
             }
           ]
         },
@@ -535,7 +570,7 @@
               "path": "src/io/CompanyManager.js",
               "type": "file",
               "ext": "js",
-              "size": 34997
+              "size": 35288
             },
             {
               "name": "DashboardSync.js",
@@ -549,14 +584,14 @@
               "path": "src/io/ExportManager.js",
               "type": "file",
               "ext": "js",
-              "size": 30008
+              "size": 30074
             },
             {
               "name": "PlanManager.js",
               "path": "src/io/PlanManager.js",
               "type": "file",
               "ext": "js",
-              "size": 20438
+              "size": 20940
             },
             {
               "name": "PlanningRegistry.js",
@@ -577,7 +612,7 @@
               "path": "src/io/TemplateManager.js",
               "type": "file",
               "ext": "js",
-              "size": 35035
+              "size": 36503
             }
           ]
         },
@@ -596,7 +631,7 @@
                   "path": "src/models/schema/SchemaBuilders.js",
                   "type": "file",
                   "ext": "js",
-                  "size": 61123
+                  "size": 87415
                 },
                 {
                   "name": "SchemaModelFactory.js",
@@ -745,7 +780,7 @@
               "path": "src/models/mesa.js",
               "type": "file",
               "ext": "js",
-              "size": 5061
+              "size": 5070
             },
             {
               "name": "mesaCocktail.js",
@@ -759,7 +794,7 @@
               "path": "src/models/mesaCurva.js",
               "type": "file",
               "ext": "js",
-              "size": 4577
+              "size": 4574
             },
             {
               "name": "mesaImperial.js",
@@ -773,7 +808,7 @@
               "path": "src/models/mesaRect.js",
               "type": "file",
               "ext": "js",
-              "size": 1826
+              "size": 1825
             },
             {
               "name": "mesaSerpentina.js",
@@ -822,14 +857,14 @@
               "path": "src/scene/InteractionManager.js",
               "type": "file",
               "ext": "js",
-              "size": 57218
+              "size": 62117
             },
             {
               "name": "SceneManager.js",
               "path": "src/scene/SceneManager.js",
               "type": "file",
               "ext": "js",
-              "size": 49366
+              "size": 49275
             },
             {
               "name": "SelectionManager.js",
@@ -843,7 +878,7 @@
               "path": "src/scene/SnapManager.js",
               "type": "file",
               "ext": "js",
-              "size": 2520
+              "size": 2528
             }
           ]
         },
@@ -857,14 +892,14 @@
               "path": "src/schemas/CatalogBlueprints.js",
               "type": "file",
               "ext": "js",
-              "size": 19961
+              "size": 20169
             },
             {
               "name": "CatalogCategories.js",
               "path": "src/schemas/CatalogCategories.js",
               "type": "file",
               "ext": "js",
-              "size": 852
+              "size": 918
             },
             {
               "name": "ChildrenEngine.js",
@@ -878,7 +913,7 @@
               "path": "src/schemas/ElementSchemas.js",
               "type": "file",
               "ext": "js",
-              "size": 22988
+              "size": 24840
             },
             {
               "name": "ParamDefinitions.js",
@@ -941,7 +976,7 @@
               "path": "src/services/CloudApi.js",
               "type": "file",
               "ext": "js",
-              "size": 3773
+              "size": 3969
             },
             {
               "name": "CloudSync.js",
@@ -955,21 +990,21 @@
               "path": "src/services/MessageManager.js",
               "type": "file",
               "ext": "js",
-              "size": 4842
+              "size": 5349
             },
             {
               "name": "ServiceConfig.js",
               "path": "src/services/ServiceConfig.js",
               "type": "file",
               "ext": "js",
-              "size": 3540
+              "size": 3587
             },
             {
               "name": "SubscriptionManager.js",
               "path": "src/services/SubscriptionManager.js",
               "type": "file",
               "ext": "js",
-              "size": 8269
+              "size": 8589
             },
             {
               "name": "SupportManager.js",
@@ -990,14 +1025,21 @@
               "path": "src/ui/CatalogModal.js",
               "type": "file",
               "ext": "js",
-              "size": 32482
+              "size": 53581
             },
             {
               "name": "Dock.js",
               "path": "src/ui/Dock.js",
               "type": "file",
               "ext": "js",
-              "size": 2767
+              "size": 3423
+            },
+            {
+              "name": "FeedbackModal.js",
+              "path": "src/ui/FeedbackModal.js",
+              "type": "file",
+              "ext": "js",
+              "size": 4494
             },
             {
               "name": "HeaderActionMenus.js",
@@ -1018,7 +1060,7 @@
               "path": "src/ui/PlansModal.js",
               "type": "file",
               "ext": "js",
-              "size": 7372
+              "size": 9104
             },
             {
               "name": "ProButtonManager.js",
@@ -1046,7 +1088,7 @@
               "path": "src/ui/UIManager.js",
               "type": "file",
               "ext": "js",
-              "size": 92760
+              "size": 92769
             },
             {
               "name": "ZoneManager.js",
@@ -1062,7 +1104,7 @@
           "path": "src/main.js",
           "type": "file",
           "ext": "js",
-          "size": 19628
+          "size": 20688
         }
       ]
     },
@@ -1083,14 +1125,14 @@
           "path": "styles/components.css",
           "type": "file",
           "ext": "css",
-          "size": 61179
+          "size": 66536
         },
         {
           "name": "dock.css",
           "path": "styles/dock.css",
           "type": "file",
           "ext": "css",
-          "size": 9875
+          "size": 11794
         },
         {
           "name": "layout.css",
@@ -1182,7 +1224,7 @@
       "path": "index.html",
       "type": "file",
       "ext": "html",
-      "size": 59450
+      "size": 64562
     },
     {
       "name": "Mejoras.yml",

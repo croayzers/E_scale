@@ -139,8 +139,13 @@ export const AppState = {
   },
 
   history: [],
-  HISTORY_LIMIT: 3,
   _suppressHistory: false,
+
+  _getUndoLimit() {
+    const code = String(this.company?.subscriptionPlanCode || 'free_lite').toLowerCase();
+    const limits = { free_lite: 5, pro: 20, premium: 20, enterprise: 30 };
+    return limits[code] ?? 5;
+  },
 
   getSceneInsights(reason = 'snapshot') {
     return buildSceneInsights(this, reason);
@@ -163,7 +168,8 @@ export const AppState = {
       selectedIds: [...this.selectedIds]
     };
     this.history.push(snapshot);
-    if (this.history.length > this.HISTORY_LIMIT) this.history.shift();
+    const limit = this._getUndoLimit();
+    if (this.history.length > limit) this.history.shift();
     UIManager.refreshUndoBadge?.();
   },
 

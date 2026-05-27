@@ -96,7 +96,8 @@ PROJECT STRUCTURE
 │   │   ├── LayerManager.js
 │   │   └── PlanCatalog.js
 │   ├── data/
-│   │   └── elementsData.js
+│   │   ├── elementsData.js
+│   │   └── planFeatures.js
 │   ├── io/
 │   │   ├── CompanyManager.js
 │   │   ├── DashboardSync.js

@@ -81,6 +81,11 @@
       <i data-lucide="printer"></i> Imprimir
     </button>
 
+    <div class="sidebar-section-label">Licencias</div>
+    <button class="sidebar-item" data-section="planes">
+      <i data-lucide="layers"></i> Planes
+    </button>
+
     <div class="sidebar-section-label">Dev</div>
     <button class="sidebar-item" data-section="proyecto">
       <i data-lucide="git-branch"></i> Project Tree
@@ -671,6 +676,226 @@
             <span class="toggle-track"></span>
           </label>
         </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ PLANES ══════════════════════ -->
+    <section id="sec-planes" class="admin-section">
+      <div class="section-title">Planes</div>
+      <div class="section-subtitle">Comparativa de funcionalidades por licencia. Fuente de verdad: <code class="inline-code">src/data/planFeatures.js</code> y <code class="inline-code">src/core/PlanCatalog.js</code>.</div>
+
+      <!-- Plan cards -->
+      <div class="plan-cards-row">
+
+        <div class="plan-card tier-lite">
+          <div class="plan-card-tier">LITE</div>
+          <div class="plan-card-name">Free Lite</div>
+          <div class="plan-card-price">Gratis</div>
+          <div class="plan-card-audience">Particulares</div>
+          <div class="plan-card-code">free_lite</div>
+        </div>
+
+        <div class="plan-card tier-pro">
+          <div class="plan-card-tier">PRO</div>
+          <div class="plan-card-name">PRO</div>
+          <div class="plan-card-price">€34/mes</div>
+          <div class="plan-card-audience">Freelance</div>
+          <div class="plan-card-code">pro</div>
+        </div>
+
+        <div class="plan-card tier-pro-unlimited">
+          <div class="plan-card-badge">Popular</div>
+          <div class="plan-card-tier">PRO UNLIMITED</div>
+          <div class="plan-card-name">PRO Unlimited</div>
+          <div class="plan-card-price">€120/mes</div>
+          <div class="plan-card-audience">Equipos</div>
+          <div class="plan-card-code">premium</div>
+        </div>
+
+        <div class="plan-card tier-enterprise coming-soon">
+          <div class="plan-card-badge badge-soon">Próximamente</div>
+          <div class="plan-card-tier">PREMIUM</div>
+          <div class="plan-card-name">Enterprise</div>
+          <div class="plan-card-price">Consultar</div>
+          <div class="plan-card-audience">Empresa</div>
+          <div class="plan-card-code">enterprise</div>
+        </div>
+
+      </div>
+
+      <!-- Feature comparison table -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="plan-table">
+          <thead>
+            <tr>
+              <th class="plan-th-feature">Funcionalidad</th>
+              <th class="plan-th plan-col-lite">LITE</th>
+              <th class="plan-th plan-col-pro">PRO</th>
+              <th class="plan-th plan-col-unlimited">PRO UNLIMITED</th>
+              <th class="plan-th plan-col-enterprise">PREMIUM</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- ── Proyectos y elementos ── -->
+            <tr class="plan-row-category">
+              <td colspan="5"><i data-lucide="folder" style="width:12px;height:12px"></i> Proyectos y elementos</td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Proyectos activos</td>
+              <td class="plan-td plan-col-lite"><span class="pv-limit">1</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-unlimited">∞</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-unlimited">∞</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-unlimited">∞</span></td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Elementos por plano</td>
+              <td class="plan-td plan-col-lite"><span class="pv-limit">50</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-unlimited">∞</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-unlimited">∞</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-unlimited">∞</span></td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Catálogo de elementos</td>
+              <td class="plan-td plan-col-lite"><span class="pv-text">Básico (2 cat.)</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-text pv-ok">Completo</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-text pv-ok">Completo</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-text pv-ok">Completo</span></td>
+            </tr>
+
+            <!-- ── Historial y deshacer ── -->
+            <tr class="plan-row-category">
+              <td colspan="5"><i data-lucide="rotate-ccw" style="width:12px;height:12px"></i> Historial y deshacer</td>
+            </tr>
+            <tr class="plan-row-highlight">
+              <td class="plan-td-label">
+                <strong>Control+Z · pasos</strong>
+                <span class="plan-td-note">AppState._getUndoLimit()</span>
+              </td>
+              <td class="plan-td plan-col-lite"><span class="pv-limit pv-undo">5</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-limit pv-undo pv-undo-pro">20</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-limit pv-undo pv-undo-pro">20</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-limit pv-undo pv-undo-ent">30</span></td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Historial de versiones</td>
+              <td class="plan-td plan-col-lite"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-check">✓</span></td>
+            </tr>
+
+            <!-- ── Exportación ── -->
+            <tr class="plan-row-category">
+              <td colspan="5"><i data-lucide="download" style="width:12px;height:12px"></i> Exportación</td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Exportación PNG</td>
+              <td class="plan-td plan-col-lite"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-check">✓</span></td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Exportación PDF</td>
+              <td class="plan-td plan-col-lite"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-check">✓</span></td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Envío PDF por email</td>
+              <td class="plan-td plan-col-lite"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-check">✓</span></td>
+            </tr>
+
+            <!-- ── Trabajo en equipo ── -->
+            <tr class="plan-row-category">
+              <td colspan="5"><i data-lucide="users" style="width:12px;height:12px"></i> Trabajo en equipo</td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Usuarios del equipo</td>
+              <td class="plan-td plan-col-lite"><span class="pv-limit">1</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-limit">2</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-unlimited">∞</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-unlimited">∞</span></td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Edición simultánea</td>
+              <td class="plan-td plan-col-lite"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-check">✓</span></td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Sincronización Cloud</td>
+              <td class="plan-td plan-col-lite"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-check">✓</span></td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Compartir con clientes</td>
+              <td class="plan-td plan-col-lite"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-check">✓</span></td>
+            </tr>
+
+            <!-- ── Marca ── -->
+            <tr class="plan-row-category">
+              <td colspan="5"><i data-lucide="tag" style="width:12px;height:12px"></i> Marca y personalización</td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Logo propio en documentos</td>
+              <td class="plan-td plan-col-lite"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-check">✓</span></td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Branding E-scale</td>
+              <td class="plan-td plan-col-lite"><span class="pv-text">Siempre</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-text pv-ok">Opcional</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-text pv-ok">Opcional</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-text pv-ok">Opcional</span></td>
+            </tr>
+
+            <!-- ── Integraciones ── -->
+            <tr class="plan-row-category">
+              <td colspan="5"><i data-lucide="link" style="width:12px;height:12px"></i> Integraciones</td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Importación Excel proveedores</td>
+              <td class="plan-td plan-col-lite"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-check">✓</span></td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Informes de empresa</td>
+              <td class="plan-td plan-col-lite"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-check">✓</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-check">✓</span></td>
+            </tr>
+            <tr>
+              <td class="plan-td-label">Integración CRM / ERP</td>
+              <td class="plan-td plan-col-lite"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-pro"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-unlimited"><span class="pv-dash">—</span></td>
+              <td class="plan-td plan-col-enterprise"><span class="pv-check">✓</span></td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Source note -->
+      <div class="plan-source-note">
+        Para añadir o modificar funcionalidades, edita <code class="inline-code">src/data/planFeatures.js</code> y actualiza los <code class="inline-code">limits</code> en <code class="inline-code">src/core/PlanCatalog.js</code>. El límite de Control+Z se aplica automáticamente en <code class="inline-code">src/core/AppState.js → _getUndoLimit()</code>.
       </div>
     </section>
 

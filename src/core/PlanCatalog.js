@@ -17,6 +17,13 @@ export const PLAN_CATALOG = {
       'Exportación PNG',
       '1 usuario'
     ],
+    limits: {
+      activeProjects: 1,
+      elementsPerPlan: 50,
+      teamUsers: 1,
+      undoSteps: 5,
+      templateSlots: 3
+    },
     features: {
       ownLogo: false,
       pdfExport: false,
@@ -50,6 +57,13 @@ export const PLAN_CATALOG = {
       'Compartir planning con clientes',
       '2 usuarios del equipo'
     ],
+    limits: {
+      activeProjects: null,
+      elementsPerPlan: null,
+      teamUsers: 2,
+      undoSteps: 20,
+      templateSlots: 20
+    },
     features: {
       ownLogo: true,
       pdfExport: true,
@@ -83,6 +97,13 @@ export const PLAN_CATALOG = {
       'Sincronización Cloud',
       'Historial de versiones'
     ],
+    limits: {
+      activeProjects: null,
+      elementsPerPlan: null,
+      teamUsers: null,
+      undoSteps: 20,
+      templateSlots: 50
+    },
     features: {
       ownLogo: true,
       pdfExport: true,
