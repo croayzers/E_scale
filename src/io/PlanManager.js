@@ -96,7 +96,18 @@ function init() {
 
 // ── Plan dropdown ─────────────────────────────────────────────────────────────
 function togglePlanDropdown() {
-  document.getElementById('upload-plan-dropdown')?.classList.toggle('hidden');
+  const dropdown = document.getElementById('upload-plan-dropdown');
+  if (!dropdown) return;
+  const isHidden = dropdown.classList.contains('hidden');
+  if (isHidden) {
+    const btn = document.getElementById('btn-upload-plan');
+    const rect = btn.getBoundingClientRect();
+    dropdown.style.top  = `${rect.bottom + 6}px`;
+    dropdown.style.left = `${rect.left}px`;
+    dropdown.classList.remove('hidden');
+  } else {
+    dropdown.classList.add('hidden');
+  }
 }
 function closePlanDropdown() {
   document.getElementById('upload-plan-dropdown')?.classList.add('hidden');
