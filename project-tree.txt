@@ -31,6 +31,8 @@ PROJECT STRUCTURE
 │   │   ├── send-export.js
 │   │   ├── send-feedback.js
 │   │   └── send-share.js
+│   ├── plans/
+│   │   └── search.js
 │   └── public-config.js
 ├── brand/
 │   ├── brand.json
