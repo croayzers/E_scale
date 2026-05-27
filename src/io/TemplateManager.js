@@ -258,6 +258,33 @@ async function promptAndApplyPlanning(data, entry) {
   setCurrentTemplateMeta({ name: data.name || entry.name, source: 'loaded' });
   showToast(`Planning "${currentPlanningMeta.name}" cargado — ${c} elemento${c !== 1 ? 's' : ''}`);
   renderTemplateList('planning');
+
+  setTimeout(() => showPlanningImportInfo(), 1200);
+}
+
+function showPlanningImportInfo() {
+  let card = document.getElementById('escale-planning-import-info');
+  if (card) { card.remove(); }
+  card = document.createElement('div');
+  card.id = 'escale-planning-import-info';
+  card.style.cssText = [
+    'position:fixed', 'bottom:90px', 'left:50%', 'transform:translateX(-50%)',
+    'z-index:400', 'background:#1a1a1c', 'color:#f5f3ee',
+    'padding:14px 22px', 'border-radius:12px', 'max-width:380px', 'width:calc(100vw - 32px)',
+    'font-family:"Inter Tight",sans-serif', 'font-size:12.5px', 'line-height:1.55',
+    'box-shadow:0 8px 32px rgba(0,0,0,0.35)', 'cursor:pointer',
+    'display:flex', 'align-items:flex-start', 'gap:12px'
+  ].join(';');
+  card.innerHTML = `
+    <span style="font-size:18px;flex-shrink:0">📐</span>
+    <div>
+      <div style="font-weight:700;margin-bottom:4px">Verifica la escala del plano</div>
+      <div style="opacity:0.72;font-size:11.5px">Si no has calibrado el plano con este planning, usa la herramienta de calibración para reescalar y que las medidas coincidan.</div>
+    </div>
+  `;
+  card.addEventListener('click', () => card.remove());
+  document.body.appendChild(card);
+  setTimeout(() => card?.remove(), 9000);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -273,6 +300,10 @@ function serializeItems(sourceItems, { markBase = false } = {}) {
 }
 
 function buildData(kind, items, opts = {}) {
+  // El grid global nunca se exporta (cada escena mantiene el suyo).
+  // Las zonas sí incluyen su gridConfig dentro de sus items.
+  // El plano (imagen) no se guarda en plantillas de tipo 'planning'.
+  const includePlanImage = kind !== 'planning';
   return {
     version:    TEMPLATE_VERSION,
     appVersion: 'E4c',
@@ -284,7 +315,7 @@ function buildData(kind, items, opts = {}) {
       widthM:  AppState.plan.widthM,
       lengthM: AppState.plan.lengthM,
       opacity: AppState.plan.opacity,
-      imageDataURL: getPlanImageDataURL()
+      ...(includePlanImage && { imageDataURL: getPlanImageDataURL() })
     },
     camera:  AppState.camera,
     snap:    { ...AppState.snap },
@@ -725,9 +756,7 @@ async function init() {
   document.getElementById('btn-save-template')?.addEventListener('click', save);
   document.getElementById('btn-load-template')?.addEventListener('click', load);
   document.getElementById('file-template')?.addEventListener('change', handleFileLoad);
-  document.getElementById('welcome-plantilla')?.addEventListener('click', () => {
-    document.getElementById('welcome-modal').style.display = 'none'; load();
-  });
+  // welcome-plantilla se gestiona en main.js (flujo work-mode-modal → TemplateManager.load)
 
   // Pills — auto-pick folder if none selected yet
   document.getElementById('tpl-base-btn')?.addEventListener('click', async e => {

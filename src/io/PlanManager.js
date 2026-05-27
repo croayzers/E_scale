@@ -81,10 +81,20 @@ function applyImageToPlan(imgSrc, formatLabel) {
   img.src = imgSrc;
 }
 
+function hasExistingPlan() {
+  return Boolean(AppState.plan.texture?.image);
+}
+
+function confirmOverwrite() {
+  if (!hasExistingPlan()) return true;
+  return confirm('Ya hay un plano cargado.\n\n¿Deseas reemplazarlo con el nuevo archivo?');
+}
+
 /* ── Handler IMG ── */
 function handleImageFile(e) {
   const file = e.target.files[0];
   if (!file) return;
+  if (!confirmOverwrite()) { e.target.value = ''; return; }
   const reader = new FileReader();
   reader.onload = ev => applyImageToPlan(ev.target.result, 'IMG');
   reader.readAsDataURL(file);
@@ -95,6 +105,7 @@ function handleImageFile(e) {
 async function handlePdfFile(e) {
   const file = e.target.files[0];
   if (!file) return;
+  if (!confirmOverwrite()) { e.target.value = ''; return; }
   e.target.value = '';
 
   if (!window.pdfjsLib) {
@@ -138,6 +149,7 @@ async function handlePdfFile(e) {
 function handleDwgFile(e) {
   const file = e.target.files[0];
   if (!file) return;
+  if (!confirmOverwrite()) { e.target.value = ''; return; }
   e.target.value = '';
 
   document.getElementById('plan-status').textContent = 'Procesando…';

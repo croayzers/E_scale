@@ -80,6 +80,7 @@ export const AppState = {
   showCotas: true,
   shadows: true,
   inventoryCollapsed: false,
+  workMode: null,   // 'base' | 'planning' — elegido en el modal de inicio
 
   plan: {
     texture: null,

@@ -456,22 +456,44 @@ async function bootstrap() {
     if (welcomeModal) welcomeModal.style.display = 'flex';
   });
 
-  document.getElementById('welcome-plano')?.addEventListener('click', () => {
+  const workModeModal = document.getElementById('work-mode-modal');
+  let _pendingWelcomeAction = null;
+
+  function showWorkModeModal(welcomeMode, action) {
     if (welcomeModal) welcomeModal.style.display = 'none';
-    setTopCamera();
-    document.getElementById('btn-upload-plan')?.click();
-    void AnalyticsManager.track('welcome_choice', { mode: 'plano_2d' });
-    openAfterWelcome();
+    _pendingWelcomeAction = action;
+    void AnalyticsManager.track('welcome_choice', { mode: welcomeMode });
+    if (workModeModal) workModeModal.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function commitWorkMode(mode) {
+    AppState.workMode = mode;
+    if (workModeModal) workModeModal.style.display = 'none';
+    void AnalyticsManager.track('work_mode_choice', { mode });
+    const action = _pendingWelcomeAction;
+    _pendingWelcomeAction = null;
+    action?.();
+  }
+
+  document.getElementById('work-mode-base')?.addEventListener('click', () => commitWorkMode('base'));
+  document.getElementById('work-mode-planning')?.addEventListener('click', () => commitWorkMode('planning'));
+
+  document.getElementById('welcome-plano')?.addEventListener('click', () => {
+    showWorkModeModal('plano_2d', () => {
+      setTopCamera();
+      document.getElementById('btn-upload-plan')?.click();
+      openAfterWelcome();
+    });
   });
   document.getElementById('welcome-libre')?.addEventListener('click', () => {
-    if (welcomeModal) welcomeModal.style.display = 'none';
-    void AnalyticsManager.track('welcome_choice', { mode: 'diseno_libre' });
-    openAfterWelcome();
+    showWorkModeModal('diseno_libre', () => openAfterWelcome());
   });
   document.getElementById('welcome-plantilla')?.addEventListener('click', () => {
-    if (welcomeModal) welcomeModal.style.display = 'none';
-    void AnalyticsManager.track('welcome_choice', { mode: 'plantilla' });
-    openAfterWelcome();
+    showWorkModeModal('plantilla', () => {
+      TemplateManager.load();
+      openAfterWelcome();
+    });
   });
 
   refreshHeaderStats();

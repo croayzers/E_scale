@@ -156,6 +156,26 @@
   </div>
 </div>
 
+<!-- ============ MODAL MODO DE TRABAJO ============ -->
+<div id="work-mode-modal" class="fixed inset-0 z-[210] flex items-center justify-center" style="display:none;background:rgba(245,243,238,0.92);backdrop-filter:blur(12px)">
+  <div class="glass-mac p-10 max-w-md w-full mx-6 text-center anim-in">
+    <div class="display-font text-2xl font-medium mb-2 leading-tight">¿Qué quieres crear?</div>
+    <div class="mono text-[11px] tracking-widest uppercase mb-8" style="color:var(--muted)">Selecciona el tipo de trabajo</div>
+    <div class="grid grid-cols-2 gap-3">
+      <button id="work-mode-base" class="p-5 text-left border border-black/15 hover:border-black hover:bg-black hover:text-white transition-all" style="border-radius:10px">
+        <i data-lucide="building-2" class="w-7 h-7 mb-3"></i>
+        <div class="display-font text-lg mb-1">Base</div>
+        <div class="text-[11px] opacity-70 leading-relaxed">Recinto, estructura y distribución fija del espacio.</div>
+      </button>
+      <button id="work-mode-planning" class="p-5 text-left border border-black/15 hover:border-black hover:bg-black hover:text-white transition-all" style="border-radius:10px">
+        <i data-lucide="calendar-check" class="w-7 h-7 mb-3"></i>
+        <div class="display-font text-lg mb-1">Planning evento</div>
+        <div class="text-[11px] opacity-70 leading-relaxed">Mesas, sillas e invitados para un evento específico.</div>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ HEADER MAC ============ -->
 <header id="header-mac" class="fixed z-30 anim-in glass-mac" style="top:12px;left:12px;right:12px;padding:6px 8px;height:44px;overflow-x:auto;overflow-y:hidden;">
   <div id="header-inner" style="display:flex;flex-wrap:nowrap;align-items:center;gap:8px;height:100%;width:max-content;min-width:100%;">
