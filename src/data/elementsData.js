@@ -404,6 +404,93 @@ export default {
       "cableColor": "#1a1a1c",
       "chairs": 0,
       "defaultRotation": 0
+    },
+    {
+      "id": "pared_3m",
+      "name": "Pared",
+      "category": "structures",
+      "icon": "square",
+      "type": "schemaProp",
+      "assetProfile": "pared",
+      "dims": { "length": 3.0, "width": 0.1, "height": 3.0 },
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "pared_puerta",
+      "name": "Pared y puerta",
+      "category": "structures",
+      "icon": "door-open",
+      "type": "schemaProp",
+      "assetProfile": "paredPuerta",
+      "dims": { "length": 3.0, "width": 0.1, "height": 3.0 },
+      "doorWidth": 1.0,
+      "doorHeight": 2.0,
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "techo_3x3",
+      "name": "Techo",
+      "category": "structures",
+      "icon": "layout-panel-top",
+      "type": "schemaProp",
+      "assetProfile": "techo",
+      "dims": { "length": 3.0, "width": 3.0, "height": 0.1 },
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0,
+      "y": 2.0
+    },
+    {
+      "id": "muro_8m",
+      "name": "Muro",
+      "category": "structures",
+      "icon": "rectangle-horizontal",
+      "type": "schemaProp",
+      "assetProfile": "muro",
+      "dims": { "length": 8.0, "width": 0.6, "height": 5.0 },
+      "color": "#4a2d1a",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "tejado_1aguas",
+      "name": "Tejado 1 aguas",
+      "category": "structures",
+      "icon": "triangle",
+      "type": "schemaProp",
+      "assetProfile": "tejado1Aguas",
+      "dims": { "length": 3.0, "width": 3.0, "height": 1.0 },
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "tejado_2aguas",
+      "name": "Tejado 2 aguas",
+      "category": "structures",
+      "icon": "chevron-up",
+      "type": "schemaProp",
+      "assetProfile": "tejado2Aguas",
+      "dims": { "length": 3.0, "width": 3.0, "height": 1.0 },
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "tejado_4aguas",
+      "name": "Tejado 4 aguas",
+      "category": "structures",
+      "icon": "tent",
+      "type": "schemaProp",
+      "assetProfile": "tejado4Aguas",
+      "dims": { "length": 3.0, "width": 3.0, "height": 1.0 },
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0
     }
   ],
   "ambient": [
@@ -476,6 +563,43 @@ export default {
       "dims": { "height": 1.8 },
       "color": "#2f6a3f",
       "potColor": "#5a3a1f",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "arbusto_recto_3m",
+      "name": "Arbusto recto",
+      "category": "ambient",
+      "icon": "minus",
+      "type": "schemaProp",
+      "assetProfile": "arbustoRecto",
+      "dims": { "length": 3.0, "width": 1.0, "height": 1.0 },
+      "color": "#3D7A38",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "arbusto_corner",
+      "name": "Arbusto corner",
+      "category": "ambient",
+      "icon": "corner-down-right",
+      "type": "schemaProp",
+      "assetProfile": "arbustoCorner",
+      "dims": { "length": 1.0, "width": 1.0, "height": 1.0 },
+      "color": "#3D7A38",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "arbusto_curvo_3m",
+      "name": "Arbusto curvo",
+      "category": "ambient",
+      "icon": "spline",
+      "type": "schemaProp",
+      "assetProfile": "arbustoCurvo",
+      "dims": { "length": 3.0, "width": 1.0, "height": 1.0 },
+      "curveDiameter": 1.0,
+      "color": "#3D7A38",
       "chairs": 0,
       "defaultRotation": 0
     }

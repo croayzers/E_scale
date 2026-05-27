@@ -1275,6 +1275,206 @@ function buildMesaDJ(group, item, L, W, H, color) {
   addSphere(group, { radius: 0.055, position: [0, tH + 0.2, W * 0.42 + 0.04], color: '#FF00AA', emissive: true });
 }
 
+function buildPared(group, item, L, W, H, color) {
+  const body = addBox(group, { size: [L, H, W], position: [0, H / 2, 0], color, preset: 'matte' });
+  markMain(body, color);
+}
+
+function buildMuro(group, item, L, W, H, color) {
+  const body = addBox(group, { size: [L, H, W], position: [0, H / 2, 0], color, preset: 'matte' });
+  markMain(body, color);
+  addBox(group, { size: [L + 0.04, 0.06, W + 0.04], position: [0, H + 0.03, 0], color: '#6B4423', preset: 'matte' });
+}
+
+function buildTecho(group, item, L, W, H, color) {
+  const t = Math.max(0.06, H);
+  const body = addBox(group, { size: [L, t, W], position: [0, t / 2, 0], color, preset: 'matte' });
+  markMain(body, color);
+}
+
+function buildParedPuerta(group, item, L, W, H, color) {
+  const doorW = item.doorWidth ?? 1.0;
+  const doorH = item.doorHeight ?? 2.0;
+  const sideW = (L - doorW) / 2;
+  const frameColor = '#8B7355';
+
+  const leftBody = addBox(group, { size: [sideW, H, W], position: [-L / 2 + sideW / 2, H / 2, 0], color, preset: 'matte' });
+  markMain(leftBody, color);
+  addBox(group, { size: [sideW, H, W], position: [L / 2 - sideW / 2, H / 2, 0], color, preset: 'matte' });
+  if (H > doorH) {
+    addBox(group, { size: [doorW, H - doorH, W], position: [0, doorH + (H - doorH) / 2, 0], color, preset: 'matte' });
+  }
+
+  addBox(group, { size: [0.06, doorH, W + 0.02], position: [-doorW / 2 + 0.03, doorH / 2, 0], color: frameColor, preset: 'matte' });
+  addBox(group, { size: [0.06, doorH, W + 0.02], position: [doorW / 2 - 0.03, doorH / 2, 0], color: frameColor, preset: 'matte' });
+  addBox(group, { size: [doorW, 0.06, W + 0.02], position: [0, doorH - 0.03, 0], color: frameColor, preset: 'matte' });
+
+  const doorPivot = new THREE.Group();
+  doorPivot.position.set(-doorW / 2, 0, W / 2 + 0.02);
+  doorPivot.rotation.y = Math.PI / 4;
+  const doorMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(doorW * 0.96, doorH * 0.97, 0.04),
+    makeStandardMaterial(frameColor, 'matte', 1)
+  );
+  doorMesh.position.set(doorW * 0.48, doorH / 2, 0);
+  doorMesh.castShadow = true;
+  doorPivot.add(doorMesh);
+  group.add(doorPivot);
+
+  const hingeX = -doorW / 2;
+  const hingeZ = W / 2 + 0.02;
+  const arcSegs = 24;
+  const arcPts = [];
+  for (let i = 0; i <= arcSegs; i++) {
+    const a = (i / arcSegs) * (Math.PI / 2);
+    arcPts.push(new THREE.Vector3(hingeX + Math.cos(a) * doorW, 0.016, hingeZ + Math.sin(a) * doorW));
+  }
+  const arcLine = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(arcPts),
+    new THREE.LineDashedMaterial({ color: 0x999999, dashSize: 0.1, gapSize: 0.06, transparent: true, opacity: 0.65 })
+  );
+  arcLine.computeLineDistances();
+  group.add(arcLine);
+
+  const arcShape = new THREE.Shape();
+  arcShape.moveTo(hingeX, hingeZ);
+  for (let i = 0; i <= arcSegs; i++) {
+    const a = (i / arcSegs) * (Math.PI / 2);
+    arcShape.lineTo(hingeX + Math.cos(a) * doorW, hingeZ + Math.sin(a) * doorW);
+  }
+  arcShape.lineTo(hingeX, hingeZ);
+  const arcFill = new THREE.Mesh(
+    new THREE.ShapeGeometry(arcShape),
+    new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.10, side: THREE.DoubleSide, depthWrite: false })
+  );
+  arcFill.rotation.x = -Math.PI / 2;
+  arcFill.position.y = 0.012;
+  arcFill.renderOrder = 10;
+  group.add(arcFill);
+}
+
+function buildArbustoRecto(group, item, L, W, H, color) {
+  const baseColor = color || '#3D7A38';
+  const leafColors = ['#4A8C45', '#3D7A38', '#558C50', '#2D6E30'];
+  const base = addBox(group, { size: [L, H * 0.55, W * 0.65], position: [0, H * 0.275, 0], color: '#2A5E28', preset: 'matte' });
+  markMain(base, baseColor);
+  const count = Math.max(3, Math.round(L / 0.75));
+  for (let i = 0; i < count; i++) {
+    const x = -L / 2 + L * (i + 0.5) / count;
+    addSphere(group, {
+      radius: H * 0.42,
+      position: [x, H * 0.68, Math.sin(i * 2.1) * W * 0.08],
+      color: leafColors[i % leafColors.length],
+      preset: 'matte'
+    });
+  }
+}
+
+function buildArbustoCorner(group, item, L, W, H, color) {
+  const baseColor = color || '#3D7A38';
+  const leafColors = ['#4A8C45', '#3D7A38', '#558C50'];
+  const armW = W * 0.55;
+  const armLen = L * 0.88;
+
+  const armX = addBox(group, { size: [armLen, H * 0.55, armW], position: [-L / 2 + armLen / 2, H * 0.275, -W / 2 + armW / 2], color: '#2A5E28', preset: 'matte' });
+  markMain(armX, baseColor);
+  addBox(group, { size: [armW, H * 0.55, armLen], position: [-L / 2 + armW / 2, H * 0.275, -W / 2 + armLen / 2], color: '#2A5E28', preset: 'matte' });
+
+  addSphere(group, { radius: H * 0.4, position: [-L / 2 + armW / 2, H * 0.68, -W / 2 + armW / 2], color: leafColors[0], preset: 'matte' });
+  const nArm = Math.max(2, Math.round((armLen - armW) / 0.7));
+  for (let i = 0; i < nArm; i++) {
+    const t = (i + 0.5) / nArm;
+    addSphere(group, { radius: H * 0.32, position: [-L / 2 + armW + (armLen - armW) * t, H * 0.68, -W / 2 + armW / 2], color: leafColors[(i + 1) % leafColors.length], preset: 'matte' });
+    addSphere(group, { radius: H * 0.32, position: [-L / 2 + armW / 2, H * 0.68, -W / 2 + armW + (armLen - armW) * t], color: leafColors[(i + 2) % leafColors.length], preset: 'matte' });
+  }
+}
+
+function buildArbustoCurvo(group, item, L, W, H, color) {
+  const baseColor = color || '#3D7A38';
+  const leafColors = ['#4A8C45', '#3D7A38', '#558C50', '#2D6E30'];
+  const curveR = item.curveDiameter ?? 1.0;
+  const totalAngle = L / curveR;
+  const startAngle = -totalAngle / 2;
+  const count = Math.max(4, Math.round(L / 0.7));
+  let firstBase = null;
+  for (let i = 0; i < count; i++) {
+    const angle = startAngle + totalAngle * (i / (count - 1));
+    const cx = Math.sin(angle) * curveR;
+    const cz = (Math.cos(angle) - Math.cos(startAngle)) * curveR;
+    const b = addBox(group, { size: [W * 0.55, H * 0.5, W * 0.55], position: [cx, H * 0.25, cz], color: '#2A5E28', preset: 'matte' });
+    if (!firstBase) { firstBase = b; markMain(b, baseColor); }
+    addSphere(group, { radius: H * 0.4, position: [cx, H * 0.65, cz], color: leafColors[i % leafColors.length], preset: 'matte' });
+  }
+}
+
+function buildTejado1Aguas(group, item, L, W, H, color) {
+  const peak = Math.max(0.1, H);
+  const t = 0.14;
+  const profile = new THREE.Shape();
+  profile.moveTo(-W / 2, 0);
+  profile.lineTo(W / 2, peak);
+  profile.lineTo(W / 2, peak - t);
+  profile.lineTo(-W / 2, -t);
+  profile.closePath();
+  const geo = new THREE.ExtrudeGeometry(profile, { depth: L, bevelEnabled: false, curveSegments: 1 });
+  const mesh = new THREE.Mesh(geo, makeStandardMaterial(color, 'matte', 1));
+  mesh.rotation.y = Math.PI / 2;
+  mesh.position.set(-L / 2, 0, 0);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  markMain(mesh, color);
+  group.add(mesh);
+}
+
+function buildTejado2Aguas(group, item, L, W, H, color) {
+  const peak = Math.max(0.1, H);
+  const profile = new THREE.Shape();
+  profile.moveTo(-W / 2, 0);
+  profile.lineTo(0, peak);
+  profile.lineTo(W / 2, 0);
+  profile.closePath();
+  const geo = new THREE.ExtrudeGeometry(profile, { depth: L, bevelEnabled: false, curveSegments: 1 });
+  const mesh = new THREE.Mesh(geo, makeStandardMaterial(color, 'matte', 1));
+  mesh.rotation.y = Math.PI / 2;
+  mesh.position.set(-L / 2, 0, 0);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  markMain(mesh, color);
+  group.add(mesh);
+  addBox(group, { size: [L, 0.06, 0.08], position: [0, peak + 0.03, 0], color: '#8B7355', preset: 'matte' });
+}
+
+function buildTejado4Aguas(group, item, L, W, H, color) {
+  const peak = Math.max(0.1, H);
+  const mat = makeStandardMaterial(color, 'matte', 1);
+  const apex = [0, peak, 0];
+  const corners = [
+    [-L / 2, 0, -W / 2],
+    [L / 2, 0, -W / 2],
+    [L / 2, 0, W / 2],
+    [-L / 2, 0, W / 2]
+  ];
+  for (let i = 0; i < 4; i++) {
+    const c1 = corners[i];
+    const c2 = corners[(i + 1) % 4];
+    const verts = new Float32Array([
+      apex[0], apex[1], apex[2],
+      c1[0], c1[1], c1[2],
+      c2[0], c2[1], c2[2]
+    ]);
+    const faceGeo = new THREE.BufferGeometry();
+    faceGeo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+    faceGeo.setIndex([0, 1, 2]);
+    faceGeo.computeVertexNormals();
+    const face = new THREE.Mesh(faceGeo, mat.clone());
+    face.castShadow = true;
+    face.receiveShadow = true;
+    markMain(face, color);
+    group.add(face);
+  }
+  addBox(group, { size: [L, 0.02, W], position: [0, 0.01, 0], color, preset: 'matte', opacity: 0.35 });
+}
+
 function buildGenericRect(item, view) {
   const group = new THREE.Group();
   const W = item.dims?.width ?? 1.2;
@@ -1411,6 +1611,36 @@ function buildGenericRect(item, view) {
       break;
     case 'mesaDJ':
       buildMesaDJ(group, item, L, W, H, color);
+      break;
+    case 'pared':
+      buildPared(group, item, L, W, H, color);
+      break;
+    case 'muro':
+      buildMuro(group, item, L, W, H, color);
+      break;
+    case 'techo':
+      buildTecho(group, item, L, W, H, color);
+      break;
+    case 'paredPuerta':
+      buildParedPuerta(group, item, L, W, H, color);
+      break;
+    case 'arbustoRecto':
+      buildArbustoRecto(group, item, L, W, H, color);
+      break;
+    case 'arbustoCorner':
+      buildArbustoCorner(group, item, L, W, H, color);
+      break;
+    case 'arbustoCurvo':
+      buildArbustoCurvo(group, item, L, W, H, color);
+      break;
+    case 'tejado1Aguas':
+      buildTejado1Aguas(group, item, L, W, H, color);
+      break;
+    case 'tejado2Aguas':
+      buildTejado2Aguas(group, item, L, W, H, color);
+      break;
+    case 'tejado4Aguas':
+      buildTejado4Aguas(group, item, L, W, H, color);
       break;
     default: {
       const body = new THREE.Mesh(
