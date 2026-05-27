@@ -332,17 +332,6 @@ export default {
       "defaultRotation": 0
     },
     {
-      "id": "tent_tipi",
-      "name": "Tipi",
-      "category": "decor",
-      "type": "carpaTipi",
-      "dims": { "diameter": 6.0, "height": 5.5 },
-      "tarpColor": "#e8dcc4",
-      "poleColor": "#3a2d1f",
-      "chairs": 0,
-      "defaultRotation": 0
-    },
-    {
       "id": "tent_domo",
       "name": "Domo",
       "category": "decor",

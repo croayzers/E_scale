@@ -365,6 +365,8 @@ function inferRectProfile(item) {
     case 'helicoptero': return 'helicoptero';
     case 'escalera':    return 'escalera';
     case 'mesa_dj':     return 'mesaDJ';
+    case 'altavoz_grande': return 'speaker';
+    case 'microfono_pie': return 'microphone';
     default: return '';
   }
 }
@@ -634,7 +636,7 @@ function buildBuffetCarro(item, view) {
   const W = item.dims?.width ?? 1.5;
   const H = item.dims?.height ?? 1.0;
   const color = item.color || '#E8E4DF';
-  const accent = '#4B5563';
+  const metal = '#4B5563';
 
   if (view === 'top') {
     addTopFootprint(group, item, L, W, color, 0.18);
@@ -642,37 +644,43 @@ function buildBuffetCarro(item, view) {
     return group;
   }
 
+  const wheelR = 0.18;
+  const bodyBase = wheelR * 2;
+  const offX = L / 2 - 0.15;
+  const offZ = W / 2 - 0.18;
+
+  // 4 large caster wheels (tyre + hub + axle stub)
+  [[offX, offZ], [-offX, offZ], [offX, -offZ], [-offX, -offZ]].forEach(([x, z]) => {
+    addCylinder(group, { radiusTop: wheelR, height: wheelR * 0.42, position: [x, wheelR, z], color: '#1A1A1C', preset: 'matte', radialSegments: 24, rotation: [Math.PI / 2, 0, 0] });
+    addCylinder(group, { radiusTop: wheelR * 0.52, height: wheelR * 0.44, position: [x, wheelR, z], color: metal, preset: 'metal', radialSegments: 12, rotation: [Math.PI / 2, 0, 0] });
+    addCylinder(group, { radiusTop: 0.03, height: wheelR * 0.5, position: [x, wheelR, z], color: '#94A3B8', preset: 'metal', radialSegments: 8, rotation: [Math.PI / 2, 0, 0] });
+  });
+
+  // axle bars (front/back pairs)
+  [offX, -offX].forEach(x => addBox(group, { size: [0.04, 0.04, W - 0.3], position: [x, wheelR, 0], color: metal, preset: 'metal' }));
+
+  // vertical legs from axle to body base
+  [[offX, offZ], [-offX, offZ], [offX, -offZ], [-offX, -offZ]].forEach(([x, z]) => {
+    addBox(group, { size: [0.06, bodyBase - wheelR, 0.06], position: [x, wheelR + (bodyBase - wheelR) / 2, z], color: metal, preset: 'metal' });
+  });
+
   // base frame
-  const base = addBox(group, { size: [L, 0.08, W], position: [0, 0.08, 0], color: accent, preset: 'matte' });
+  const base = addBox(group, { size: [L, 0.07, W], position: [0, bodyBase + 0.035, 0], color: metal, preset: 'matte' });
   markMain(base, color);
 
   // main body / shelf unit
-  const body = addBox(group, { size: [L, H * 0.55, W * 0.92], position: [0, H * 0.28 + 0.08, 0], color, preset: 'fabric' });
-  markMain(body, color);
+  addBox(group, { size: [L, H * 0.55, W * 0.92], position: [0, bodyBase + 0.07 + H * 0.275, 0], color, preset: 'fabric' });
 
   // top tray surface
-  addBox(group, { size: [L + 0.04, 0.05, W + 0.04], position: [0, H * 0.58 + 0.08, 0], color: '#D1D5DB', preset: 'matte' });
+  addBox(group, { size: [L + 0.04, 0.05, W + 0.04], position: [0, bodyBase + 0.07 + H * 0.57, 0], color: '#D1D5DB', preset: 'matte' });
 
   // mid shelf
-  addBox(group, { size: [L - 0.06, 0.03, W * 0.88], position: [0, H * 0.38, 0], color: '#D4D0CB', preset: 'matte' });
+  addBox(group, { size: [L - 0.06, 0.03, W * 0.88], position: [0, bodyBase + 0.07 + H * 0.36, 0], color: '#D4D0CB', preset: 'matte' });
 
-  // back panel / sneeze guard frame
-  addBox(group, { size: [L, H * 0.38, 0.025], position: [0, H * 0.62 + 0.12, W / 2 - 0.015], color: '#B0CAD8', preset: 'glass' });
+  // sneeze guard (back)
+  addBox(group, { size: [L, H * 0.36, 0.025], position: [0, bodyBase + 0.07 + H * 0.60, W / 2 - 0.015], color: '#B0CAD8', preset: 'glass' });
 
-  // legs (4 corners)
-  const lh = 0.18;
-  const offX = L / 2 - 0.08;
-  const offZ = W / 2 - 0.08;
-  [[offX, offZ], [-offX, offZ], [offX, -offZ], [-offX, -offZ]].forEach(([x, z]) => {
-    addBox(group, { size: [0.05, lh, 0.05], position: [x, lh / 2, z], color: accent, preset: 'metal' });
-  });
-
-  // wheel hubs (bottom)
-  [[offX, offZ], [-offX, offZ], [offX, -offZ], [-offX, -offZ]].forEach(([x, z]) => {
-    addSphere(group, { radius: 0.045, position: [x, 0.045, z], color: '#374151', preset: 'matte' });
-  });
-
-  addLabel(group, item.labelText || 'Buffet carro', H + 0.45);
+  addLabel(group, item.labelText || 'Buffet carro', bodyBase + H + 0.45);
   return group;
 }
 
@@ -810,19 +818,13 @@ function buildRunway(group, item, L, W, H, color) {
 }
 
 function buildBooth(group, item, L, W, H, color) {
-  const wallDepth = Math.max(0.05, W * 0.08);
-  const shell = addBox(group, {
-    size: [L, H, W],
-    position: [0, H / 2, 0],
-    color,
-    preset: 'glass',
-    opacity: 0.12
-  });
+  const wd = Math.max(0.06, W * 0.09);
+  const shell = addBox(group, { size: [L, H, W], position: [0, H / 2, 0], color, preset: 'glass', opacity: 0.12 });
   markMain(shell, color);
-  addBox(group, { size: [L, H, wallDepth], position: [0, H / 2, -W / 2 + wallDepth / 2], color, preset: 'matte' });
-  addBox(group, { size: [wallDepth, H, W], position: [-L / 2 + wallDepth / 2, H / 2, 0], color, preset: 'matte' });
-  addBox(group, { size: [wallDepth, H, W], position: [L / 2 - wallDepth / 2, H / 2, 0], color, preset: 'matte' });
-  addBox(group, { size: [L, wallDepth, W], position: [0, H - wallDepth / 2, 0], color: '#111827', preset: 'metal' });
+  addBox(group, { size: [L, H, wd], position: [0, H / 2, -W / 2 + wd / 2], color, preset: 'matte' });
+  addBox(group, { size: [wd, H, W], position: [-L / 2 + wd / 2, H / 2, 0], color, preset: 'matte' });
+  addBox(group, { size: [wd, H, W], position: [L / 2 - wd / 2, H / 2, 0], color, preset: 'matte' });
+  addBox(group, { size: [L + wd * 2, wd, W + wd * 2], position: [0, H + wd / 2, 0], color: '#111827', preset: 'metal' });
 }
 
 function buildPortableToilet(group, item, L, W, H, color) {
@@ -998,15 +1000,61 @@ function buildBottleRack(group, item, L, W, H, color) {
 }
 
 function buildCoffeeMachine(group, item, L, W, H, color) {
-  const body = addBox(group, {
-    size: [L, H, W],
-    position: [0, H / 2, 0],
-    color,
-    preset: 'metal'
-  });
+  const chrome = '#CBD5E1';
+  const shiny = '#D1D5DB';
+  const dark = '#1E293B';
+  const black = '#0F172A';
+  const groupCount = Math.max(1, Math.round(L / 0.38));
+
+  // Main body
+  const body = addBox(group, { size: [L, H * 0.84, W], position: [0, H * 0.42, 0], color, preset: 'metal' });
   markMain(body, color);
-  addBox(group, { size: [L * 0.78, H * 0.22, W * 0.42], position: [0, H * 0.68, -W * 0.08], color: '#E5E7EB', preset: 'glass', opacity: 0.42 });
-  [-L * 0.18, L * 0.18].forEach(x => addCylinder(group, { radiusTop: 0.02, height: 0.16, position: [x, H * 0.26, W * 0.28], color: '#94A3B8', preset: 'metal' }));
+
+  // Drip tray
+  addBox(group, { size: [L + 0.03, 0.04, W + 0.03], position: [0, 0.02, 0], color: chrome, preset: 'metal' });
+  addBox(group, { size: [L - 0.04, 0.014, W - 0.04], position: [0, 0.042, 0], color: '#374151', preset: 'matte' });
+
+  // Top panel
+  addBox(group, { size: [L + 0.02, 0.055, W + 0.02], position: [0, H * 0.84 + 0.028, 0], color: shiny, preset: 'metal' });
+
+  // Bean hoppers on top
+  for (let i = 0; i < groupCount; i++) {
+    const hx = groupCount > 1 ? -L / 2 + (L / groupCount) * (i + 0.5) : 0;
+    addCylinder(group, { radiusTop: 0.078, radiusBottom: 0.12, height: 0.22, position: [hx, H * 0.84 + 0.055 + 0.11, 0], color: dark, preset: 'glass', opacity: 0.6, radialSegments: 20 });
+    addCylinder(group, { radiusTop: 0.088, height: 0.028, position: [hx, H * 0.84 + 0.055 + 0.22 + 0.014, 0], color: black, preset: 'matte', radialSegments: 16 });
+  }
+
+  // Group heads (front)
+  for (let i = 0; i < groupCount; i++) {
+    const gx = groupCount > 1 ? -L / 2 + (L / groupCount) * (i + 0.5) : 0;
+    addCylinder(group, { radiusTop: 0.058, height: 0.06, position: [gx, H * 0.44, W / 2 + 0.03], color: chrome, preset: 'metal', radialSegments: 18 });
+    addPolylineTubes(group, [[gx, H * 0.42, W / 2 + 0.09], [gx - 0.055, H * 0.37, W / 2 + 0.17], [gx + 0.055, H * 0.37, W / 2 + 0.17]], 0.012, dark);
+    addCylinder(group, { radiusTop: 0.007, height: 0.055, position: [gx - 0.016, H * 0.31, W / 2 + 0.03], color: chrome, preset: 'metal', radialSegments: 6 });
+    addCylinder(group, { radiusTop: 0.007, height: 0.055, position: [gx + 0.016, H * 0.31, W / 2 + 0.03], color: chrome, preset: 'metal', radialSegments: 6 });
+  }
+
+  // Steam wands (sides, arcing outward and forward)
+  [-L * 0.46, L * 0.46].forEach((x, idx) => {
+    const side = idx === 0 ? -1 : 1;
+    addPolylineTubes(group, [
+      [x, H * 0.57, W / 2 + 0.01],
+      [x + side * 0.06, H * 0.44, W / 2 + 0.1],
+      [x + side * 0.1, H * 0.29, W / 2 + 0.15]
+    ], 0.013, chrome);
+    addCylinder(group, { radiusTop: 0.018, height: 0.024, position: [x + side * 0.1, H * 0.28, W / 2 + 0.15], color: chrome, preset: 'metal', radialSegments: 8 });
+  });
+
+  // Pressure gauges
+  [-L * 0.28, L * 0.28].forEach(x => {
+    addCylinder(group, { radiusTop: 0.034, height: 0.022, position: [x, H * 0.68, W / 2 + 0.011], color: shiny, preset: 'metal', radialSegments: 20 });
+    addCylinder(group, { radiusTop: 0.027, height: 0.024, position: [x, H * 0.68, W / 2 + 0.022], color: '#E5E7EB', preset: 'glass', opacity: 0.75, radialSegments: 18 });
+  });
+
+  // Control knobs
+  for (let i = 0; i < groupCount; i++) {
+    const kx = groupCount > 1 ? -L / 2 + (L / groupCount) * (i + 0.5) : 0;
+    addCylinder(group, { radiusTop: 0.022, height: 0.032, position: [kx, H * 0.72, W / 2 + 0.012], color: black, preset: 'matte', radialSegments: 12 });
+  }
 }
 
 function buildServiceCart(group, item, L, W, H, color) {
@@ -1354,25 +1402,41 @@ function buildEscalera(group, item, L, W, H, color) {
   const steps = Math.max(3, Math.round(L / 0.55));
   const stepW = L / steps;
   const stepH = H / steps;
-  const rW = Math.max(0.03, W * 0.03);
+  const railColor = '#94A3B8';
+  const rW = Math.max(0.024, Math.min(W * 0.028, 0.048));
+  const railAbove = 0.92;
+
+  // Step blocks — each block occupies only its own X slice, no z-fighting
   for (let i = 0; i < steps; i++) {
+    const blockH = (i + 1) * stepH;
     const block = addBox(group, {
-      size: [(i + 1) * stepW, (i + 1) * stepH, W],
-      position: [-L / 2 + (i + 1) * stepW / 2, (i + 1) * stepH / 2, 0],
+      size: [stepW, blockH, W],
+      position: [-L / 2 + i * stepW + stepW / 2, blockH / 2, 0],
       color, preset: 'matte'
     });
     if (i === 0) markMain(block, color);
+    // Nose strip on front edge of each tread
     addBox(group, {
-      size: [stepW, 0.03, W],
-      position: [-L / 2 + (i + 1) * stepW, (i + 1) * stepH + 0.015, 0],
+      size: [stepW + 0.01, 0.024, W + 0.01],
+      position: [-L / 2 + i * stepW + stepW / 2, blockH + 0.012, 0],
       color: '#374151', preset: 'metal'
     });
   }
-  [-W / 2 - rW, W / 2 + rW].forEach(z => {
-    addBox(group, { size: [L * 1.08, rW * 1.2, rW * 1.2], position: [0, H + rW * 0.6, z], color: '#94A3B8', preset: 'metal' });
-    [0, 0.5, 1].forEach(t => {
-      addBox(group, { size: [rW, H * t + H * 0.12, rW], position: [-L / 2 + L * t, (H * t + H * 0.12) / 2, z], color: '#94A3B8', preset: 'metal' });
-    });
+
+  // Handrails + balusters on both sides
+  [-W / 2 - rW / 2, W / 2 + rW / 2].forEach(z => {
+    // Diagonal inclined rail
+    group.add(tubeBetween(
+      new THREE.Vector3(-L / 2, railAbove, z),
+      new THREE.Vector3(L / 2, H + railAbove, z),
+      rW * 0.55, railColor
+    ));
+    // Baluster at each step corner
+    for (let i = 0; i <= steps; i++) {
+      const bx = -L / 2 + i * stepW;
+      const stepY = i * stepH;
+      addBox(group, { size: [rW, railAbove, rW], position: [bx, stepY + railAbove / 2, z], color: railColor, preset: 'metal' });
+    }
   });
 }
 
@@ -1620,6 +1684,85 @@ function buildMesaPlegable(group, item, L, W, H, color) {
   addBox(group, { size: [L - 0.12, bt, bt], position: [0, braceY, -W / 2 + inset], color: legColor, preset: 'metal' });
 }
 
+function buildSpeaker(group, item, L, W, H, color) {
+  const body = addBox(group, { size: [L, H, W], position: [0, H / 2, 0], color, preset: 'matte' });
+  markMain(body, color);
+
+  // Front grill
+  addBox(group, { size: [L * 0.94, H * 0.78, 0.016], position: [0, H * 0.50, W / 2 + 0.008], color: '#1A1A2E', preset: 'matte' });
+
+  // Woofer cone
+  const wooferR = Math.min(L, H) * 0.34;
+  addCylinder(group, { radiusTop: wooferR, height: 0.055, position: [0, H * 0.36, W / 2 + 0.024], color: '#2D3748', preset: 'matte', radialSegments: 28 });
+  addCylinder(group, { radiusTop: wooferR * 0.27, height: 0.034, position: [0, H * 0.36, W / 2 + 0.056], color: '#111827', preset: 'matte', radialSegments: 16 });
+  const wooferRing = new THREE.Mesh(
+    new THREE.TorusGeometry(wooferR * 0.88, wooferR * 0.09, 8, 28),
+    makeStandardMaterial('#111827', 'matte', 1)
+  );
+  wooferRing.rotation.x = Math.PI / 2;
+  wooferRing.position.set(0, H * 0.36, W / 2 + 0.018);
+  group.add(wooferRing);
+
+  // Horn / compression driver (HF)
+  addBox(group, { size: [L * 0.78, H * 0.21, 0.058], position: [0, H * 0.75, W / 2 + 0.029], color: '#111827', preset: 'matte' });
+  addCylinder(group, { radiusTop: 0.022, height: 0.038, position: [0, H * 0.75, W / 2 + 0.07], color: '#1E293B', preset: 'matte', radialSegments: 12 });
+
+  // Port holes (bass reflex)
+  const portCount = Math.max(1, Math.round(L / 0.3));
+  for (let i = 0; i < portCount; i++) {
+    const px = -L / 2 + (L / portCount) * (i + 0.5);
+    addCylinder(group, { radiusTop: 0.034, height: 0.02, position: [px, H * 0.09, W / 2 + 0.01], color: '#0F172A', preset: 'matte', radialSegments: 12 });
+  }
+
+  // Corner edge strips
+  [[L / 2 - 0.012, W / 2 - 0.012], [-L / 2 + 0.012, W / 2 - 0.012], [L / 2 - 0.012, -W / 2 + 0.012], [-L / 2 + 0.012, -W / 2 + 0.012]].forEach(([x, z]) => {
+    addCylinder(group, { radiusTop: 0.012, height: H, position: [x, H / 2, z], color: '#374151', preset: 'matte', radialSegments: 8 });
+  });
+
+  // Carry handle
+  [-L * 0.27, L * 0.27].forEach(x => addBox(group, { size: [0.024, 0.11, 0.024], position: [x, H + 0.042, 0], color: '#6B7280', preset: 'metal' }));
+  addBox(group, { size: [L * 0.66, 0.022, 0.022], position: [0, H + 0.097, 0], color: '#6B7280', preset: 'metal' });
+}
+
+function buildMicrophone(group, item, L, W, H, color) {
+  const standR = Math.min(L, W) * 0.09;
+  const baseR = Math.min(L, W) * 0.42;
+  const headR = Math.min(L, W) * 0.36;
+  const chrome = '#94A3B8';
+  const dark = '#1F2937';
+  const black = '#0F172A';
+
+  // Tripod — 3 spread legs
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2;
+    const fx = Math.cos(a) * baseR, fz = Math.sin(a) * baseR;
+    addPolylineTubes(group, [[0, 0.06, 0], [fx * 0.45, 0.04, fz * 0.45], [fx, 0.012, fz]], 0.012, '#374151');
+    addCylinder(group, { radiusTop: 0.022, height: 0.014, position: [fx, 0.007, fz], color: black, preset: 'matte', radialSegments: 8 });
+  }
+  addCylinder(group, { radiusTop: 0.032, height: 0.072, position: [0, 0.036, 0], color: '#374151', preset: 'metal', radialSegments: 10 });
+
+  // Main pole
+  const poleH = H * 0.78;
+  const pole = addCylinder(group, { radiusTop: standR, height: poleH, position: [0, 0.072 + poleH / 2, 0], color: chrome, preset: 'metal', radialSegments: 12 });
+  markMain(pole, color);
+
+  // Height lock collar
+  addCylinder(group, { radiusTop: standR * 2.4, height: 0.038, position: [0, H * 0.52, 0], color: dark, preset: 'matte', radialSegments: 10 });
+  addCylinder(group, { radiusTop: standR * 1.5, height: 0.07, position: [0, H * 0.56, 0], color: '#1E293B', preset: 'matte', radialSegments: 10 });
+
+  // Mic clip
+  addCylinder(group, { radiusTop: headR * 0.48, height: 0.055, position: [0, poleH + 0.072, 0], color: dark, preset: 'metal', radialSegments: 12 });
+
+  // Capsule body
+  const capsH = headR * 1.55;
+  addCylinder(group, { radiusTop: headR * 0.44, radiusBottom: headR * 0.38, height: capsH, position: [0, poleH + 0.072 + 0.028 + capsH / 2, 0], color: dark, preset: 'metal', radialSegments: 14 });
+
+  // Grille sphere (windscreen)
+  const grillY = poleH + 0.072 + 0.028 + capsH + headR * 0.58;
+  addSphere(group, { radius: headR, position: [0, grillY, 0], color: '#1A1A2E', preset: 'matte' });
+  addSphere(group, { radius: headR * 0.88, position: [0, grillY, 0], color: black, preset: 'matte' });
+}
+
 function buildGenericRect(item, view) {
   const group = new THREE.Group();
   const W = item.dims?.width ?? 1.2;
@@ -1789,6 +1932,12 @@ function buildGenericRect(item, view) {
       break;
     case 'mesaPlegable':
       buildMesaPlegable(group, item, L, W, H, color);
+      break;
+    case 'speaker':
+      buildSpeaker(group, item, L, W, H, color);
+      break;
+    case 'microphone':
+      buildMicrophone(group, item, L, W, H, color);
       break;
     default: {
       const body = new THREE.Mesh(
