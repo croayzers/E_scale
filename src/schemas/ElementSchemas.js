@@ -720,6 +720,22 @@ export const ELEMENT_SCHEMAS = [
       StandardParams.rotation(), StandardParams.text(), StandardParams.opacity()
     ]
   },
+  {
+    id: 'table.folding',
+    family: 'table',
+    match: item => item.assetProfile === 'mesaPlegable',
+    metadata: { label: 'Mesa plegable', icon: 'table-2', category: 'tables' },
+    builder: { preset: 'genericRectProp' },
+    ui: { dynamic: true, supportsAdvanced: false },
+    defaults: { dims: { length: 1.8, width: 0.75, height: 0.75 }, color: '#f0ede8', labelText: '', visual: { opacity: 1, shadows: true } },
+    params: [
+      StandardParams.length({ default: 1.8, min: 0.6, max: 6, step: 0.1, label: 'Largo' }),
+      StandardParams.width({ default: 0.75, min: 0.4, max: 2, step: 0.05 }),
+      StandardParams.height({ default: 0.75, min: 0.5, max: 1.2, step: 0.01 }),
+      StandardParams.color({ label: 'Color tablero' }),
+      StandardParams.rotation(), StandardParams.text(), StandardParams.opacity(), StandardParams.shadow()
+    ]
+  },
   // ── GENERIC FALLBACK ─────────────────────────────────────────────────────────
   {
     id: 'prop.generic-rect',

@@ -191,6 +191,18 @@ export default {
       "color": "#4a4744",
       "chairs": 0,
       "defaultRotation": 0
+    },
+    {
+      "id": "mesa_plegable",
+      "name": "Mesa Plegable",
+      "category": "tables",
+      "icon": "table-2",
+      "type": "schemaProp",
+      "assetProfile": "mesaPlegable",
+      "dims": { "length": 1.8, "width": 0.75, "height": 0.75 },
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0
     }
   ],
   "bars": [

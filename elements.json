@@ -191,26 +191,50 @@
       "color": "#4a4744",
       "chairs": 0,
       "defaultRotation": 0
+    },
+    {
+      "id": "mesa_plegable",
+      "name": "Mesa Plegable",
+      "category": "tables",
+      "icon": "table-2",
+      "type": "schemaProp",
+      "assetProfile": "mesaPlegable",
+      "dims": { "length": 1.8, "width": 0.75, "height": 0.75 },
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0
     }
   ],
   "bars": [
     {
-      "id": "buffet_arroces_360",
-      "name": "Buffet Arroces",
+      "id": "buffet_360",
+      "name": "Buffet",
       "category": "bars",
       "type": "buffet",
-      "subtype": "arroces",
       "dims": { "length": 3.6 },
+      "labelText": "Buffet",
       "chairs": 0,
       "defaultRotation": 0
     },
     {
-      "id": "buffet_feria",
-      "name": "Buffet Feria",
+      "id": "carrito_buffet",
+      "name": "Carrito buffet",
       "category": "bars",
-      "type": "buffet",
-      "subtype": "feria",
-      "dims": { "length": 3.6 },
+      "type": "carritoBuf",
+      "dims": { "length": 1.2, "width": 0.7, "height": 0.9 },
+      "labelText": "Carrito",
+      "color": "#E0DDD8",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "buffet_carro",
+      "name": "Buffet carro",
+      "category": "bars",
+      "type": "buffetCarro",
+      "dims": { "length": 3.0, "width": 1.5, "height": 1.0 },
+      "labelText": "Buffet carro",
+      "color": "#E8E4DF",
       "chairs": 0,
       "defaultRotation": 0
     },
@@ -240,7 +264,7 @@
     }
   ],
   "stages": [],
-"decor": [
+  "decor": [
     {
       "id": "tent_cuadrada",
       "name": "Cuadrada",
@@ -350,8 +374,19 @@
       "color": "#6b4423",
       "chairs": 0,
       "defaultRotation": 0
+    },
+    {
+      "id": "pergola_4x4",
+      "name": "Pérgola",
+      "category": "decor",
+      "icon": "layout-template",
+      "type": "pergola",
+      "dims": { "length": 4.0, "width": 4.0, "height": 3.0, "roofHeight": 0.12, "modSpacing": 4.0 },
+      "color": "#C4A265",
+      "roofColor": "#4A4744",
+      "chairs": 0,
+      "defaultRotation": 0
     }
-    
   ],
   "structures": [
     {
@@ -403,6 +438,90 @@
       "spacing": 1.0,
       "lightColor": "#ffd454",
       "cableColor": "#1a1a1c",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "pared_3m",
+      "name": "Pared",
+      "category": "structures",
+      "icon": "square",
+      "type": "schemaProp",
+      "assetProfile": "pared",
+      "dims": { "length": 3.0, "width": 0.1, "height": 3.0 },
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "pared_puerta",
+      "name": "Pared y puerta",
+      "category": "structures",
+      "icon": "door-open",
+      "type": "schemaProp",
+      "assetProfile": "paredPuerta",
+      "dims": { "length": 3.0, "width": 0.1, "height": 3.0, "doorWidth": 1.0, "doorHeight": 2.0 },
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "techo_3x3",
+      "name": "Techo",
+      "category": "structures",
+      "icon": "layout-panel-top",
+      "type": "schemaProp",
+      "assetProfile": "techo",
+      "dims": { "length": 3.0, "width": 3.0, "height": 0.1, "floorHeight": 2.0 },
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "muro_8m",
+      "name": "Muro",
+      "category": "structures",
+      "icon": "rectangle-horizontal",
+      "type": "schemaProp",
+      "assetProfile": "muro",
+      "dims": { "length": 8.0, "width": 0.6, "height": 5.0 },
+      "color": "#4a2d1a",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "tejado_1aguas",
+      "name": "Tejado 1 aguas",
+      "category": "structures",
+      "icon": "triangle",
+      "type": "schemaProp",
+      "assetProfile": "tejado1Aguas",
+      "dims": { "length": 3.0, "width": 3.0, "height": 1.0 },
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "tejado_2aguas",
+      "name": "Tejado 2 aguas",
+      "category": "structures",
+      "icon": "chevron-up",
+      "type": "schemaProp",
+      "assetProfile": "tejado2Aguas",
+      "dims": { "length": 3.0, "width": 3.0, "height": 1.0 },
+      "color": "#f0ede8",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "tejado_4aguas",
+      "name": "Tejado 4 aguas",
+      "category": "structures",
+      "icon": "tent",
+      "type": "schemaProp",
+      "assetProfile": "tejado4Aguas",
+      "dims": { "length": 3.0, "width": 3.0, "height": 1.0 },
+      "color": "#f0ede8",
       "chairs": 0,
       "defaultRotation": 0
     }
@@ -468,7 +587,7 @@
       "chairs": 0,
       "defaultRotation": 0
     },
-     {
+    {
       "id": "planta_grande",
       "name": "Planta Grande",
       "category": "ambient",
@@ -477,6 +596,43 @@
       "dims": { "height": 1.8 },
       "color": "#2f6a3f",
       "potColor": "#5a3a1f",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "arbusto_recto_3m",
+      "name": "Arbusto recto",
+      "category": "ambient",
+      "icon": "minus",
+      "type": "schemaProp",
+      "assetProfile": "arbustoRecto",
+      "dims": { "length": 3.0, "width": 1.0, "height": 1.0 },
+      "color": "#3D7A38",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "arbusto_corner",
+      "name": "Arbusto corner",
+      "category": "ambient",
+      "icon": "corner-down-right",
+      "type": "schemaProp",
+      "assetProfile": "arbustoCorner",
+      "dims": { "length": 1.0, "width": 1.0, "height": 1.0 },
+      "color": "#3D7A38",
+      "chairs": 0,
+      "defaultRotation": 0
+    },
+    {
+      "id": "arbusto_curvo_3m",
+      "name": "Arbusto curvo",
+      "category": "ambient",
+      "icon": "spline",
+      "type": "schemaProp",
+      "assetProfile": "arbustoCurvo",
+      "dims": { "length": 3.0, "width": 1.0, "height": 1.0 },
+      "curveDiameter": 1.0,
+      "color": "#3D7A38",
       "chairs": 0,
       "defaultRotation": 0
     }

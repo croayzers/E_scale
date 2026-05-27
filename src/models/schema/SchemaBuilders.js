@@ -1600,6 +1600,26 @@ function buildTejado4Aguas(group, item, L, W, H, color) {
   addBox(group, { size: [L, 0.02, W], position: [0, 0.01, 0], color, preset: 'matte', opacity: 0.35 });
 }
 
+function buildMesaPlegable(group, item, L, W, H, color) {
+  const topThick = 0.03;
+  const legSize = 0.04;
+  const legColor = '#C0BDB8';
+  const inset = 0.06;
+  const legH = H - topThick;
+
+  const top = addBox(group, { size: [L, topThick, W], position: [0, H - topThick / 2, 0], color, preset: 'matte' });
+  markMain(top, color);
+
+  [[L / 2 - inset, W / 2 - inset], [L / 2 - inset, -W / 2 + inset], [-L / 2 + inset, W / 2 - inset], [-L / 2 + inset, -W / 2 + inset]].forEach(([x, z]) => {
+    addBox(group, { size: [legSize, legH, legSize], position: [x, legH / 2, z], color: legColor, preset: 'metal' });
+  });
+
+  const braceY = H * 0.35;
+  const bt = 0.02;
+  addBox(group, { size: [L - 0.12, bt, bt], position: [0, braceY, W / 2 - inset], color: legColor, preset: 'metal' });
+  addBox(group, { size: [L - 0.12, bt, bt], position: [0, braceY, -W / 2 + inset], color: legColor, preset: 'metal' });
+}
+
 function buildGenericRect(item, view) {
   const group = new THREE.Group();
   const W = item.dims?.width ?? 1.2;
@@ -1766,6 +1786,9 @@ function buildGenericRect(item, view) {
       break;
     case 'tejado4Aguas':
       buildTejado4Aguas(group, item, L, W, H, color);
+      break;
+    case 'mesaPlegable':
+      buildMesaPlegable(group, item, L, W, H, color);
       break;
     default: {
       const body = new THREE.Mesh(
