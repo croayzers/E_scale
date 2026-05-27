@@ -24,7 +24,8 @@ let shiftDown = false;
 let placementIndicator = null;
 let copiedItemTemplate = null;
 let placementPreviewVisible = false;
-let formatModeActive = false;  // herramienta pincel de formato
+let formatModeActive = false;
+let _ctxAdvancedOpen = false;
 
 function init() {
   const canvas = document.getElementById('scene-canvas');
@@ -564,19 +565,31 @@ function showContextMenu(x, y, item) {
   menu.style.left = Math.min(x, window.innerWidth - w - 10) + 'px';
   menu.style.top = Math.min(y, window.innerHeight - h - 10) + 'px';
   if (window.lucide) lucide.createIcons();
+  const advDetails = menu.querySelector('.ctx-advanced');
+  if (advDetails) advDetails.addEventListener('toggle', () => { _ctxAdvancedOpen = advDetails.open; });
   menu.querySelectorAll('[data-action]').forEach(el => {
     el.addEventListener('click', () => {
       handleContextAction(el.dataset.action, el.dataset.value, item.id);
       if (!el.dataset.keepOpen) hideContextMenu();
     });
   });
+  // Sync dual color inputs (swatch ↔ hex text)
+  const colorSwatch = menu.querySelector('input[type="color"][data-field="color"]');
+  const colorHex = menu.querySelector('input.ctx-color-hex[data-field="color"]');
+  if (colorSwatch && colorHex) {
+    colorSwatch.addEventListener('input', () => { colorHex.value = colorSwatch.value; });
+    colorHex.addEventListener('input', () => {
+      if (/^#[0-9a-fA-F]{6}$/.test(colorHex.value)) colorSwatch.value = colorHex.value;
+    });
+  }
+
   menu.querySelectorAll('[data-field]').forEach(el => {
     const saveField = () => {
       const value = el.type === 'checkbox' ? el.checked : el.value;
       handleContextField(el.dataset.field, value, item.id);
     };
     el.addEventListener('change', saveField);
-    if (el.tagName === 'TEXTAREA' || el.type === 'text') el.addEventListener('input', saveField);
+    if (el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'color') el.addEventListener('input', saveField);
   });
 }
 
@@ -990,7 +1003,57 @@ function quickPresetsHTML(item) {
     </div>`;
 }
 
+function colorFieldHTML(item) {
+  const raw = String(item.color || '#CCCCCC').trim();
+  const safe = /^#[0-9a-fA-F]{6}$/.test(raw) ? raw : '#CCCCCC';
+  return `
+    <div class="ctx-color-wrap">
+      <input type="color" data-field="color" value="${escapeAttr(safe)}" class="ctx-color-swatch"/>
+      <input type="text" data-field="color" value="${escapeAttr(safe)}" maxlength="7"
+        class="ctx-color-hex" placeholder="#RRGGBB"/>
+    </div>`;
+}
+
+function labelFieldHTML(item) {
+  if (['zone', 'sillaCatering', 'sillaLineal'].includes(item.type)) return '';
+  return `
+    <label class="ctx-field ctx-field-full">
+      <span>Rótulo</span>
+      <input type="text" data-field="labelText" value="${escapeAttr(item.labelText || '')}" class="ctx-input" placeholder="Texto..."/>
+    </label>`;
+}
+
+function advancedParamsHTML(item) {
+  const rotDeg = Math.round(((item.rotY ?? 0) * 180 / Math.PI + 360) % 360);
+  const opacity = ((item.visual?.opacity ?? 1) * 100).toFixed(0);
+  const shadows = item.visual?.shadows !== false;
+  const yPos = (item.y ?? 0).toFixed(2);
+  return `
+    <div class="ctx-field-grid">
+      <label class="ctx-field">
+        <span>Rotación (°)</span>
+        <input data-field="rotDeg" class="ctx-input" type="number" min="0" max="360" step="1" value="${rotDeg}"/>
+      </label>
+      <label class="ctx-field">
+        <span>Altura Y (m)</span>
+        <input data-field="y" class="ctx-input" type="number" min="-10" max="30" step="0.1" value="${yPos}"/>
+      </label>
+    </div>
+    <div class="ctx-field-grid">
+      <label class="ctx-field">
+        <span>Opacidad %</span>
+        <input data-field="visual.opacity" class="ctx-input" type="number" min="5" max="100" step="5" value="${opacity}"/>
+      </label>
+      <label class="ctx-check">
+        <input data-field="visual.shadows" type="checkbox" ${shadows ? 'checked' : ''}/>
+        <span>Sombras</span>
+      </label>
+    </div>
+    ${item.type === 'carpa' ? carpaStructureHTML(item) : ''}`;
+}
+
 function buildUnifiedContextMenuHTML(item) {
+  const hasSeats = isSeatEditable(item);
   return `
     <div class="ctx-section ctx-editor">
       <div class="ctx-title-row">
@@ -1006,33 +1069,35 @@ function buildUnifiedContextMenuHTML(item) {
         ${typeControlHTML(item)}
       </div>
 
-      ${isSeatEditable(item) ? `
+      <div class="ctx-block">
+        <div class="ctx-label">Medidas</div>
+        ${dimensionFieldsHTML(item)}
+        ${quickPresetsHTML(item)}
+      </div>
+
+      <div class="ctx-block">
+        <div class="ctx-label">Apariencia</div>
+        ${colorFieldHTML(item)}
+        ${labelFieldHTML(item)}
+      </div>
+
+      ${hasSeats ? `
         <div class="ctx-block">
-          <div class="ctx-label">Cantidad de sillas</div>
-          ${numberFieldHTML('chairs', 'Sillas', item.chairs ?? 0)}
+          <div class="ctx-label">Sillas</div>
+          ${numberFieldHTML('chairs', 'Cantidad', item.chairs ?? 0)}
         </div>` : ''}
 
       ${tableAssignmentHTML(item)}
 
-      ${(item.type === 'buffet' || item.type === 'buffetCarro' || item.type === 'carritoBuf') ? `
-        <div class="ctx-block">
-          <div class="ctx-label">Rótulo</div>
-          <label class="ctx-field ctx-field-full">
-            <input type="text" data-field="labelText" value="${escapeAttr(item.labelText || '')}" class="ctx-input" placeholder="Buffet ..."/>
-          </label>
-        </div>` : ''}
-
-      <div class="ctx-block">
-        <div class="ctx-label">Medidas editables</div>
-        ${dimensionFieldsHTML(item)}
-      </div>
-
-      ${carpaStructureHTML(item)}
-
-      <div class="ctx-block">
-        <div class="ctx-label">3 medidas rapidas</div>
-        ${quickPresetsHTML(item)}
-      </div>
+      <details class="ctx-advanced"${_ctxAdvancedOpen ? ' open' : ''}>
+        <summary class="ctx-advanced-toggle">
+          <span>Configuración avanzada</span>
+          <i data-lucide="chevron-down" class="w-3 h-3 ctx-advanced-icon"></i>
+        </summary>
+        <div class="ctx-advanced-body">
+          ${advancedParamsHTML(item)}
+        </div>
+      </details>
 
       <div class="ctx-divider"></div>
       <div class="ctx-actions">
@@ -1054,7 +1119,7 @@ function buildUnifiedContextMenuHTML(item) {
         <button data-action="duplicate" class="ctx-action-btn">
           <i data-lucide="copy" class="w-3.5 h-3.5"></i>
           <span>Duplicar</span>
-          <small>Control + Click</small>
+          <small>Ctrl + Click</small>
         </button>
         <button data-action="delete" class="ctx-action-btn danger">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
@@ -1274,6 +1339,45 @@ function handleContextField(field, value, id) {
 
   if (field === 'labelText') {
     applyContextPatch(id, { labelText: String(value || '') }, false);
+    return;
+  }
+
+  if (field === 'color') {
+    const val = String(value || '').trim();
+    if (/^#[0-9a-fA-F]{3,6}$/.test(val)) {
+      applyContextPatch(id, { color: val }, false);
+    }
+    return;
+  }
+
+  if (field === 'rotDeg') {
+    const deg = parseFloat(value);
+    if (!Number.isFinite(deg)) return;
+    applyContextPatch(id, { rotY: (((deg % 360) + 360) % 360) * Math.PI / 180 });
+    return;
+  }
+
+  if (field === 'y') {
+    const yVal = parseFloat(value);
+    if (!Number.isFinite(yVal)) return;
+    applyContextPatch(id, { y: yVal }, false);
+    return;
+  }
+
+  if (field.startsWith('visual.')) {
+    const key = field.slice(7);
+    const current = item.visual || {};
+    let parsed;
+    if (key === 'shadows') {
+      parsed = Boolean(value);
+    } else if (key === 'opacity') {
+      parsed = Math.min(1, Math.max(0.05, parseFloat(value) / 100));
+      if (!Number.isFinite(parsed)) return;
+    } else {
+      parsed = parseFloat(value);
+      if (!Number.isFinite(parsed)) return;
+    }
+    applyContextPatch(id, { visual: { ...current, [key]: parsed } }, false);
     return;
   }
 
