@@ -8,6 +8,7 @@ import { UIManager }         from '../ui/UIManager.js';
 import { CatalogModal }      from '../ui/CatalogModal.js';
 import { ZoneManager }       from '../ui/ZoneManager.js';
 import { SelectionManager }  from './SelectionManager.js';
+import { GroupManager }      from '../core/GroupManager.js';
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
@@ -423,9 +424,10 @@ function onPointerDown(e) {
     return;
   }
 
-  // Click en vacío + Shift → empezar box-select
+  // Click en vacío + Shift → empezar box-select (bloquear cámara para evitar pan en ISO)
   if (!item && shiftDown) {
     boxSelecting = { startX: e.clientX, startY: e.clientY, additive: true };
+    SceneManager.setControlsEnabled(false);
     return;
   }
 
@@ -459,7 +461,12 @@ function onPointerDown(e) {
       AppState.duplicate(item.id);
       return;
     }
-    AppState.select(item.id, shiftDown);
+    // Grupo: si el item pertenece a un grupo y Shift no está pulsado,
+    // expandir la selección a todos los miembros del grupo antes del drag.
+    const groupExpanded = GroupManager.handleGroupClick(item, shiftDown);
+    if (!groupExpanded) {
+      AppState.select(item.id, shiftDown);
+    }
     if (!shiftDown) pendingClickItem = item;
 
     const point = getDragPoint();
@@ -547,6 +554,7 @@ function onPointerUp(e) {
     }
     boxSelecting = null;
     hideBoxOverlay();
+    SceneManager.setControlsEnabled(true);
     return;
   }
 
@@ -1158,6 +1166,8 @@ function buildUnifiedContextMenuHTML(item) {
         </div>
       </details>
 
+      ${GroupManager.contextMenuHTML(item)}
+
       <div class="ctx-divider"></div>
       <div class="ctx-actions">
         <button data-action="rotate-step" data-keep-open="1" class="ctx-action-btn">
@@ -1553,6 +1563,11 @@ function handleContextAction(action, value, id) {
       copiedItemTemplate.locked = false;
       break;
     case 'delete': AppState.remove(id); break;
+
+    case 'group-selected':   GroupManager.groupSelected(); break;
+    case 'group-dissolve':   GroupManager.ungroupSelected(); break;
+    case 'group-select-all': GroupManager.selectGroup(item.groupId); break;
+    case 'group-duplicate':  GroupManager.duplicateGroup(item.groupId); break;
     case 'carpa-preset': {
       const [L, W] = value.split('x').map(parseFloat);
       AppState.update(id, { dims: { ...item.dims, length: L, width: W } });
@@ -1589,6 +1604,16 @@ function onKeyDown(e) {
   // ── Ctrl+Z: Undo ──
   if ((e.ctrlKey || e.metaKey) && e.key?.toLowerCase() === 'z') {
     e.preventDefault(); AppState.undo(); return;
+  }
+
+  // ── Ctrl+G: agrupar selección ──
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key?.toLowerCase() === 'g') {
+    e.preventDefault(); GroupManager.groupSelected(); return;
+  }
+
+  // ── Ctrl+Shift+G: desagrupar ──
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key?.toLowerCase() === 'g') {
+    e.preventDefault(); GroupManager.ungroupSelected(); return;
   }
 
   // ── Ctrl+D: Duplicar selección ──

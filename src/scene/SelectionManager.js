@@ -11,6 +11,7 @@ const FORMAT_PROPS = ['color', 'textColor', 'poleColor', 'tarpColor', 'cableColo
 let copiedFormat = null;              // { color?, textColor?, ... }
 const markedSameStyleIds = new Set(); // Items marked as same-style as reference
 let _layerManager = null;            // Lazy reference, set by LayerManager after init
+let _sceneManagerRef = null;         // Cached after first dynamic import
 
 function bindLayerManager(lm) { _layerManager = lm; }
 
@@ -157,8 +158,9 @@ function canEditItem(item) {
 
 /* ─── Visuals ─── */
 function refreshSelectionVisuals() {
-  // SceneManager.highlightSelection reads markedSameStyleIds from us
+  if (_sceneManagerRef) { _sceneManagerRef.highlightSelection(); return; }
   import('../scene/SceneManager.js').then(({ SceneManager }) => {
+    _sceneManagerRef = SceneManager;
     SceneManager.highlightSelection();
   });
 }

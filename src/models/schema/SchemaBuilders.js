@@ -31,21 +31,41 @@ function makeTopFill(color, opacity = 0.16) {
   });
 }
 
+function makeCanvasTexture(text, {
+  canvasWidth = 512, canvasHeight = 128,
+  font = '600 42px "Inter Tight", sans-serif',
+  color = '#111827',
+  bg = 'rgba(245,243,238,0.94)',
+  stroke = false,
+  strokeColor = 'rgba(0,0,0,0.55)',
+  strokeWidth = 4,
+} = {}) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  const ctx = canvas.getContext('2d');
+  if (bg) { ctx.fillStyle = bg; ctx.fillRect(0, 0, canvasWidth, canvasHeight); }
+  ctx.font = font;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  if (stroke) {
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = strokeWidth;
+    ctx.strokeStyle = strokeColor;
+    ctx.strokeText(text, canvasWidth / 2, canvasHeight / 2);
+  }
+  ctx.fillStyle = color;
+  ctx.fillText(text, canvasWidth / 2, canvasHeight / 2);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  return texture;
+}
+
 function addLabel(group, text, y, color = '#111827') {
   const normalized = String(text || '').trim();
   if (!normalized) return;
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = 512;
-  canvas.height = 128;
-  ctx.fillStyle = 'rgba(245,243,238,0.94)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = '600 42px "Inter Tight", sans-serif';
-  ctx.fillStyle = color;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(normalized, canvas.width / 2, canvas.height / 2);
-  const texture = new THREE.CanvasTexture(canvas);
+  const texture = makeCanvasTexture(normalized, { color });
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
   sprite.scale.set(1.8, 0.45, 1);
   sprite.position.set(0, y, 0);
@@ -55,18 +75,11 @@ function addLabel(group, text, y, color = '#111827') {
 function addTopLabel(group, text, color = '#111827') {
   const normalized = String(text || '').trim();
   if (!normalized) return;
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = 384;
-  canvas.height = 96;
-  ctx.fillStyle = 'rgba(245,243,238,0.94)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = '600 34px "Inter Tight", sans-serif';
-  ctx.fillStyle = color;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(normalized, canvas.width / 2, canvas.height / 2);
-  const texture = new THREE.CanvasTexture(canvas);
+  const texture = makeCanvasTexture(normalized, {
+    canvasWidth: 384, canvasHeight: 96,
+    font: '600 34px "Inter Tight", sans-serif',
+    color,
+  });
   const plane = new THREE.Mesh(
     new THREE.PlaneGeometry(1.8, 0.45),
     new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false })
@@ -84,34 +97,19 @@ function addTopPlainText(group, text, {
 } = {}) {
   const normalized = String(text || '').trim();
   if (!normalized) return;
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = 512;
-  canvas.height = 128;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.font = `700 ${Math.max(18, Math.min(fontSize, 72))}px "Inter Tight", sans-serif`;
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = Math.max(2, Math.min(8, fontSize / 8));
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
-  ctx.fillStyle = color;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.strokeText(normalized, canvas.width / 2, canvas.height / 2);
-  ctx.fillText(normalized, canvas.width / 2, canvas.height / 2);
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  const computedWidth = Math.max(width, normalized.length * Math.max(0.34, fontSize * 0.018));
+  const clampedSize = Math.max(18, Math.min(fontSize, 72));
+  const texture = makeCanvasTexture(normalized, {
+    font: `700 ${clampedSize}px "Inter Tight", sans-serif`,
+    color,
+    bg: null,
+    stroke: true,
+    strokeWidth: Math.max(2, Math.min(8, clampedSize / 8)),
+  });
+  const computedWidth  = Math.max(width,  normalized.length * Math.max(0.34, fontSize * 0.018));
   const computedHeight = Math.max(height, Math.max(0.7, fontSize * 0.028));
   const plane = new THREE.Mesh(
     new THREE.PlaneGeometry(computedWidth, computedHeight),
-    new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      depthWrite: false,
-      side: THREE.DoubleSide
-    })
+    new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, side: THREE.DoubleSide })
   );
   plane.rotation.x = -Math.PI / 2;
   plane.position.y = 0.085;

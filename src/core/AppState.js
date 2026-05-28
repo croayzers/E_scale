@@ -155,7 +155,6 @@ export const AppState = {
     const detail = this.getSceneInsights(reason);
     window.__ESCALE_SCENE_INSIGHTS__ = detail;
     document.dispatchEvent(new CustomEvent('escale:scene-insights-changed', { detail }));
-    window.dispatchEvent(new CustomEvent('escale:scene-insights-changed', { detail }));
     return detail;
   },
 

@@ -4,6 +4,22 @@
 
 let _appState, _sceneManager;
 let itemSettingsHandle;
+
+// Cached DOM refs populated on first use (DOM guaranteed ready after UIManager.init)
+let _domEls = null;
+function _els() {
+  if (!_domEls) _domEls = {
+    pax:     document.getElementById('stat-pax'),
+    elms:    document.getElementById('stat-elements'),
+    mesas:   document.getElementById('breakdown-mesas'),
+    buffets: document.getElementById('breakdown-buffets'),
+    carpas:  document.getElementById('breakdown-carpas'),
+    structs: document.getElementById('breakdown-structures'),
+    undo:    document.getElementById('undo-badge'),
+    tooltip: document.getElementById('tooltip'),
+  };
+  return _domEls;
+}
 async function bindDeps() {
   if (!_appState)     ({ AppState:     _appState     } = await import('../core/AppState.js'));
   if (!_sceneManager) ({ SceneManager: _sceneManager } = await import('../scene/SceneManager.js'));
@@ -19,10 +35,9 @@ function refresh() {
   if (!A) return;
 
   const totalPax = A.items.reduce((s, i) => s + (i.chairs || 0), 0);
-  const elPax  = document.getElementById('stat-pax');
-  const elElms = document.getElementById('stat-elements');
-  if (elPax)  elPax.textContent  = totalPax;
-  if (elElms) elElms.textContent = A.items.length;
+  const e = _els();
+  if (e.pax)  e.pax.textContent  = totalPax;
+  if (e.elms) e.elms.textContent = A.items.length;
 
   // Desglose mesas por diámetro (sólo redondas, no Presi)
   const mesasByDiameter = {};
@@ -30,7 +45,7 @@ function refresh() {
     const k = m.dims.diameter.toFixed(1);
     mesasByDiameter[k] = (mesasByDiameter[k] || 0) + 1;
   });
-  const mesaContainer = document.getElementById('breakdown-mesas');
+  const mesaContainer = e.mesas;
   if (mesaContainer) {
     if (Object.keys(mesasByDiameter).length === 0) {
       mesaContainer.innerHTML = `<div class="text-xs" style="color:var(--muted)">—</div>`;
@@ -51,7 +66,7 @@ function refresh() {
   A.items.filter(i => i.type === 'buffet').forEach(b => {
     buffetsByCat[b.subtype] = (buffetsByCat[b.subtype] || 0) + 1;
   });
-  const buffetContainer = document.getElementById('breakdown-buffets');
+  const buffetContainer = e.buffets;
   if (buffetContainer) {
     if (Object.keys(buffetsByCat).length === 0) {
       buffetContainer.innerHTML = `<div class="text-xs" style="color:var(--muted)">—</div>`;
@@ -68,7 +83,7 @@ function refresh() {
 
   // Desglose carpas
   const carpas = A.items.filter(i => i.type === 'carpa');
-  const carpaContainer = document.getElementById('breakdown-carpas');
+  const carpaContainer = e.carpas;
   if (carpaContainer) {
     if (carpas.length === 0) {
       carpaContainer.innerHTML = `<div class="text-xs" style="color:var(--muted)">—</div>`;
@@ -97,7 +112,7 @@ function refresh() {
   A.items.filter(i => STRUCT_TYPES.includes(i.type)).forEach(s => {
     structCounts[s.type] = (structCounts[s.type] || 0) + 1;
   });
-  const structContainer = document.getElementById('breakdown-structures');
+  const structContainer = e.structs;
   if (structContainer) {
     if (Object.keys(structCounts).length === 0) {
       structContainer.innerHTML = `<div class="text-xs" style="color:var(--muted)">—</div>`;
@@ -131,7 +146,7 @@ function showTooltip(item) {
 }
 
 function hideTooltip() {
-  document.getElementById('tooltip')?.classList.remove('visible');
+  _els().tooltip?.classList.remove('visible');
 }
 
 function updateTooltipPosition() {
@@ -173,7 +188,7 @@ function updateTooltipPosition() {
   const x = (vec.x * 0.5 + 0.5) * window.innerWidth;
   const y = (-vec.y * 0.5 + 0.5) * window.innerHeight;
 
-  const tip = document.getElementById('tooltip');
+  const tip = _els().tooltip;
   updateItemSettingsHandle(item, mesh);
   if (!tip) return;
   tip.style.left = x + 'px';
@@ -1621,7 +1636,7 @@ function hideDetail() {
 
 function refreshUndoBadge() {
   const A = dynamic.AppState;
-  const badge = document.getElementById('undo-badge');
+  const badge = _els().undo;
   if (!badge || !A) return;
   const n = A.history.length;
   badge.textContent = `(${n}/${A._getUndoLimit?.() ?? 5})`;

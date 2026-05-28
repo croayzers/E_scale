@@ -95,6 +95,7 @@ PROJECT STRUCTURE
 │   │   ├── AppState.js
 │   │   ├── BrandTokens.js
 │   │   ├── ElementLibrary.js
+│   │   ├── GroupManager.js
 │   │   ├── InventoryRules.js
 │   │   ├── LayerManager.js
 │   │   └── PlanCatalog.js
