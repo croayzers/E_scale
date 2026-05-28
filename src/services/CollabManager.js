@@ -281,6 +281,7 @@ export const CollabManager = {
 
   end() {
     if (_debounce) { clearTimeout(_debounce); _debounce = null; }
+    _channel?.untrack?.().catch(() => {});
     _channel?.unsubscribe();
     _channel = null;
     document.removeEventListener('escale:scene-insights-changed', onSceneChange);
