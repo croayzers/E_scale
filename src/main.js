@@ -33,6 +33,7 @@ import { CollabInviteModal }   from './ui/CollabInviteModal.js';
 import { CollabJoinModal }     from './ui/CollabJoinModal.js';
 import { CollabIsland }        from './ui/CollabIsland.js';
 import { CollabInteractions }  from './services/CollabInteractions.js';
+import { CatDock }             from './ui/CatDock.js';
 
 function showStartupError(label, error) {
   console.error(`[E-scale] ${label} falló:`, error);
@@ -94,6 +95,7 @@ async function bootstrap() {
   safeInit('CollabInviteModal',  () => CollabInviteModal.init());
   safeInit('CollabIsland',       () => CollabIsland.init());
   safeInit('CollabInteractions', () => CollabInteractions.init());
+  safeInit('CatDock',            () => CatDock.init());
   await safeInit('CollabManager', () => CollabManager.init());
 
   // Exponer al window para acceso desde consola y botones inline
