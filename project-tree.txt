@@ -94,7 +94,6 @@ PROJECT STRUCTURE
 ├── README.md
 ├── server.py
 ├── sprites/
-│   └── pepecat.png
 ├── src/
 │   ├── core/
 │   │   ├── AppBridge.js
@@ -170,7 +169,6 @@ PROJECT STRUCTURE
 │   └── ui/
 │       ├── AICopilot.js
 │       ├── CatalogModal.js
-│       ├── CatDock.js
 │       ├── CollabInviteModal.js
 │       ├── CollabIsland.js
 │       ├── CollabJoinModal.js
