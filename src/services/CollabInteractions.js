@@ -333,10 +333,12 @@ export const CollabInteractions = {
       float.querySelector('#collab-note-compose')?.classList.remove('visible');
     });
 
-    // Broadcast local selection on any scene change (debounced)
-    document.addEventListener('escale:scene-insights-changed', () => {
+    // Broadcast local selection only on select/deselect events
+    document.addEventListener('escale:scene-insights-changed', e => {
+      const r = e.detail?.reason;
+      if (r !== 'select' && r !== 'select-many' && r !== 'deselect') return;
       if (_presenceDebounce) clearTimeout(_presenceDebounce);
-      _presenceDebounce = setTimeout(syncSelectionToPresence, 120);
+      _presenceDebounce = setTimeout(syncSelectionToPresence, 200);
     });
 
     // Hide compose when clicking outside

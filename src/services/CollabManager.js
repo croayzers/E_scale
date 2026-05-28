@@ -134,8 +134,14 @@ async function connect(channelName) {
       _channel.send({ type: 'broadcast', event: 'full_sync', payload: { from: _localUserId, items: snap() } });
     })
     .on('presence', { event: 'sync' }, () => {
+      const seen = new Set();
       const participants = Object.values(_channel.presenceState())
         .flat()
+        .filter(p => {
+          if (!p.userId || seen.has(p.userId)) return false;
+          seen.add(p.userId);
+          return true;
+        })
         .map((p, i) => ({
           userId:         p.userId,
           displayName:    p.displayName || 'Usuario',
@@ -282,8 +288,7 @@ export const CollabManager = {
 
   end() {
     if (_debounce) { clearTimeout(_debounce); _debounce = null; }
-    _channel?.untrack?.().catch(() => {});
-    _channel?.unsubscribe();
+    try { _channel?.unsubscribe(); } catch {}
     _channel = null;
     document.removeEventListener('escale:scene-insights-changed', onSceneChange);
     _sessionId = null; _sessionName = null; _hostName = null; _inviteToken = null;
