@@ -435,10 +435,7 @@ function onPointerDown(e) {
   }
 
   if (item) {
-    if (isViewer()) {
-      AppState.select(item.id, shiftDown);
-      return;
-    }
+    if (isViewer()) return;
     if (bKeyDown && !shiftDown) {
       AppState.select(item.id);
       AppState.toggleLock(item.id);
@@ -576,7 +573,7 @@ function onPointerUp(e) {
     const dy = Math.abs(e.clientY - (mouseDownPos?.y ?? e.clientY));
     const item = pendingClickItem;
     pendingClickItem = null;
-    if (dx < 5 && dy < 5) {
+    if (dx < 5 && dy < 5 && !isViewer()) {
       showContextMenu(e.clientX, e.clientY, item);
     }
   }
