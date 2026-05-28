@@ -109,6 +109,10 @@ async function connect(channelName) {
       SceneManager.rebuildAll?.();
       _lastSnap = snap();
     })
+    .on('broadcast', { event: 'request_sync' }, ({ payload }) => {
+      if (!_isHost || payload.from === _localUserId) return;
+      _channel.send({ type: 'broadcast', event: 'full_sync', payload: { from: _localUserId, items: snap() } });
+    })
     .on('presence', { event: 'sync' }, () => {
       const participants = Object.values(_channel.presenceState())
         .flat()
@@ -123,13 +127,9 @@ async function connect(channelName) {
       _presenceCb?.(participants);
     })
     .on('presence', { event: 'join' }, () => {
-      // Host re-sends full scene whenever a new participant connects
       if (_isHost) {
         setTimeout(() => {
-          _channel.send({
-            type: 'broadcast', event: 'full_sync',
-            payload: { from: _localUserId, items: snap() }
-          });
+          _channel.send({ type: 'broadcast', event: 'full_sync', payload: { from: _localUserId, items: snap() } });
         }, 400);
       }
     });
@@ -140,6 +140,12 @@ async function connect(channelName) {
       if (status === 'SUBSCRIBED') {
         clearTimeout(t);
         await _channel.track({ userId: _localUserId, displayName: _localName, color: _localColor, role: _localRole });
+        // Guest explicitly requests the full scene after connecting
+        if (!_isHost) {
+          setTimeout(() => {
+            _channel.send({ type: 'broadcast', event: 'request_sync', payload: { from: _localUserId } });
+          }, 800);
+        }
         resolve();
       }
     });
