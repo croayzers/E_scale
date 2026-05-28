@@ -183,7 +183,7 @@ function updateNoteButtonPosition(cam, meshes) {
 
   const active   = CollabManager.active;
   const itemId   = AppState.selectedId;
-  if (!active || itemId === null || !cam) {
+  if (!active || itemId === null || !cam || CollabManager.localRole === 'viewer') {
     float.classList.remove('visible');
     compose?.classList.remove('visible');
     return;
