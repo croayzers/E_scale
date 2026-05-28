@@ -840,6 +840,7 @@ function fieldBounds(field) {
   if (name === 'diameter') return { min: 0.04, max: 30, step: 0.01 };
   if (name === 'thickness') return { min: 0.02, max: 2, step: 0.01 };
   if (name === 'seatHeight' || name === 'totalHeight') return { min: 0.1, max: 3, step: 0.01 };
+  if (name === 'chairOffset') return { min: 0, max: 0.80, step: 0.05 };
   return { min: 0, max: 200, step: 0.1 };
 }
 
@@ -1118,6 +1119,12 @@ function advancedParamsHTML(item) {
     ${item.type === 'carpa' ? carpaStructureHTML(item) : ''}`;
 }
 
+function chairOffsetHTML(item) {
+  if (!['mesa', 'mesaRect', 'mesaImperial'].includes(item.type)) return '';
+  const val = (item.chairOffset ?? 0.10).toFixed(2);
+  return `<div class="ctx-field-grid">${numberFieldHTML('chairOffset', 'Gap silla-borde (m)', val)}</div>`;
+}
+
 function buildUnifiedContextMenuHTML(item) {
   const hasSeats = isSeatEditable(item);
   return `
@@ -1139,6 +1146,7 @@ function buildUnifiedContextMenuHTML(item) {
       <div class="ctx-block">
         <div class="ctx-label">Medidas</div>
         ${dimensionFieldsHTML(item)}
+        ${chairOffsetHTML(item)}
         ${quickPresetsHTML(item)}
       </div>
 

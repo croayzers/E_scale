@@ -66,8 +66,10 @@ export function createMesa(item) {
     group.add(base);
   }
 
-  // Sillas dispuestas radialmente (respaldo afuera)
-  const chairRadius = r + (item.autoChildren?.offset ?? 0.1);
+  // Sillas dispuestas radialmente — chairOffset es el gap entre borde de mesa y borde de silla
+  const CHAIR_HALF_DEPTH = 0.21; // asiento de 0.42m → la mitad define cuánto penetraría si no se compensa
+  const chairGap = item.chairOffset ?? 0.10;
+  const chairRadius = r + CHAIR_HALF_DEPTH + chairGap;
   for (let i = 0; i < item.chairs; i++) {
     const angle = (i / item.chairs) * Math.PI * 2;
     const cx = Math.cos(angle) * chairRadius;
@@ -119,8 +121,10 @@ export function createMesaPresi(item) {
   group.add(cloth);
 
   // Sillas en lados largos (4 por lado = 8)
+  const CHAIR_HALF_DEPTH = 0.21;
+  const chairGap = item.chairOffset ?? 0.10;
   const sideChairs = 4;
-  const sideOffsetZ = W / 2 + 0.1;
+  const sideOffsetZ = W / 2 + CHAIR_HALF_DEPTH + chairGap;
   for (let i = 0; i < sideChairs; i++) {
     const t = (i + 0.5) / sideChairs;
     const x = -L / 2 + t * L;
@@ -137,7 +141,7 @@ export function createMesaPresi(item) {
   }
 
   // Sillas de los extremos (opcionales)
-  const endOffsetX = L / 2 + 0.1;
+  const endOffsetX = L / 2 + CHAIR_HALF_DEPTH + chairGap;
   if (item.endHead !== false) {
     const chairHead = createChair();
     chairHead.position.set(endOffsetX, 0, 0);

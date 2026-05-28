@@ -22,12 +22,13 @@ export function createMesaRect(item) {
   cloth.userData.baseColor = 0xc9c5bd;
   g.add(cloth);
 
-  // Sillas perimetrales — usa createChair canonical (respaldo en +Z, mira hacia -Z por defecto)
+  // Sillas perimetrales — chairOffset es el gap entre borde de mesa y borde del asiento
   // +Z side: rotY=0  → silla mira -Z (hacia la mesa) ✓
   // -Z side: rotY=π  → silla mira +Z (hacia la mesa) ✓
+  const CHAIR_HALF_DEPTH = 0.21; // asiento 0.42m → 0.21 compensa para que el gap sea real
   const sep = item.chairSep ?? 0.60;
   const sideChairs = Math.max(1, Math.floor(L / sep));
-  const offsetZ = W / 2 + (item.chairOffset ?? 0.1);
+  const offsetZ = W / 2 + CHAIR_HALF_DEPTH + (item.chairOffset ?? 0.10);
   for (let i = 0; i < sideChairs; i++) {
     const t = (i + 0.5) / sideChairs;
     const x = -L / 2 + t * L;
