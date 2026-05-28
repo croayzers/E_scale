@@ -1,21 +1,23 @@
 /* CatDock — gato animado que camina sobre el dock */
 
 const SPRITE_URL = '/sprites/pepecat.png';
-const CELL_W = 55;   // 352 × (60/384)
+// Sprite real: 4465×3347 px, celda 1116.25×1116.25 (4 cols × 3 filas)
+// Mostrar a 60px de alto: scale = 60/1116.25
+const CELL_W = 60;   // 1116.25 × scale (celda cuadrada)
 const CELL_H = 60;
-const SHEET_W = 220; // 1408 × (60/384)
-const SHEET_H = 120; // 768 × (60/384)
+const SHEET_W = 240; // 4465 × scale
+const SHEET_H = 180; // 3347 × scale
 const FPS = 7;
 const WALK_PX_PER_S = 48;
 
-// background-positions para cada frame
+// background-positions para cada frame (celdas de 60×60 px en pantalla)
 const FRAMES = {
   anda1: '0px 0px',
-  anda2: '-55px 0px',
-  anda3: '-110px 0px',
-  anda4: '-165px 0px',
+  anda2: '-60px 0px',
+  anda3: '-120px 0px',
+  anda4: '-180px 0px',
   tumba: '0px -60px',
-  boca:  '-55px -60px',
+  boca:  '-60px -60px',
 };
 
 const WALK_FRAMES = ['anda1', 'anda2', 'anda3', 'anda4'];
@@ -38,6 +40,7 @@ const css = `
   background-image: url('${SPRITE_URL}');
   background-size: ${SHEET_W}px ${SHEET_H}px;
   background-repeat: no-repeat;
+  image-rendering: crisp-edges;
   image-rendering: pixelated;
   pointer-events: auto;
   cursor: pointer;
