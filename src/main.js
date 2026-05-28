@@ -28,10 +28,11 @@ import { MessageManager } from './services/MessageManager.js';
 import { FeedbackModal } from './ui/FeedbackModal.js';
 import { AppBridge } from './core/AppBridge.js';
 import { AICopilot } from './ui/AICopilot.js';
-import { CollabManager }     from './services/CollabManager.js';
-import { CollabInviteModal } from './ui/CollabInviteModal.js';
-import { CollabJoinModal }   from './ui/CollabJoinModal.js';
-import { CollabIsland }      from './ui/CollabIsland.js';
+import { CollabManager }       from './services/CollabManager.js';
+import { CollabInviteModal }   from './ui/CollabInviteModal.js';
+import { CollabJoinModal }     from './ui/CollabJoinModal.js';
+import { CollabIsland }        from './ui/CollabIsland.js';
+import { CollabInteractions }  from './services/CollabInteractions.js';
 
 function showStartupError(label, error) {
   console.error(`[E-scale] ${label} falló:`, error);
@@ -89,9 +90,10 @@ async function bootstrap() {
   safeInit('FeedbackModal',  () => FeedbackModal.init());
   AppBridge.init();
   safeInit('AICopilot', () => AICopilot.init());
-  safeInit('CollabJoinModal',   () => CollabJoinModal.init());
-  safeInit('CollabInviteModal', () => CollabInviteModal.init());
-  safeInit('CollabIsland',      () => CollabIsland.init());
+  safeInit('CollabJoinModal',    () => CollabJoinModal.init());
+  safeInit('CollabInviteModal',  () => CollabInviteModal.init());
+  safeInit('CollabIsland',       () => CollabIsland.init());
+  safeInit('CollabInteractions', () => CollabInteractions.init());
   await safeInit('CollabManager', () => CollabManager.init());
 
   // Exponer al window para acceso desde consola y botones inline

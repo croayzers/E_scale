@@ -159,6 +159,7 @@ PROJECT STRUCTURE
 │   │   ├── BrandConfig.js
 │   │   ├── CloudApi.js
 │   │   ├── CloudSync.js
+│   │   ├── CollabInteractions.js
 │   │   ├── CollabManager.js
 │   │   ├── MessageManager.js
 │   │   ├── ServiceConfig.js

@@ -59,6 +59,8 @@ export const CollabJoinModal = {
           <div data-view="form">
             <label class="cj-label">Tu nombre</label>
             <input data-cj="name-input" class="cj-input" placeholder="¿Cómo te llaman?" maxlength="40" autocomplete="off" />
+            <label class="cj-label">Empresa (opcional)</label>
+            <input data-cj="company-input" class="cj-input" placeholder="Tu empresa u organización" maxlength="60" autocomplete="off" />
             <label class="cj-label">Email (opcional)</label>
             <input data-cj="email-input" class="cj-input" type="email" placeholder="Para guardar tu cuenta después" />
             <p class="cj-note">Puedes colaborar ahora sin cuenta. Te pediremos el registro al terminar si quieres guardar tus cambios.</p>
@@ -125,6 +127,7 @@ export const CollabJoinModal = {
       const data = await CollabManager.joinSession({
         inviteToken:  _token,
         displayName:  name,
+        company:      q('company-input')?.value.trim() || '',
         email:        q('email-input')?.value.trim() || ''
       });
       _el.classList.remove('visible');

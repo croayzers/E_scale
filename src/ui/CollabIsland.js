@@ -118,12 +118,15 @@ function injectStyles() {
 
 function renderIsland() {
   if (!_el) return;
-  const avatarsHtml = _participants.slice(0, 6).map(p => `
+  const avatarsHtml = _participants.slice(0, 6).map(p => {
+    const tipName = p.displayName + (p.isLocal ? ' (Tú)' : '');
+    const tipCompany = p.company ? ` · ${p.company}` : '';
+    return `
     <div class="ci-av${p.isLocal ? ' local' : ''}" style="background:${p.color}">
       ${initials(p.displayName)}
-      <span class="ci-av-tip">${p.displayName}${p.isLocal ? ' (Tú)' : ''}</span>
-    </div>
-  `).join('');
+      <span class="ci-av-tip">${tipName}${tipCompany}</span>
+    </div>`;
+  }).join('');
 
   const canInvite = CollabManager.isHost && isPro();
   const inviteDisabled = !canInvite ? 'disabled' : '';

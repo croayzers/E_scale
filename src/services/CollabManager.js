@@ -20,6 +20,8 @@ let _lastSnap   = null;       // deep copy of items after last broadcast
 let _debounce   = null;
 let _presenceCb  = null;
 let _camMoveCb   = null;
+let _noteCb      = null;
+let _localCompany = null;
 
 // ── Supabase realtime client ──────────────────────────────────────────────────
 
@@ -119,6 +121,14 @@ async function connect(channelName) {
       if (payload.from === _localUserId) return;
       _camMoveCb?.(payload);
     })
+    .on('broadcast', { event: 'collab-note' }, ({ payload }) => {
+      if (payload.from === _localUserId) return;
+      _noteCb?.('collab-note', payload);
+    })
+    .on('broadcast', { event: 'collab-note-dismiss' }, ({ payload }) => {
+      if (payload.from === _localUserId) return;
+      _noteCb?.('collab-note-dismiss', payload);
+    })
     .on('broadcast', { event: 'request_sync' }, ({ payload }) => {
       if (!_isHost || payload.from === _localUserId) return;
       _channel.send({ type: 'broadcast', event: 'full_sync', payload: { from: _localUserId, items: snap() } });
@@ -127,11 +137,13 @@ async function connect(channelName) {
       const participants = Object.values(_channel.presenceState())
         .flat()
         .map((p, i) => ({
-          userId:      p.userId,
-          displayName: p.displayName || 'Usuario',
-          color:       p.color || COLORS[i % COLORS.length],
-          role:        p.role || 'editor',
-          isLocal:     p.userId === _localUserId
+          userId:         p.userId,
+          displayName:    p.displayName || 'Usuario',
+          company:        p.company || '',
+          color:          p.color || COLORS[i % COLORS.length],
+          role:           p.role || 'editor',
+          selectedItemId: p.selectedItemId || null,
+          isLocal:        p.userId === _localUserId
         }));
       document.dispatchEvent(new CustomEvent('escale:collab-presence', { detail: { participants } }));
       _presenceCb?.(participants);
@@ -149,7 +161,7 @@ async function connect(channelName) {
     _channel.subscribe(async status => {
       if (status === 'SUBSCRIBED') {
         clearTimeout(t);
-        await _channel.track({ userId: _localUserId, displayName: _localName, color: _localColor, role: _localRole });
+        await _channel.track({ userId: _localUserId, displayName: _localName, company: _localCompany || '', color: _localColor, role: _localRole });
         if (!_isHost) {
           setTimeout(() => {
             _channel.send({ type: 'broadcast', event: 'request_sync', payload: { from: _localUserId } });
@@ -214,7 +226,7 @@ export const CollabManager = {
     return data;
   },
 
-  async joinSession({ inviteToken, displayName, email } = {}) {
+  async joinSession({ inviteToken, displayName, company = '', email } = {}) {
     const resp = await fetch(ServiceConfig.getUrl('collabJoin'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -228,22 +240,39 @@ export const CollabManager = {
     for (const it of (data.snapshot?.items || [])) AppState.items.push(it);
     AppState.items.forEach(it => SceneManager.rebuild(it));
 
-    _sessionId   = data.sessionId;
-    _sessionName = data.sessionName;
-    _hostName    = data.hostName || null;
-    _isHost      = false;
-    _localRole   = data.guestRole || 'editor';
-    _localUserId = `guest-${Date.now()}`;
-    _localName   = displayName;
-    _localColor  = COLORS[1 + Math.floor(Math.random() * (COLORS.length - 1))];
-    _lastSnap    = snap();
+    _sessionId    = data.sessionId;
+    _sessionName  = data.sessionName;
+    _hostName     = data.hostName || null;
+    _isHost       = false;
+    _localRole    = data.guestRole || 'editor';
+    _localUserId  = `guest-${Date.now()}`;
+    _localName    = displayName;
+    _localCompany = company || '';
+    _localColor   = COLORS[1 + Math.floor(Math.random() * (COLORS.length - 1))];
+    _lastSnap     = snap();
 
     await connect(data.channelName);
     return data;
   },
 
+  get localName()  { return _localName; },
+  get localColor() { return _localColor; },
+
   onPresenceChange(fn) { _presenceCb = fn; },
   onCameraMove(fn)     { _camMoveCb  = fn; },
+  onNoteEvent(fn)      { _noteCb     = fn; },
+
+  updatePresence(extra = {}) {
+    if (!_channel) return;
+    _channel.track({ userId: _localUserId, displayName: _localName, company: _localCompany || '', color: _localColor, role: _localRole, ...extra });
+  },
+
+  sendNoteEvent(type, payload) {
+    if (!_channel) return;
+    const full = { ...payload, from: _localUserId };
+    _channel.send({ type: 'broadcast', event: type, payload: full });
+    _noteCb?.(type, full);
+  },
 
   broadcastCameraMove(data) {
     if (!_channel || _localRole === 'viewer') return;
@@ -256,7 +285,7 @@ export const CollabManager = {
     _channel = null;
     document.removeEventListener('escale:scene-insights-changed', onSceneChange);
     _sessionId = null; _sessionName = null; _hostName = null; _inviteToken = null;
-    _isHost = false; _lastSnap = null;
+    _isHost = false; _lastSnap = null; _localCompany = null;
     document.dispatchEvent(new CustomEvent('escale:collab-ended'));
   }
 };
