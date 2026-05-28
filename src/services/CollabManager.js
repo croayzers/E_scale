@@ -80,7 +80,6 @@ function applyDelta({ added = [], updated = [], deleted = [] }) {
 // ── Broadcast ─────────────────────────────────────────────────────────────────
 
 function doBroadcast() {
-  _debounce = null;
   if (!_channel || _localRole === 'viewer') return;
   const curr = snap();
   if (!_lastSnap) { _lastSnap = curr; return; }
