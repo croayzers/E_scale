@@ -484,7 +484,6 @@ body.has-items #empty-hint { display: none; }
 }
 
 #dock {
-  position: relative;
   isolation: isolate;
 }
 #dock::before {
