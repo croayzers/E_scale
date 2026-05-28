@@ -435,7 +435,10 @@ function onPointerDown(e) {
   }
 
   if (item) {
-    if (isViewer()) return;
+    if (isViewer()) {
+      AppState.select(item.id);
+      return;
+    }
     if (bKeyDown && !shiftDown) {
       AppState.select(item.id);
       AppState.toggleLock(item.id);
