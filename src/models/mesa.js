@@ -67,7 +67,7 @@ export function createMesa(item) {
   }
 
   // Sillas dispuestas radialmente (respaldo afuera)
-  const chairRadius = r + 0.1;
+  const chairRadius = r + (item.autoChildren?.offset ?? 0.1);
   for (let i = 0; i < item.chairs; i++) {
     const angle = (i / item.chairs) * Math.PI * 2;
     const cx = Math.cos(angle) * chairRadius;

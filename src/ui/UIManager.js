@@ -782,10 +782,16 @@ function showDetail(item) {
           <input data-input="width" type="number" min="0.5" max="2" step="0.05" value="${item.dims.width}" class="input-field"/>
         </label>
       </div>
-      <label class="block mb-3">
-        <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Separación sillas (m)</span>
-        <input data-input="chairSep" type="number" min="0.45" max="1.0" step="0.05" value="${item.chairSep ?? 0.60}" class="input-field"/>
-      </label>
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Sep. sillas (m)</span>
+          <input data-input="chairSep" type="number" min="0.45" max="1.0" step="0.05" value="${item.chairSep ?? 0.60}" class="input-field"/>
+        </label>
+        <label class="block">
+          <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Offset sillas (m)</span>
+          <input data-input="chairOffset" type="number" min="0" max="0.5" step="0.01" value="${(item.chairOffset ?? 0.1).toFixed(2)}" class="input-field"/>
+        </label>
+      </div>
       <label class="block mb-3">
         <span class="mono text-[9.5px] uppercase block mb-1" style="color:var(--muted)">Color</span>
         <input data-input="color" type="color" value="${item.color || '#4a4744'}" class="input-field" style="padding:2px;height:36px"/>
@@ -798,10 +804,11 @@ function showDetail(item) {
       </div>
     `;
     wireSimpleInputs(panel, item, A, {
-      length:   v => ({ dims: { ...item.dims, length: clampNum(v, 1, 20) } }),
-      width:    v => ({ dims: { ...item.dims, width:  clampNum(v, 0.5, 2) } }),
-      chairSep: v => ({ chairSep: clampNum(v, 0.45, 1.0) }),
-      color:    v => ({ color: v }),
+      length:      v => ({ dims: { ...item.dims, length: clampNum(v, 1, 20) } }),
+      width:       v => ({ dims: { ...item.dims, width:  clampNum(v, 0.5, 2) } }),
+      chairSep:    v => ({ chairSep: clampNum(v, 0.45, 1.0) }),
+      chairOffset: v => ({ chairOffset: clampNum(v, 0, 0.5) }),
+      color:       v => ({ color: v }),
     });
 
   } else if (item.type === 'mesaCocktail') {
