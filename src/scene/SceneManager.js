@@ -669,30 +669,20 @@ function makeZoneGrid(item) {
 
   const L = Math.max(0.5, item.dims?.length || 4);
   const W = Math.max(0.5, item.dims?.width || 4);
-  const majorSize = Math.max(0.1, cfg.majorSize || 1);
-  const subSize = Math.min(majorSize, Math.max(0.05, cfg.subSize || 0.25));
+  const step = Math.max(0.1, cfg.majorSize || 0.25);
   const vis = Math.max(0, Math.min(100, cfg.opacity ?? 55));
   const opacity = vis / 100;
 
   if (opacity <= 0) return group;
 
-  const divXFine = Math.min(800, Math.max(1, Math.round(L / subSize)));
-  const divZFine = Math.min(800, Math.max(1, Math.round(W / subSize)));
-  const fineMat = new THREE.LineBasicMaterial({
-    color: 0x1a1a1c, transparent: true, opacity: opacity * 0.28, depthWrite: false
+  const divX = Math.min(1600, Math.max(1, Math.round(L / step)));
+  const divZ = Math.min(1600, Math.max(1, Math.round(W / step)));
+  const mat = new THREE.LineBasicMaterial({
+    color: 0x1a1a1c, transparent: true, opacity: opacity * 0.55, depthWrite: false
   });
-  const fineLines = new THREE.LineSegments(buildRectGridGeo(L, W, divXFine, divZFine), fineMat);
-  fineLines.position.y = 0.034;
-  group.add(fineLines);
-
-  const divXMain = Math.min(400, Math.max(1, Math.round(L / majorSize)));
-  const divZMain = Math.min(400, Math.max(1, Math.round(W / majorSize)));
-  const mainMat = new THREE.LineBasicMaterial({
-    color: 0x1a1a1c, transparent: true, opacity: opacity * 0.62, depthWrite: false
-  });
-  const mainLines = new THREE.LineSegments(buildRectGridGeo(L, W, divXMain, divZMain), mainMat);
-  mainLines.position.y = 0.038;
-  group.add(mainLines);
+  const lines = new THREE.LineSegments(buildRectGridGeo(L, W, divX, divZ), mat);
+  lines.position.y = 0.034;
+  group.add(lines);
 
   return group;
 }

@@ -96,10 +96,10 @@ function buildZoneItem(anchor, point) {
     textColor: '#000000',
     fontSize: 120,
     gridConfig: {
-      majorSize: 1,
-      subSize: 0.25,
+      majorSize: 0.25,
       opacity: 55,
-      enabled: true
+      enabled: true,
+      snapEnabled: true
     }
   };
 }
@@ -359,7 +359,7 @@ function zoneEditorMarkup(zone) {
 /* ─── Zone Grid helpers ───────────────────────────────────── */
 
 function defaultGridConfig() {
-  return { majorSize: 1, subSize: 0.25, opacity: 55, enabled: true };
+  return { majorSize: 0.25, opacity: 55, enabled: true, snapEnabled: true };
 }
 
 function zoneGridListMarkup(zones) {
@@ -370,7 +370,7 @@ function zoneGridListMarkup(zones) {
     const cfg = zone.gridConfig || defaultGridConfig();
     const active = zone.id === activeGridZoneId;
     const dims = `${(zone.dims?.length || 0).toFixed(1)}×${(zone.dims?.width || 0).toFixed(1)}m`;
-    const sizeLabel = `${cfg.majorSize || 1}m / ${cfg.subSize || 0.25}m`;
+    const sizeLabel = `${cfg.majorSize || 0.25}m`;
     return `
       <div class="zone-chip-row">
         <button class="zone-chip ${active ? 'active' : ''}" type="button" data-grid-zone-id="${zone.id}">
@@ -391,16 +391,19 @@ function zoneGridListMarkup(zones) {
 function zoneGridEditorMarkup(zone) {
   if (!zone) return '';
   const cfg = { ...defaultGridConfig(), ...(zone.gridConfig || {}) };
+  const snapOn = cfg.snapEnabled !== false;
   return `
     <div class="menu-section-label">Grid · ${zone.labelText || `Zona ${zone.id}`}</div>
     <div class="menu-field-grid">
       <label class="menu-field">
         <span>Medida grid (m)</span>
-        <input id="zg-main-size" class="input-field" type="number" min="0.1" max="20" step="0.1" value="${cfg.majorSize}"/>
-      </label>
-      <label class="menu-field">
-        <span>Subrejilla (m)</span>
-        <input id="zg-sub-size" class="input-field" type="number" min="0.05" max="5" step="0.05" value="${cfg.subSize}"/>
+        <div class="zg-size-row">
+          <input id="zg-main-size" class="input-field" type="number" min="0.05" max="20" step="0.05" value="${cfg.majorSize}"/>
+          <button id="zg-snap-toggle" class="zg-snap-btn ${snapOn ? 'is-on' : ''}" type="button" title="Snap rejilla">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            <span>${snapOn ? 'Snap ON' : 'Snap OFF'}</span>
+          </button>
+        </div>
       </label>
       <label class="menu-field menu-field-full">
         <span>Visibilidad</span>
@@ -421,13 +424,19 @@ function bindZoneGridEditor(zone) {
   };
 
   document.getElementById('zg-main-size')?.addEventListener('change', e => {
-    const majorSize = Math.max(0.1, Math.min(20, parseFloat(e.target.value) || 1));
+    const majorSize = Math.max(0.05, Math.min(20, parseFloat(e.target.value) || 0.25));
     updateGrid({ majorSize });
   });
-  document.getElementById('zg-sub-size')?.addEventListener('change', e => {
-    const subSize = Math.max(0.05, Math.min(5, parseFloat(e.target.value) || 0.25));
-    updateGrid({ subSize });
-  });
+  const snapBtn = document.getElementById('zg-snap-toggle');
+  if (snapBtn) {
+    snapBtn.addEventListener('click', () => {
+      const current = zone.gridConfig || defaultGridConfig();
+      const next = current.snapEnabled !== false ? false : true;
+      updateGrid({ snapEnabled: next });
+      snapBtn.classList.toggle('is-on', next);
+      snapBtn.querySelector('span').textContent = next ? 'Snap ON' : 'Snap OFF';
+    });
+  }
   document.getElementById('zg-visibility')?.addEventListener('input', e => {
     const opacity = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0));
     const lbl = document.getElementById('zg-visibility-value');

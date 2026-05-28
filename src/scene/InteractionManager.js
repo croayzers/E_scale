@@ -146,18 +146,16 @@ function getSnapConfigForPoint(x, z) {
   const zones = AppState.items.filter(item => item.type === 'zone');
   for (const zone of zones) {
     const cfg = zone.gridConfig;
-    if (!cfg || cfg.enabled === false) continue;
+    if (!cfg || cfg.enabled === false || cfg.snapEnabled === false) continue;
     const L = zone.dims?.length || 4;
     const W = zone.dims?.width || 4;
     const halfL = L / 2;
     const halfW = W / 2;
     if (Math.abs(x - zone.x) <= halfL && Math.abs(z - zone.z) <= halfW) {
-      const subSize = Math.max(0.05, cfg.subSize || 0.25);
-      const divX = Math.min(800, Math.max(1, Math.round(L / subSize)));
-      const divZ = Math.min(800, Math.max(1, Math.round(W / subSize)));
+      const step = Math.max(0.05, cfg.majorSize || 0.25);
       return {
-        stepX: L / divX,
-        stepZ: W / divZ,
+        stepX: step,
+        stepZ: step,
         originX: zone.x - halfL,
         originZ: zone.z - halfW
       };
