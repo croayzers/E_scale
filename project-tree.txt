@@ -80,7 +80,6 @@ PROJECT STRUCTURE
 ├── elements.json
 ├── generate-tree-json.js
 ├── generate-tree.js
-├── header-mac.txt
 ├── header-mac.yml
 ├── hooks/
 ├── index.html
@@ -91,8 +90,6 @@ PROJECT STRUCTURE
 │   ├── resend.js
 │   ├── stripe.js
 │   └── supabase.js
-├── Mejoras.yml
-├── Online.yml
 ├── qa/
 ├── README.md
 ├── server.py

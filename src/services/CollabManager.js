@@ -9,6 +9,7 @@ let _sbClient   = null;
 let _channel    = null;
 let _sessionId  = null;
 let _sessionName = null;
+let _hostName   = null;
 let _inviteToken = null;
 let _isHost     = false;
 let _localRole  = 'editor';   // 'editor' | 'viewer'
@@ -169,6 +170,7 @@ export const CollabManager = {
   get active()      { return Boolean(_sessionId); },
   get sessionId()   { return _sessionId; },
   get sessionName() { return _sessionName; },
+  get hostName()    { return _hostName; },
   get inviteToken() { return _inviteToken; },
   get isHost()      { return _isHost; },
   get localRole()   { return _localRole; },
@@ -228,6 +230,7 @@ export const CollabManager = {
 
     _sessionId   = data.sessionId;
     _sessionName = data.sessionName;
+    _hostName    = data.hostName || null;
     _isHost      = false;
     _localRole   = data.guestRole || 'editor';
     _localUserId = `guest-${Date.now()}`;
@@ -252,7 +255,7 @@ export const CollabManager = {
     _channel?.unsubscribe();
     _channel = null;
     document.removeEventListener('escale:scene-insights-changed', onSceneChange);
-    _sessionId = null; _sessionName = null; _inviteToken = null;
+    _sessionId = null; _sessionName = null; _hostName = null; _inviteToken = null;
     _isHost = false; _lastSnap = null;
     document.dispatchEvent(new CustomEvent('escale:collab-ended'));
   }
