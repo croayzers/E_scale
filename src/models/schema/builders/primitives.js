@@ -240,7 +240,7 @@ export function addCylinder(group, { radiusTop, radiusBottom = radiusTop, height
   return mesh;
 }
 
-export function addSphere(group, { radius, position, color, preset = 'glass', opacity = 1, emissive = false }) {
+export function addSphere(group, { radius, position, color, preset = 'glass', opacity = 1, emissive = false, segments = 20 }) {
   const material = emissive
     ? new THREE.MeshStandardMaterial({
         color: colorNumber(color),
@@ -251,7 +251,7 @@ export function addSphere(group, { radius, position, color, preset = 'glass', op
         opacity
       })
     : makeStandardMaterial(color, preset, opacity);
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 18, 18), material);
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, segments, segments), material);
   mesh.position.set(position[0], position[1], position[2]);
   group.add(mesh);
   return mesh;

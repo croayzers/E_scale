@@ -2,16 +2,23 @@ import { addBox, addSphere, addLabel, addTopLabel, addTopFootprint, markMain, ma
 
 export function buildArbustoRecto(group, item, L, W, H, color) {
   const baseColor = color || '#3D7A38';
-  const leafColors = ['#4A8C45', '#3D7A38', '#558C50', '#2D6E30'];
+  const leafColors = ['#4A8C45', '#3D7A38', '#558C50', '#2D6E30', '#3A7235'];
   const base = addBox(group, { size: [L, H * 0.55, W * 0.65], position: [0, H * 0.275, 0], color: '#2A5E28', preset: 'matte' });
   markMain(base, baseColor);
-  const count = Math.max(3, Math.round(L / 0.75));
+  const count = Math.max(5, Math.round(L / 0.55));
   for (let i = 0; i < count; i++) {
+    const t = count > 1 ? i / (count - 1) : 0.5;
+    const r = H * (0.34 + 0.07 * Math.sin(i * 1.7 + 0.5));
     addSphere(group, {
-      radius: H * 0.42,
-      position: [-L / 2 + L * (i + 0.5) / count, H * 0.68, Math.sin(i * 2.1) * W * 0.08],
+      radius: r,
+      position: [
+        -L / 2 + L * t,
+        H * (0.64 + 0.08 * Math.cos(i * 2.3)),
+        Math.sin(i * 1.9) * W * 0.22
+      ],
       color: leafColors[i % leafColors.length],
-      preset: 'matte'
+      preset: 'matte',
+      segments: 28
     });
   }
 }

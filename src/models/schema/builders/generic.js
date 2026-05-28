@@ -107,8 +107,71 @@ function inferRoundProfile(item) {
     case 'candelabro':       return 'candelabra';
     case 'peana_decorativa': return 'pedestal';
     case 'cubitera':         return 'iceBucket';
+    case 'fuente_ambiente':  return 'fountain';
     default:                 return '';
   }
+}
+
+function buildFountain(group, diameter, height, color) {
+  const R = diameter / 2;
+  const basinH = Math.max(0.28, height * 0.30);
+  const wallT  = Math.max(0.08, R * 0.08);
+  const mat    = makeStandardMaterial(color, 'matte', 1);
+
+  // Outer basin
+  const outer = new THREE.Mesh(new THREE.CylinderGeometry(R, R * 1.03, basinH, 48), mat.clone());
+  outer.position.y = basinH / 2;
+  markMain(outer, color);
+  group.add(outer);
+
+  // Water surface
+  const waterDisc = new THREE.Mesh(
+    new THREE.CircleGeometry(R - wallT, 48),
+    makeStandardMaterial('#60A5FA', 'glass', 0.60)
+  );
+  waterDisc.rotation.x = -Math.PI / 2;
+  waterDisc.position.y = basinH - 0.01;
+  group.add(waterDisc);
+
+  // Pillar base
+  const pillarH = height - basinH;
+  const pillarBase = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.22, R * 0.32, 0.10, 32), mat.clone());
+  pillarBase.position.y = basinH + 0.05;
+  group.add(pillarBase);
+
+  // Main pillar
+  const pillar = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.09, R * 0.14, pillarH, 24), mat.clone());
+  pillar.position.y = basinH + 0.10 + pillarH / 2;
+  group.add(pillar);
+
+  // Top cap / lip
+  const topCap = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.28, R * 0.20, 0.06, 32), mat.clone());
+  topCap.position.y = basinH + 0.10 + pillarH + 0.03;
+  group.add(topCap);
+
+  // Small upper basin
+  const upR = R * 0.30;
+  const upBasin = new THREE.Mesh(new THREE.CylinderGeometry(upR, upR * 1.06, 0.14, 32), mat.clone());
+  upBasin.position.y = basinH + 0.10 + pillarH + 0.07;
+  group.add(upBasin);
+
+  // Water spout
+  const spoutH = 0.22;
+  const spout = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.022, 0.018, spoutH, 12),
+    makeStandardMaterial('#BAE6FD', 'glass', 0.75)
+  );
+  spout.position.y = basinH + 0.10 + pillarH + 0.14 + spoutH / 2;
+  group.add(spout);
+
+  // Torus ring accent at basin rim
+  const rimRing = new THREE.Mesh(
+    new THREE.TorusGeometry(R, 0.025, 8, 48),
+    makeStandardMaterial(color, 'matte', 1)
+  );
+  rimRing.rotation.x = Math.PI / 2;
+  rimRing.position.y = basinH;
+  group.add(rimRing);
 }
 
 export function buildGenericRect(item, view) {
@@ -230,6 +293,7 @@ export function buildGenericRound(item, view) {
     case 'candelabra':  buildCandelabra(group, diameter, height, color); break;
     case 'pedestal':    buildPedestal(group, diameter, height, color); break;
     case 'iceBucket':   buildIceBucket(group, diameter, height, color); break;
+    case 'fountain':    buildFountain(group, diameter, height, color); break;
     default: {
       const body = new THREE.Mesh(
         new THREE.CylinderGeometry(diameter / 2, diameter / 2, height, 56),

@@ -5,8 +5,8 @@ export function buildSofa(item, view) {
   const W = item.dims?.width ?? 1.4;
   const D = item.dims?.length ?? 0.9;
   const H = item.dims?.height ?? 0.82;
-  const color = item.color || '#CFC7BC';
-  const accent = item.accentColor || '#8B5E3C';
+  const color = item.color || '#4a4a52';
+  const accent = item.accentColor || '#2a2a30';
 
   if (view === 'top') {
     const fill = new THREE.Mesh(new THREE.PlaneGeometry(W, D), makeTopFill(color, 0.26));
@@ -21,28 +21,43 @@ export function buildSofa(item, view) {
     return group;
   }
 
+  // Seat cushion — slightly forward, not reaching the rear edge
+  const seatH = H * 0.42;
   const base = new THREE.Mesh(
-    new THREE.BoxGeometry(W, H * 0.45, D),
+    new THREE.BoxGeometry(W, seatH, D * 0.80),
     makeStandardMaterial(color, 'fabric', 1)
   );
-  base.position.y = H * 0.22;
+  base.position.set(0, seatH / 2, -D * 0.05);
   base.castShadow = true;
   markMain(base, color);
   group.add(base);
 
+  // Backrest — starts exactly at seat top, no overlap
+  const backH = H * 0.52;
   const back = new THREE.Mesh(
-    new THREE.BoxGeometry(W, H * 0.4, D * 0.16),
+    new THREE.BoxGeometry(W, backH, D * 0.14),
     makeStandardMaterial(color, 'fabric', 1)
   );
-  back.position.set(0, H * 0.52, D / 2 - D * 0.08);
+  back.position.set(0, seatH + backH / 2, D / 2 - D * 0.07);
+  back.castShadow = true;
   group.add(back);
 
-  const armGeo = new THREE.BoxGeometry(W * 0.12, H * 0.32, D * 0.82);
-  [-W / 2 + W * 0.06, W / 2 - W * 0.06].forEach(x => {
+  // Arm rests — same height as backrest, on sides
+  const armGeo = new THREE.BoxGeometry(W * 0.11, H * 0.50, D * 0.80);
+  [-W / 2 + W * 0.055, W / 2 - W * 0.055].forEach(x => {
     const arm = new THREE.Mesh(armGeo, makeStandardMaterial(accent, 'matte', 1));
-    arm.position.set(x, H * 0.28, 0);
+    arm.position.set(x, H * 0.25, -D * 0.05);
+    arm.castShadow = true;
     group.add(arm);
   });
+
+  // Thin legs
+  const legR = 0.025, legH = seatH * 0.28;
+  const legOffX = W / 2 - 0.12, legOffZ = D * 0.35;
+  [[-legOffX, -legOffZ], [legOffX, -legOffZ], [-legOffX, legOffZ], [legOffX, legOffZ]].forEach(([x, z]) => {
+    addCylinder(group, { radiusTop: legR, height: legH, position: [x, legH / 2, z - D * 0.05], color: accent, preset: 'metal', radialSegments: 8 });
+  });
+
   addLabel(group, item.labelText, H + 0.35);
   return group;
 }

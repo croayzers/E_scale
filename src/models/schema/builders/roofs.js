@@ -55,7 +55,7 @@ export function buildTejado4Aguas(group, item, L, W, H, color) {
     ]);
     const faceGeo = new THREE.BufferGeometry();
     faceGeo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-    faceGeo.setIndex([0, 1, 2]);
+    faceGeo.setIndex([0, 2, 1]);
     faceGeo.computeVertexNormals();
     const face = new THREE.Mesh(faceGeo, mat.clone());
     face.castShadow = true;

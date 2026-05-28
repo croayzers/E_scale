@@ -113,13 +113,13 @@ export function buildCurvedBar(group, diameter, height, color) {
   top.rotation.x = -Math.PI / 2;
   top.position.y = height;
   group.add(top);
-  const frontRail = new THREE.Mesh(
-    new THREE.TorusGeometry((innerRadius + outerRadius) / 2, counterDepth * 0.46, 12, 48, angle),
-    makeStandardMaterial('#CBD5E1', 'metal', 0.22)
+  const footRail = new THREE.Mesh(
+    new THREE.TorusGeometry(innerRadius + 0.06, 0.018, 8, 64, angle),
+    makeStandardMaterial('#9CA3AF', 'metal', 1)
   );
-  frontRail.rotation.x = Math.PI / 2;
-  frontRail.position.y = height * 0.58;
-  group.add(frontRail);
+  footRail.rotation.x = Math.PI / 2;
+  footRail.position.y = height * 0.28;
+  group.add(footRail);
 }
 
 export function buildVase(group, diameter, height, color) {
