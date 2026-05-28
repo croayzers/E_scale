@@ -737,6 +737,233 @@ export const ELEMENT_SCHEMAS = [
       StandardParams.rotation(), StandardParams.text(), StandardParams.opacity(), StandardParams.shadow()
     ]
   },
+  // ── LEGACY MIGRATION SCHEMAS (type → builder preset) ──────────────────────────
+  // Tables
+  {
+    id: 'mesa.presidential',
+    family: 'table',
+    match: item => item.type === 'mesa' && item.subtype === 'presi',
+    metadata: { label: 'Mesa presidencial', icon: 'table-2', category: 'tables' },
+    builder: { preset: 'mesaPresi' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 5.0, width: 1.0, height: 0.75 }, color: '#DDD4C8', labelText: '' },
+    params: []
+  },
+  {
+    id: 'mesa.rect',
+    family: 'table',
+    match: item => item.type === 'mesaRect',
+    metadata: { label: 'Mesa rectangular', icon: 'table-2', category: 'tables' },
+    builder: { preset: 'mesaRect' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 2.4, width: 0.9, height: 0.75 }, color: '#DDD4C8', labelText: '' },
+    params: []
+  },
+  {
+    id: 'mesa.imperial',
+    family: 'table',
+    match: item => item.type === 'mesaImperial',
+    metadata: { label: 'Mesa imperial', icon: 'table-2', category: 'tables' },
+    builder: { preset: 'mesaRect' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 6.0, width: 1.2, height: 0.75 }, color: '#DDD4C8', labelText: '' },
+    params: []
+  },
+  {
+    id: 'mesa.cocktail',
+    family: 'table',
+    match: item => item.type === 'mesaCocktail',
+    metadata: { label: 'Mesa cocktail', icon: 'wine', category: 'tables' },
+    builder: { preset: 'mesaCocktail' },
+    ui: { dynamic: true },
+    defaults: { dims: { diameter: 0.8, height: 1.05 }, color: '#DDD4C8', labelText: '' },
+    params: []
+  },
+  {
+    id: 'mesa.curved',
+    family: 'table',
+    match: item => item.type === 'mesaCurva',
+    metadata: { label: 'Mesa curva', icon: 'circle', category: 'tables' },
+    builder: { preset: 'mesaCurva' },
+    ui: { dynamic: true },
+    defaults: { dims: { radius: 2.5, angle: 120, width: 0.9, height: 0.75 }, color: '#DDD4C8', labelText: '' },
+    params: []
+  },
+  {
+    id: 'mesa.serpentine',
+    family: 'table',
+    match: item => item.type === 'mesaSerpentina',
+    metadata: { label: 'Mesa serpentina', icon: 'spline', category: 'tables' },
+    builder: { preset: 'mesaSerpentina' },
+    ui: { dynamic: true },
+    defaults: { dims: { radius: 2.5, angle: 120, width: 0.9, height: 0.75 }, color: '#DDD4C8', labelText: '' },
+    params: []
+  },
+  // Buffet / bars
+  {
+    id: 'buffet.legacy',
+    family: 'buffet',
+    match: item => item.type === 'buffet',
+    metadata: { label: 'Buffet', icon: 'utensils-crossed', category: 'bars' },
+    builder: { preset: 'buffetStreet' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 2.4, width: 0.8, height: 0.85 }, color: '#DDD4C8', labelText: '' },
+    params: []
+  },
+  {
+    id: 'bar.open',
+    family: 'bar',
+    match: item => item.type === 'barraLibre',
+    metadata: { label: 'Barra libre', icon: 'wine', category: 'bars' },
+    builder: { preset: 'barraLibre' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 3.0, width: 0.8, height: 0.9 }, color: '#1a1a1c', labelText: '' },
+    params: []
+  },
+  // Ambient / nature
+  {
+    id: 'ambient.tree',
+    family: 'ambient',
+    match: item => item.type === 'arbol',
+    metadata: { label: 'Árbol', icon: 'trees', category: 'ambient' },
+    builder: { preset: 'arbol' },
+    ui: { dynamic: true },
+    defaults: { dims: { crownWidth: 1.8, totalHeight: 3.0 }, color: '#2f6a3f' },
+    params: []
+  },
+  {
+    id: 'ambient.post',
+    family: 'ambient',
+    match: item => item.type === 'poste',
+    metadata: { label: 'Poste', icon: 'pilcrow', category: 'ambient' },
+    builder: { preset: 'poste' },
+    ui: { dynamic: true },
+    defaults: { dims: { diameter: 0.12, height: 3.0 }, color: '#6b4423' },
+    params: []
+  },
+  {
+    id: 'ambient.ambiente',
+    family: 'ambient',
+    match: item => item.type === 'ambiente',
+    metadata: { label: 'Ambiente', icon: 'lamp-floor', category: 'ambient' },
+    builder: { preset: 'ambiente' },
+    ui: { dynamic: true },
+    defaults: { dims: { height: 2.0 }, color: '#1a1a1c' },
+    params: []
+  },
+  // Lighting
+  {
+    id: 'light.cable',
+    family: 'lighting',
+    match: item => item.type === 'cableLuces',
+    metadata: { label: 'Cable luces', icon: 'lamp-ceiling', category: 'lighting' },
+    builder: { preset: 'cableLuces' },
+    ui: { dynamic: true },
+    defaults: { height: 4.0, count: 8, spacing: 1.0 },
+    params: []
+  },
+  // Structures
+  {
+    id: 'structure.room',
+    family: 'structure',
+    match: item => item.type === 'room',
+    metadata: { label: 'Recinto', icon: 'box', category: 'structures' },
+    builder: { preset: 'room' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 6.0, width: 4.0, height: 3.0, thickness: 0.10 }, color: '#ffffff' },
+    params: []
+  },
+  // Tents / carpas
+  {
+    id: 'tent.carpa',
+    family: 'tent',
+    match: item => item.type === 'carpa',
+    metadata: { label: 'Carpa', icon: 'tent', category: 'tents' },
+    builder: { preset: 'carpa' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 10, width: 6, height: 3 }, color: '#ffffff' },
+    params: []
+  },
+  {
+    id: 'tent.cuadrada',
+    family: 'tent',
+    match: item => item.type === 'carpaCuadrada',
+    metadata: { label: 'Carpa cuadrada', icon: 'tent', category: 'tents' },
+    builder: { preset: 'carpaCuadrada' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 6, width: 6, height: 3 }, color: '#ffffff' },
+    params: []
+  },
+  {
+    id: 'tent.star',
+    family: 'tent',
+    match: item => item.type === 'carpaStar',
+    metadata: { label: 'Carpa star', icon: 'tent', category: 'tents' },
+    builder: { preset: 'carpaStar' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 10, width: 5, height: 4 }, color: '#e8e0d0' },
+    params: []
+  },
+  {
+    id: 'tent.pabellon',
+    family: 'tent',
+    match: item => item.type === 'carpaPabellon',
+    metadata: { label: 'Pabellón', icon: 'tent', category: 'tents' },
+    builder: { preset: 'carpaPabellon' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 12, width: 8, height: 4 }, color: '#f0ece4' },
+    params: []
+  },
+  {
+    id: 'tent.sailcloth',
+    family: 'tent',
+    match: item => item.type === 'carpaSailcloth',
+    metadata: { label: 'Sailcloth', icon: 'tent', category: 'tents' },
+    builder: { preset: 'carpaSailcloth' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 12, width: 9, height: 4 }, color: '#f5f0e8' },
+    params: []
+  },
+  {
+    id: 'tent.beduina',
+    family: 'tent',
+    match: item => item.type === 'carpaBeduina',
+    metadata: { label: 'Carpa beduina', icon: 'tent', category: 'tents' },
+    builder: { preset: 'carpaBeduina' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 8, width: 6, height: 4 }, color: '#c8b89a' },
+    params: []
+  },
+  {
+    id: 'tent.tipi',
+    family: 'tent',
+    match: item => item.type === 'carpaTipi',
+    metadata: { label: 'Tipi', icon: 'tent', category: 'tents' },
+    builder: { preset: 'carpaTipi' },
+    ui: { dynamic: true },
+    defaults: { dims: { diameter: 5, height: 4 }, color: '#d4c4a0' },
+    params: []
+  },
+  {
+    id: 'tent.transparente',
+    family: 'tent',
+    match: item => item.type === 'carpaTransparente',
+    metadata: { label: 'Carpa transparente', icon: 'tent', category: 'tents' },
+    builder: { preset: 'carpaTransparente' },
+    ui: { dynamic: true },
+    defaults: { dims: { length: 10, width: 6, height: 3.5 }, color: '#d8eefa' },
+    params: []
+  },
+  {
+    id: 'tent.domo',
+    family: 'tent',
+    match: item => item.type === 'carpaDomo',
+    metadata: { label: 'Domo', icon: 'tent', category: 'tents' },
+    builder: { preset: 'carpaDomo' },
+    ui: { dynamic: true },
+    defaults: { dims: { diameter: 8, height: 5 }, color: '#f0ece4' },
+    params: []
+  },
   // ── GENERIC FALLBACK ─────────────────────────────────────────────────────────
   {
     id: 'prop.generic-rect',

@@ -11,7 +11,9 @@
     "api/billing/webhook.js": { "memory": 256, "maxDuration": 10 },
     "api/email/send-export.js": { "memory": 256, "maxDuration": 10 },
     "api/email/send-share.js": { "memory": 256, "maxDuration": 10 },
-    "api/plans/search.js":   { "memory": 256, "maxDuration": 10 }
+    "api/plans/search.js":   { "memory": 256, "maxDuration": 10 },
+    "api/collab/create.js":  { "memory": 256, "maxDuration": 15 },
+    "api/collab/join.js":    { "memory": 256, "maxDuration": 10 }
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }

@@ -58,7 +58,9 @@ const DEFAULT_PUBLIC_CONFIG = {
     sendFeedback: '/api/email/send-feedback',
     analyticsCapture: '/api/analytics/capture',
     aiChat: '/api/ai/chat',
-    plansSearch: '/api/plans/search'
+    plansSearch: '/api/plans/search',
+    collabCreate: '/api/collab/create',
+    collabJoin:   '/api/collab/join'
   }
 };
 

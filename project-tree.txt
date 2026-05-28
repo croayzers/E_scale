@@ -27,6 +27,9 @@ PROJECT STRUCTURE
 │   │   ├── checkout.js
 │   │   ├── portal.js
 │   │   └── webhook.js
+│   ├── collab/
+│   │   ├── create.js
+│   │   └── join.js
 │   ├── email/
 │   │   ├── send-export.js
 │   │   ├── send-feedback.js
@@ -112,55 +115,29 @@ PROJECT STRUCTURE
 │   │   └── TemplateManager.js
 │   ├── main.js
 │   ├── models/
-│   │   ├── ambiente.js
-│   │   ├── arbol.js
 │   │   ├── arbusto.js
-│   │   ├── barraLibre.js
-│   │   ├── buffet.js
-│   │   ├── cableLuces.js
-│   │   ├── carpa.js
-│   │   ├── carpaBeduina.js
-│   │   ├── carpaCuadrada.js
-│   │   ├── carpaDomo.js
-│   │   ├── carpaHelpers.js
-│   │   ├── carpaPabellon.js
-│   │   ├── carpaSailcloth.js
-│   │   ├── carpaStar.js
-│   │   ├── carpaTipi.js
-│   │   ├── carpaTransparente.js
-│   │   ├── chair.js
-│   │   ├── colors.js
 │   │   ├── index.js
-│   │   ├── mesa.js
-│   │   ├── mesaCocktail.js
-│   │   ├── mesaCurva.js
-│   │   ├── mesaImperial.js
-│   │   ├── mesaRect.js
-│   │   ├── mesaSerpentina.js
-│   │   ├── poste.js
-│   │   ├── room.js
-│   │   ├── schema/
-│   │   │   ├── builders/
-│   │   │   │   ├── audio.js
-│   │   │   │   ├── buffet.js
-│   │   │   │   ├── deco.js
-│   │   │   │   ├── equipment.js
-│   │   │   │   ├── generic.js
-│   │   │   │   ├── lighting.js
-│   │   │   │   ├── nature.js
-│   │   │   │   ├── persons.js
-│   │   │   │   ├── primitives.js
-│   │   │   │   ├── roofs.js
-│   │   │   │   ├── seating.js
-│   │   │   │   ├── stage.js
-│   │   │   │   ├── surfaces.js
-│   │   │   │   ├── tables.js
-│   │   │   │   ├── vehicles.js
-│   │   │   │   └── walls.js
-│   │   │   ├── SchemaBuilders.js
-│   │   │   └── SchemaModelFactory.js
-│   │   ├── sillaCatering.js
-│   │   └── sillaLineal.js
+│   │   └── schema/
+│   │       ├── builders/
+│   │       │   ├── audio.js
+│   │       │   ├── buffet.js
+│   │       │   ├── deco.js
+│   │       │   ├── equipment.js
+│   │       │   ├── generic.js
+│   │       │   ├── lighting.js
+│   │       │   ├── nature.js
+│   │       │   ├── persons.js
+│   │       │   ├── primitives.js
+│   │       │   ├── roofs.js
+│   │       │   ├── seating.js
+│   │       │   ├── stage.js
+│   │       │   ├── surfaces.js
+│   │       │   ├── tables.js
+│   │       │   ├── tents.js
+│   │       │   ├── vehicles.js
+│   │       │   └── walls.js
+│   │       ├── SchemaBuilders.js
+│   │       └── SchemaModelFactory.js
 │   ├── scene/
 │   │   ├── InteractionManager.js
 │   │   ├── SceneManager.js
@@ -181,6 +158,7 @@ PROJECT STRUCTURE
 │   │   ├── BrandConfig.js
 │   │   ├── CloudApi.js
 │   │   ├── CloudSync.js
+│   │   ├── CollabManager.js
 │   │   ├── MessageManager.js
 │   │   ├── ServiceConfig.js
 │   │   ├── SubscriptionManager.js
@@ -188,6 +166,9 @@ PROJECT STRUCTURE
 │   └── ui/
 │       ├── AICopilot.js
 │       ├── CatalogModal.js
+│       ├── CollabInviteModal.js
+│       ├── CollabJoinModal.js
+│       ├── CollabPresenceBar.js
 │       ├── Dock.js
 │       ├── FeedbackModal.js
 │       ├── HeaderActionMenus.js
@@ -206,6 +187,7 @@ PROJECT STRUCTURE
 │   └── layout.css
 ├── supabase/
 │   ├── migrations/
+│   │   ├── 20260528_collab_sessions.sql
 │   │   └── add_owner_user_id.sql
 │   └── schema.sql
 ├── Supabase tablas/

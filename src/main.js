@@ -28,6 +28,10 @@ import { MessageManager } from './services/MessageManager.js';
 import { FeedbackModal } from './ui/FeedbackModal.js';
 import { AppBridge } from './core/AppBridge.js';
 import { AICopilot } from './ui/AICopilot.js';
+import { CollabManager }     from './services/CollabManager.js';
+import { CollabInviteModal } from './ui/CollabInviteModal.js';
+import { CollabJoinModal }   from './ui/CollabJoinModal.js';
+import { CollabPresenceBar } from './ui/CollabPresenceBar.js';
 
 function showStartupError(label, error) {
   console.error(`[E-scale] ${label} falló:`, error);
@@ -83,11 +87,22 @@ async function bootstrap() {
   safeInit('FeedbackModal',  () => FeedbackModal.init());
   AppBridge.init();
   safeInit('AICopilot', () => AICopilot.init());
+  safeInit('CollabJoinModal',   () => CollabJoinModal.init());
+  safeInit('CollabInviteModal', () => CollabInviteModal.init());
+  safeInit('CollabPresenceBar', () => CollabPresenceBar.init());
+  await safeInit('CollabManager', () => CollabManager.init());
 
   // Exponer al window para acceso desde consola y botones inline
   window.InteractionManager = InteractionManager;
   window.SelectionManager   = SelectionManager;
   window.EscaleAI = window.EscaleAI; // ya registrado por AppBridge.init()
+
+  document.addEventListener('escale:collab-joined', e => {
+    CollabPresenceBar.show(e.detail?.sessionName);
+  });
+  const _openCollab = () => CollabInviteModal.openOrStart();
+  document.getElementById('btn-collab')?.addEventListener('click', _openCollab);
+  document.getElementById('print-menu-collab-btn')?.addEventListener('click', _openCollab);
 
   const welcomeModal = document.getElementById('welcome-modal');
   const inventoryPanel = document.getElementById('inventory-panel');

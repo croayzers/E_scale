@@ -1,4 +1,4 @@
-import { addBox, addSphere, addLabel, addTopLabel, addTopFootprint, markMain } from './primitives.js';
+import { addBox, addSphere, addLabel, addTopLabel, addTopFootprint, markMain, makeTopFill, colorNumber } from './primitives.js';
 
 export function buildArbustoRecto(group, item, L, W, H, color) {
   const baseColor = color || '#3D7A38';
@@ -51,6 +51,141 @@ export function buildArbustoCurvo(group, item, L, W, H, color) {
     if (!firstBase) { firstBase = b; markMain(b, baseColor); }
     addSphere(group, { radius: H * 0.4, position: [cx, H * 0.65, cz], color: leafColors[i % leafColors.length], preset: 'matte' });
   }
+}
+
+export function buildArbol(item, view) {
+  const group = new THREE.Group();
+  const totalH  = item.dims?.height     ?? 5.0;
+  const crownW  = item.dims?.crownWidth ?? 2.5;
+  const crownHex = item.crownColor ?? '#2f6a3f';
+  const trunkHex = item.trunkColor ?? '#5a3a1f';
+
+  if (view === 'top') {
+    const fill = new THREE.Mesh(new THREE.CircleGeometry(crownW / 2, 56), makeTopFill(crownHex, 0.6));
+    fill.rotation.x = -Math.PI / 2;
+    fill.position.y = 0.04;
+    markMain(fill, crownHex);
+    group.add(fill);
+    return group;
+  }
+
+  const trunkH = totalH * 0.45;
+  const crownH = totalH - trunkH;
+  const trunkD = Math.max(0.15, crownW * 0.12);
+
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(trunkD * 0.45, trunkD * 0.5, trunkH, 8),
+    new THREE.MeshStandardMaterial({ color: colorNumber(trunkHex), roughness: 0.9, flatShading: true })
+  );
+  trunk.position.y = trunkH / 2;
+  trunk.castShadow = true;
+  trunk.receiveShadow = true;
+  markMain(trunk, trunkHex);
+  group.add(trunk);
+
+  const crownMat = new THREE.MeshStandardMaterial({ color: colorNumber(crownHex), roughness: 0.95, flatShading: true });
+  const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(crownW / 2, 1), crownMat);
+  crown.scale.y = (crownH / crownW) * 1.1;
+  crown.position.y = trunkH + crownH / 2;
+  crown.castShadow = true;
+  group.add(crown);
+
+  const bumpGeo = new THREE.IcosahedronGeometry(crownW * 0.28, 0);
+  [[ crownW * 0.3,  trunkH + crownH * 0.6,  crownW * 0.1],
+   [-crownW * 0.25, trunkH + crownH * 0.4, -crownW * 0.15],
+   [ 0,             trunkH + crownH * 0.85,  crownW * 0.05]].forEach(([x, y, z]) => {
+    const bump = new THREE.Mesh(bumpGeo, crownMat.clone());
+    bump.position.set(x, y, z);
+    bump.castShadow = true;
+    group.add(bump);
+  });
+
+  if (item.labelText) addLabel(group, item.labelText, totalH + 0.4);
+  return group;
+}
+
+export function buildPoste(item, view) {
+  const group = new THREE.Group();
+  const D   = item.dims?.diameter ?? 0.12;
+  const H   = item.dims?.height   ?? 3.0;
+  const color = item.color || '#6b4423';
+
+  if (view === 'top') {
+    const fill = new THREE.Mesh(new THREE.CircleGeometry(D, 24), makeTopFill(color, 0.8));
+    fill.rotation.x = -Math.PI / 2;
+    fill.position.y = 0.04;
+    markMain(fill, color);
+    group.add(fill);
+    return group;
+  }
+
+  const mat = new THREE.MeshStandardMaterial({ color: colorNumber(color), roughness: 0.6, metalness: 0.2, flatShading: true });
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(D / 2, D / 2, H, 12), mat);
+  post.position.y = H / 2;
+  post.castShadow = true;
+  post.receiveShadow = true;
+  markMain(post, color);
+  group.add(post);
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(D * 1.6, D * 1.8, 0.04, 16), mat.clone());
+  base.position.y = 0.02;
+  group.add(base);
+
+  if (item.labelText) addLabel(group, item.labelText, H + 0.35);
+  return group;
+}
+
+export function buildPlanta(item, view) {
+  const group = new THREE.Group();
+  const H          = item.dims?.height ?? 1.2;
+  const potColor   = item.potColor  || '#8b5e3c';
+  const plantColor = item.color     || '#3e7a3a';
+
+  if (view === 'top') {
+    const fill = new THREE.Mesh(new THREE.CircleGeometry(H * 0.28, 36), makeTopFill(plantColor, 0.55));
+    fill.rotation.x = -Math.PI / 2;
+    fill.position.y = 0.04;
+    markMain(fill, plantColor);
+    group.add(fill);
+    return group;
+  }
+
+  const potH = H * 0.35;
+  const pot  = new THREE.Mesh(
+    new THREE.CylinderGeometry(potH * 0.55, potH * 0.42, potH, 16),
+    new THREE.MeshStandardMaterial({ color: colorNumber(potColor), roughness: 0.8, flatShading: true })
+  );
+  pot.position.y = potH / 2;
+  pot.castShadow = true;
+  pot.receiveShadow = true;
+  markMain(pot, potColor);
+  group.add(pot);
+
+  const soil = new THREE.Mesh(
+    new THREE.CylinderGeometry(potH * 0.53, potH * 0.53, 0.04, 16),
+    new THREE.MeshStandardMaterial({ color: 0x3d2b1f, roughness: 0.95 })
+  );
+  soil.position.y = potH - 0.01;
+  group.add(soil);
+
+  const crownH   = H - potH;
+  const plantMat = new THREE.MeshStandardMaterial({ color: colorNumber(plantColor), roughness: 0.95, flatShading: true });
+  const crown    = new THREE.Mesh(new THREE.IcosahedronGeometry(crownH * 0.55, 1), plantMat);
+  crown.scale.y  = 1.1;
+  crown.position.y = potH + crownH * 0.5;
+  crown.castShadow = true;
+  group.add(crown);
+
+  const bumpGeo = new THREE.IcosahedronGeometry(crownH * 0.28, 0);
+  [[-crownH * 0.28, potH + crownH * 0.55,  crownH * 0.12],
+   [ crownH * 0.25, potH + crownH * 0.45, -crownH * 0.15]].forEach(([x, y, z]) => {
+    const bump = new THREE.Mesh(bumpGeo, plantMat.clone());
+    bump.position.set(x, y, z);
+    bump.castShadow = true;
+    group.add(bump);
+  });
+
+  return group;
 }
 
 export function buildPergola(item, view) {

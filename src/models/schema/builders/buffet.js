@@ -1,6 +1,6 @@
 import {
   addBox, addCylinder, addSphere, addWheel, addLabel, addTopLabel,
-  addTopFootprint, markMain
+  addTopFootprint, markMain, makeStandardMaterial, colorNumber
 } from './primitives.js';
 
 export function buildBuffet(item, view) {
@@ -78,6 +78,86 @@ export function buildBuffetCarrito(item, view) {
     addSphere(group, { radius: 0.035, position: [x, 0.035, z], color: '#374151', preset: 'matte' });
   });
   addLabel(group, item.labelText || 'Carrito', H + 0.35);
+  return group;
+}
+
+export function buildBuffetStreet(item, view) {
+  const group = new THREE.Group();
+  const L = item.dims?.length ?? 2.4;
+  const W = 0.8;
+  const H = 0.85;
+  const color = item.color || '#DDD4C8';
+
+  if (view === 'top') {
+    addTopFootprint(group, item, L, W + 0.6, color, 0.22);
+    addTopLabel(group, item.labelText || item.subtype || 'Buffet street');
+    return group;
+  }
+
+  const top = addBox(group, { size: [L, 0.06, W], position: [0, H, 0], color, preset: 'matte' });
+  markMain(top, color);
+  addBox(group, { size: [L + 0.03, H, W + 0.03], position: [0, H / 2, 0], color: '#c9c5bd', preset: 'fabric' });
+
+  const toldoColor = item.toldoColor || '#1e1d1c';
+  const postGeo = new THREE.CylinderGeometry(0.025, 0.025, 2.0, 6);
+  const postMat = new THREE.MeshStandardMaterial({ color: colorNumber('#6b6864'), roughness: 0.4, metalness: 0.7, flatShading: true });
+  [[-L / 2 + 0.05, W / 2 - 0.05], [L / 2 - 0.05, W / 2 - 0.05],
+   [-L / 2 + 0.05, -W / 2 + 0.05], [L / 2 - 0.05, -W / 2 + 0.05]].forEach(([x, z]) => {
+    const p = new THREE.Mesh(postGeo, postMat.clone());
+    p.position.set(x, 1.0, z);
+    p.castShadow = true;
+    group.add(p);
+  });
+
+  const toldo = addBox(group, { size: [L + 0.4, 0.04, W + 0.6], position: [0, 2.0, 0], color: toldoColor, preset: 'matte' });
+  toldo.rotation.x = -0.18;
+
+  if (item.subtype || item.labelText) {
+    addLabel(group, item.labelText || item.subtype?.toUpperCase() || 'BUFFET', 2.35);
+  }
+  return group;
+}
+
+export function buildBarraLibre(item, view) {
+  const group = new THREE.Group();
+  const L    = item.dims?.length  ?? 3.0;
+  const W    = item.dims?.width   ?? 0.8;
+  const H    = item.dims?.height  ?? 0.90;
+  const nCub = Math.max(1, item.cubiteras ?? 2);
+  const sep  = Math.max(0.3, item.cubSep  ?? 1.0);
+  const color = item.color || '#1a1a1c';
+
+  if (view === 'top') {
+    addTopFootprint(group, item, L, W, color, 0.28);
+    addTopLabel(group, item.labelText || 'Barra libre');
+    return group;
+  }
+
+  const top  = addBox(group, { size: [L, 0.05, W], position: [0, H + 0.025, 0], color: '#2a2a2c', preset: 'metal' });
+  markMain(top, color);
+  addBox(group, { size: [L + 0.02, H, W + 0.02], position: [0, H / 2, 0], color, preset: 'matte' });
+  addBox(group, { size: [L + 0.04, 0.06, W + 0.04], position: [0, 0.04, 0], color: '#2a2a2c', preset: 'metal' });
+
+  const totalSpan = (nCub - 1) * sep;
+  for (let i = 0; i < nCub; i++) {
+    const x = -totalSpan / 2 + i * sep;
+    addCylinder(group, { radiusTop: 0.14, radiusBottom: 0.12, height: 0.5, position: [x, H + 0.03, 0], color: '#8a8682', preset: 'metal', radialSegments: 16 });
+    addCylinder(group, { radiusTop: 0.10, radiusBottom: 0.09, height: 0.55, position: [x, H + 0.05, 0], color: '#d0eef8', preset: 'glass', radialSegments: 16 });
+    [-0.23, 0.23].forEach(dx => {
+      addCylinder(group, { radiusTop: 0.045, radiusBottom: 0.055, height: 0.32, position: [x + dx, H + 0.055 + 0.16, -W * 0.22], color: '#173b24', preset: 'glass', radialSegments: 18 });
+    });
+  }
+
+  const bar = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.018, 0.018, L - 0.1, 12),
+    makeStandardMaterial('#9a9692', 'metal', 1)
+  );
+  bar.rotation.z = Math.PI / 2;
+  bar.position.set(0, H * 0.55, W / 2 + 0.012);
+  bar.castShadow = true;
+  group.add(bar);
+
+  addLabel(group, item.labelText || 'Barra libre', H + 0.65);
   return group;
 }
 
