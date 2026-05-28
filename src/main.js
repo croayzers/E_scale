@@ -115,7 +115,7 @@ async function bootstrap() {
       btn.classList.add('collab-spinning');
       setTimeout(() => btn.classList.remove('collab-spinning'), 10000);
     }
-    CollabInviteModal.openOrStart();
+    CollabInviteModal.open();
   };
   document.getElementById('btn-collab')?.addEventListener('click', _openCollab);
   document.getElementById('print-menu-collab-btn')?.addEventListener('click', _openCollab);

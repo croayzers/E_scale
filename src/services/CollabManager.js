@@ -16,8 +16,9 @@ let _localRole  = 'editor';   // 'editor' | 'viewer'
 let _localUserId = null;
 let _localName  = null;
 let _localColor = null;
-let _lastSnap   = null;       // deep copy of items after last broadcast
-let _debounce   = null;
+let _lastSnap        = null;  // deep copy of items after last broadcast
+let _throttleTimer   = null;  // throttle for 30 broadcasts/s
+let _pendingBroadcast = false;
 let _presenceCb  = null;
 let _camMoveCb   = null;
 let _noteCb      = null;
@@ -90,8 +91,14 @@ function doBroadcast() {
 }
 
 function onSceneChange() {
-  if (_debounce) clearTimeout(_debounce);
-  _debounce = setTimeout(doBroadcast, 150);
+  _pendingBroadcast = true;
+  if (_throttleTimer) return;
+  _pendingBroadcast = false;
+  doBroadcast();
+  _throttleTimer = setTimeout(() => {
+    _throttleTimer = null;
+    if (_pendingBroadcast) { _pendingBroadcast = false; onSceneChange(); }
+  }, 33); // ~30 broadcasts/second
 }
 
 // ── Channel connection ────────────────────────────────────────────────────────
@@ -239,7 +246,13 @@ export const CollabManager = {
       body: JSON.stringify({ inviteToken, displayName, email })
     });
     const data = await resp.json();
-    if (!data.ok) throw new Error(data.error === 'session_not_found' ? 'Sesión no encontrada o expirada' : (data.error || 'No se pudo conectar'));
+    if (!data.ok) {
+      const msg = data.error === 'session_not_found' ? 'Sesión no encontrada o expirada'
+                : data.error === 'session_expired'   ? 'El enlace ha caducado (válido 5 días)'
+                : data.error === 'session_full'      ? 'Sesión completa — máximo 5 participantes'
+                : (data.error || 'No se pudo conectar');
+      throw new Error(msg);
+    }
 
     // Load host's scene snapshot
     AppState.items.length = 0;
@@ -287,7 +300,8 @@ export const CollabManager = {
   },
 
   end() {
-    if (_debounce) { clearTimeout(_debounce); _debounce = null; }
+    if (_throttleTimer) { clearTimeout(_throttleTimer); _throttleTimer = null; }
+    _pendingBroadcast = false;
     try { _channel?.unsubscribe(); } catch {}
     _channel = null;
     document.removeEventListener('escale:scene-insights-changed', onSceneChange);

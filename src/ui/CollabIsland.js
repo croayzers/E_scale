@@ -79,6 +79,16 @@ function injectStyles() {
       border-radius:4px; padding:1px 3px; pointer-events:none;
     }
 
+    /* Dock disabled for viewers */
+    #dock-items[data-collab-viewer] button {
+      pointer-events:none; opacity:.35; cursor:not-allowed;
+    }
+    #dock-items[data-collab-viewer]::after {
+      content:'Solo visualización';
+      display:block; text-align:center; font-size:9px; color:rgba(255,255,255,.35);
+      margin-top:4px; letter-spacing:.04em;
+    }
+
     /* Header lock overlay for guests */
     #ci-header-lock {
       display:none; position:fixed; top:12px; left:12px; right:12px; height:44px;
@@ -170,14 +180,7 @@ function renderIsland() {
   });
 
   _el.querySelector('[data-ci="invite"]')?.addEventListener('click', () => {
-    const url = `${location.origin}${location.pathname}?collab=${CollabManager.inviteToken}`;
-    navigator.clipboard?.writeText(url).catch(() => {});
-    const btn = _el.querySelector('[data-ci="invite"]');
-    if (btn) {
-      const orig = btn.innerHTML;
-      btn.innerHTML = '✓';
-      setTimeout(() => { if (btn) btn.innerHTML = orig; }, 2000);
-    }
+    CollabInviteModal.show(CollabManager.inviteToken);
   });
 
   _el.querySelector('[data-ci="view"]')?.addEventListener('click', () => {
@@ -286,6 +289,11 @@ export const CollabIsland = {
       }
       if (header) header.style.pointerEvents = 'none';
     }
+
+    // Disable dock for viewers
+    if (CollabManager.localRole === 'viewer') {
+      document.getElementById('dock-items')?.setAttribute('data-collab-viewer', '');
+    }
   },
 
   hide() {
@@ -297,5 +305,6 @@ export const CollabIsland = {
     const header = document.getElementById('header-mac');
     lock?.classList.remove('visible');
     if (header) header.style.pointerEvents = '';
+    document.getElementById('dock-items')?.removeAttribute('data-collab-viewer');
   }
 };

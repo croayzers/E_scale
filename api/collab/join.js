@@ -1,5 +1,5 @@
 const { json, methodNotAllowed, readJsonBody, badRequest, serverError } = require('../../lib/http');
-const { findCollabSessionByToken, insertCollabParticipant } = require('../../lib/supabase');
+const { findCollabSessionByToken, countCollabParticipants, insertCollabParticipant } = require('../../lib/supabase');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return methodNotAllowed(req, res, ['POST']);
@@ -15,6 +15,11 @@ module.exports = async function handler(req, res) {
     if (!session) return json(res, 404, { ok: false, error: 'session_not_found' });
     if (new Date(session.expires_at) < new Date()) {
       return json(res, 410, { ok: false, error: 'session_expired' });
+    }
+
+    const participantCount = await countCollabParticipants(session.id);
+    if (participantCount >= 4) {
+      return json(res, 409, { ok: false, error: 'session_full' });
     }
 
     await insertCollabParticipant({
