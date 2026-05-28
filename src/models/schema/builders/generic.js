@@ -1,0 +1,247 @@
+import {
+  addBox, addCylinder, addSphere, addLabel, addTopLabel, addTopFootprint,
+  markMain, makeStandardMaterial, makeTopFill, annularSectorShape
+} from './primitives.js';
+
+// Stage / structures
+import { buildTrussBox, buildTrussTri, buildScreen, buildTotem, buildPodium, buildRunway, buildCurvedPlatform, buildBooth } from './stage.js';
+// Equipment / facilities
+import {
+  buildPortableToilet, buildSinkStation, buildGenerator, buildElectricalBox, buildExtinguisher,
+  buildRecyclingPoint, buildTrashContainer, buildSignPanel, buildFence, buildInfoPoint,
+  buildBarStraight, buildFridge, buildBottleRack, buildCoffeeMachine, buildServiceCart,
+  buildDrinkDispenser, buildShowcase
+} from './equipment.js';
+// Seating
+import { buildStool } from './seating.js';
+// Decorative
+import {
+  buildFoldingScreen, buildFlowerPanel, buildLedPanel, buildPhotocall, buildDecorArch,
+  buildGiantLetters, buildNeonSign,
+  buildCurvedBar, buildVase, buildCenterpiece, buildCandelabra, buildPedestal, buildIceBucket
+} from './deco.js';
+// Vehicles + staircase
+import { buildCoche, buildMoto, buildCamion, buildAvioneta, buildBarco, buildHelicoptero, buildEscalera } from './vehicles.js';
+// Audio / DJ
+import { buildSpeaker, buildMicrophone, buildMesaDJ } from './audio.js';
+// Walls / architecture
+import { buildPared, buildMuro, buildTecho, buildParedPuerta } from './walls.js';
+// Nature
+import { buildArbustoRecto, buildArbustoCorner, buildArbustoCurvo } from './nature.js';
+// Roofs
+import { buildTejado1Aguas, buildTejado2Aguas, buildTejado4Aguas } from './roofs.js';
+// Tables (folding only — round/chair are top-level schema entries)
+import { buildMesaPlegable } from './tables.js';
+
+function inferRectProfile(item) {
+  if (item.assetProfile) return item.assetProfile;
+  switch (item.catalogDefinitionId) {
+    case 'truss_cuadrado':        return 'trussBox';
+    case 'truss_triangular':      return 'trussTri';
+    case 'pantalla_led':
+    case 'pantalla_proyeccion':   return 'screen';
+    case 'totem_publicitario':    return 'totem';
+    case 'podium':                return 'podium';
+    case 'pasarela':              return 'runway';
+    case 'tarima_curva':          return 'curvedPlatform';
+    case 'cabina_tecnica':
+    case 'cabina_traduccion':     return 'booth';
+    case 'bano_portatil':         return 'portableToilet';
+    case 'lavamanos_portatil':    return 'sinkStation';
+    case 'generador_electrico':   return 'generator';
+    case 'cuadro_electrico':      return 'electricalBox';
+    case 'extintor':              return 'extinguisher';
+    case 'punto_reciclaje':       return 'recyclingPoint';
+    case 'contenedor_basura':     return 'trashContainer';
+    case 'senal_salida':
+    case 'senal_emergencia':      return 'signPanel';
+    case 'vallado_tecnico':       return 'fence';
+    case 'punto_informacion':     return 'infoPoint';
+    case 'barra_recta':           return 'barStraight';
+    case 'nevera_industrial':     return 'fridge';
+    case 'botellero':             return 'bottleRack';
+    case 'cafetera_industrial':   return 'coffeeMachine';
+    case 'carro_servicio':        return 'serviceCart';
+    case 'taburete_alto':         return 'stool';
+    case 'dispensador_bebidas':   return 'drinkDispenser';
+    case 'vitrina_refrigerada':   return 'showcase';
+    case 'carrito_buffet':        return 'serviceCart';
+    case 'biombo_decorativo':     return 'foldingScreen';
+    case 'panel_floral':          return 'flowerPanel';
+    case 'panel_led_deco':        return 'ledPanel';
+    case 'photocall':             return 'photocall';
+    case 'arco_decorativo':       return 'decorArch';
+    case 'letras_gigantes':       return 'giantLetters';
+    case 'neon_personalizado':    return 'neonSign';
+    case 'coche':                 return 'coche';
+    case 'moto':                  return 'moto';
+    case 'camion':                return 'camion';
+    case 'avioneta':              return 'avioneta';
+    case 'barco':                 return 'barco';
+    case 'helicoptero':           return 'helicoptero';
+    case 'escalera':              return 'escalera';
+    case 'mesa_dj':               return 'mesaDJ';
+    case 'altavoz_grande':        return 'speaker';
+    case 'microfono_pie':         return 'microphone';
+    case 'pared':                 return 'pared';
+    case 'muro':                  return 'muro';
+    case 'techo':                 return 'techo';
+    case 'pared_puerta':          return 'paredPuerta';
+    case 'arbusto':               return 'arbustoRecto';
+    case 'arbusto_esquina':       return 'arbustoCorner';
+    case 'arbusto_curvo':         return 'arbustoCurvo';
+    case 'tejado_1aguas':         return 'tejado1Aguas';
+    case 'tejado_2aguas':         return 'tejado2Aguas';
+    case 'tejado_4aguas':         return 'tejado4Aguas';
+    case 'mesa_plegable':         return 'mesaPlegable';
+    default:                      return '';
+  }
+}
+
+function inferRoundProfile(item) {
+  if (item.assetProfile) return item.assetProfile;
+  switch (item.catalogDefinitionId) {
+    case 'barra_curva':      return 'curvedBar';
+    case 'jarron_alto':      return 'vase';
+    case 'centro_mesa':      return 'centerpiece';
+    case 'candelabro':       return 'candelabra';
+    case 'peana_decorativa': return 'pedestal';
+    case 'cubitera':         return 'iceBucket';
+    default:                 return '';
+  }
+}
+
+export function buildGenericRect(item, view) {
+  const group = new THREE.Group();
+  const W = item.dims?.width ?? 1.2;
+  const L = item.dims?.length ?? 1.2;
+  const H = item.dims?.height ?? 1.2;
+  const color = item.color || '#B6B1A9';
+  const profile = inferRectProfile(item);
+
+  if (view === 'top') {
+    addTopFootprint(group, item, L, W, color, item.visual?.opacity ?? 0.2);
+    return group;
+  }
+
+  switch (profile) {
+    case 'trussBox':        buildTrussBox(group, item, L, W, H, color); break;
+    case 'trussTri':        buildTrussTri(group, item, L, W, H, color); break;
+    case 'screen':          buildScreen(group, item, L, W, H, color); break;
+    case 'totem':           buildTotem(group, item, L, W, H, color); break;
+    case 'podium':          buildPodium(group, item, L, W, H, color); break;
+    case 'runway':          buildRunway(group, item, L, W, H, color); break;
+    case 'curvedPlatform':  buildCurvedPlatform(group, item, L, W, H, color); break;
+    case 'booth':           buildBooth(group, item, L, W, H, color); break;
+    case 'portableToilet':  buildPortableToilet(group, item, L, W, H, color); break;
+    case 'sinkStation':     buildSinkStation(group, item, L, W, H, color); break;
+    case 'generator':       buildGenerator(group, item, L, W, H, color); break;
+    case 'electricalBox':   buildElectricalBox(group, item, L, W, H, color); break;
+    case 'extinguisher':    buildExtinguisher(group, item, H, color); break;
+    case 'recyclingPoint':  buildRecyclingPoint(group, item, L, W, H, color); break;
+    case 'trashContainer':  buildTrashContainer(group, item, W, H, color); break;
+    case 'signPanel':       buildSignPanel(group, item, L, W, H, color); break;
+    case 'fence':           buildFence(group, item, L, W, H, color); break;
+    case 'infoPoint':       buildInfoPoint(group, item, L, W, H, color); break;
+    case 'barStraight':     buildBarStraight(group, item, L, W, H, color); break;
+    case 'fridge':          buildFridge(group, item, L, W, H, color); break;
+    case 'bottleRack':      buildBottleRack(group, item, L, W, H, color); break;
+    case 'coffeeMachine':   buildCoffeeMachine(group, item, L, W, H, color); break;
+    case 'serviceCart':     buildServiceCart(group, item, L, W, H, color); break;
+    case 'stool':           buildStool(group, item, W, H, color); break;
+    case 'drinkDispenser':  buildDrinkDispenser(group, item, W, H, color); break;
+    case 'showcase':        buildShowcase(group, item, L, W, H, color); break;
+    case 'foldingScreen':   buildFoldingScreen(group, item, L, W, H, color); break;
+    case 'flowerPanel':     buildFlowerPanel(group, item, L, W, H, color); break;
+    case 'ledPanel':        buildLedPanel(group, item, L, W, H, color); break;
+    case 'photocall':       buildPhotocall(group, item, L, W, H, color); break;
+    case 'decorArch':       buildDecorArch(group, item, L, W, H, color); break;
+    case 'giantLetters':    buildGiantLetters(group, item, L, W, H, color); break;
+    case 'neonSign':        buildNeonSign(group, item, L, W, H, color); break;
+    case 'coche':           buildCoche(group, item, L, W, H, color); break;
+    case 'moto':            buildMoto(group, item, L, W, H, color); break;
+    case 'camion':          buildCamion(group, item, L, W, H, color); break;
+    case 'avioneta':        buildAvioneta(group, item, L, W, H, color); break;
+    case 'barco':           buildBarco(group, item, L, W, H, color); break;
+    case 'helicoptero':     buildHelicoptero(group, item, L, W, H, color); break;
+    case 'escalera':        buildEscalera(group, item, L, W, H, color); break;
+    case 'mesaDJ':          buildMesaDJ(group, item, L, W, H, color); break;
+    case 'speaker':         buildSpeaker(group, item, L, W, H, color); break;
+    case 'microphone':      buildMicrophone(group, item, L, W, H, color); break;
+    case 'pared':           buildPared(group, item, L, W, H, color); break;
+    case 'muro':            buildMuro(group, item, L, W, H, color); break;
+    case 'techo':           buildTecho(group, item, L, W, H, color); break;
+    case 'paredPuerta':     buildParedPuerta(group, item, L, W, H, color); break;
+    case 'arbustoRecto':    buildArbustoRecto(group, item, L, W, H, color); break;
+    case 'arbustoCorner':   buildArbustoCorner(group, item, L, W, H, color); break;
+    case 'arbustoCurvo':    buildArbustoCurvo(group, item, L, W, H, color); break;
+    case 'tejado1Aguas':    buildTejado1Aguas(group, item, L, W, H, color); break;
+    case 'tejado2Aguas':    buildTejado2Aguas(group, item, L, W, H, color); break;
+    case 'tejado4Aguas':    buildTejado4Aguas(group, item, L, W, H, color); break;
+    case 'mesaPlegable':    buildMesaPlegable(group, item, L, W, H, color); break;
+    default: {
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(L, H, W),
+        makeStandardMaterial(color, item.visual?.materialPreset || 'matte', item.visual?.opacity ?? 1)
+      );
+      body.position.y = H / 2;
+      body.castShadow = item.visual?.shadows !== false;
+      markMain(body, color);
+      group.add(body);
+    }
+  }
+
+  addLabel(group, item.labelText, H + 0.45);
+  return group;
+}
+
+export function buildGenericRound(item, view) {
+  const group = new THREE.Group();
+  const diameter = item.dims?.diameter ?? 1.5;
+  const height = item.dims?.height ?? 0.8;
+  const color = item.color || '#B6B1A9';
+  const profile = inferRoundProfile(item);
+
+  if (view === 'top') {
+    if (profile === 'curvedBar') {
+      const outerRadius = diameter / 2;
+      const innerRadius = Math.max(0.24, outerRadius - Math.max(0.42, diameter * 0.2));
+      const shape = annularSectorShape(innerRadius, outerRadius, Math.PI * 0.74);
+      const fill = new THREE.Mesh(new THREE.ShapeGeometry(shape), makeTopFill(color, item.visual?.opacity ?? 0.24));
+      fill.rotation.x = -Math.PI / 2;
+      fill.position.y = 0.04;
+      markMain(fill, color);
+      group.add(fill);
+    } else {
+      const fill = new THREE.Mesh(new THREE.CircleGeometry(diameter / 2, 72), makeTopFill(color, item.visual?.opacity ?? 0.2));
+      fill.rotation.x = -Math.PI / 2;
+      fill.position.y = 0.04;
+      markMain(fill, color);
+      group.add(fill);
+    }
+    if (item.labelText) addTopLabel(group, item.labelText);
+    return group;
+  }
+
+  switch (profile) {
+    case 'curvedBar':   buildCurvedBar(group, diameter, height, color); break;
+    case 'vase':        buildVase(group, diameter, height, color); break;
+    case 'centerpiece': buildCenterpiece(group, diameter, height, color); break;
+    case 'candelabra':  buildCandelabra(group, diameter, height, color); break;
+    case 'pedestal':    buildPedestal(group, diameter, height, color); break;
+    case 'iceBucket':   buildIceBucket(group, diameter, height, color); break;
+    default: {
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(diameter / 2, diameter / 2, height, 56),
+        makeStandardMaterial(color, item.visual?.materialPreset || 'matte', item.visual?.opacity ?? 1)
+      );
+      body.position.y = height / 2;
+      body.castShadow = item.visual?.shadows !== false;
+      markMain(body, color);
+      group.add(body);
+    }
+  }
+
+  addLabel(group, item.labelText, height + 0.45);
+  return group;
+}

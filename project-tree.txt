@@ -140,6 +140,23 @@ PROJECT STRUCTURE
 │   │   ├── poste.js
 │   │   ├── room.js
 │   │   ├── schema/
+│   │   │   ├── builders/
+│   │   │   │   ├── audio.js
+│   │   │   │   ├── buffet.js
+│   │   │   │   ├── deco.js
+│   │   │   │   ├── equipment.js
+│   │   │   │   ├── generic.js
+│   │   │   │   ├── lighting.js
+│   │   │   │   ├── nature.js
+│   │   │   │   ├── persons.js
+│   │   │   │   ├── primitives.js
+│   │   │   │   ├── roofs.js
+│   │   │   │   ├── seating.js
+│   │   │   │   ├── stage.js
+│   │   │   │   ├── surfaces.js
+│   │   │   │   ├── tables.js
+│   │   │   │   ├── vehicles.js
+│   │   │   │   └── walls.js
 │   │   │   ├── SchemaBuilders.js
 │   │   │   └── SchemaModelFactory.js
 │   │   ├── sillaCatering.js
