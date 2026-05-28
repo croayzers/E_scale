@@ -68,7 +68,7 @@ function applyDelta({ added = [], updated = [], deleted = [] }) {
   for (const item of added) {
     if (!items.find(it => it.id === item.id)) items.push(item);
   }
-  SceneManager.rebuildAll?.();
+  AppState.items.forEach(it => SceneManager.rebuild(it));
   document.dispatchEvent(new CustomEvent('escale:collab-remote-update'));
 }
 
@@ -113,7 +113,7 @@ async function connect(channelName) {
       if (payload.from === _localUserId) return;
       AppState.items.length = 0;
       for (const it of (payload.items || [])) AppState.items.push(it);
-      SceneManager.rebuildAll?.();
+      AppState.items.forEach(it => SceneManager.rebuild(it));
       _lastSnap = snap();
     })
     .on('broadcast', { event: 'request_sync' }, ({ payload }) => {
@@ -228,7 +228,7 @@ export const CollabManager = {
     // Load host's scene snapshot
     AppState.items.length = 0;
     for (const it of (data.snapshot?.items || [])) AppState.items.push(it);
-    SceneManager.rebuildAll?.();
+    AppState.items.forEach(it => SceneManager.rebuild(it));
 
     _sessionId   = data.sessionId;
     _sessionName = data.sessionName;
