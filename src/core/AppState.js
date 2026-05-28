@@ -76,7 +76,7 @@ export const AppState = {
   selectedId: null,           // último seleccionado (compat)
   selectedIds: new Set(),     // multiselección
   nextId: 1,
-  camera: 'iso',
+  camera: 'top',
   showCotas: false,
   shadows: true,
   inventoryCollapsed: false,
