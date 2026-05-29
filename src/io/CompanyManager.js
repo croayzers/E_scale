@@ -647,6 +647,19 @@ async function handleAccessChoice(kind) {
     return;
   }
 
+  if (mode === 'login' && kind === 'email') {
+    const storedAcc = AuthManager.findLocalAccount?.(email) || null;
+    if (!storedAcc) {
+      alert('No encontramos una cuenta con ese correo. Crea una cuenta nueva para continuar.');
+      return;
+    }
+    if (storedAcc.password && !password) {
+      alert('Escribe tu contraseña para continuar.');
+      document.getElementById('access-password')?.focus();
+      return;
+    }
+  }
+
   const profile = findStoredProfile(email);
 
   try {

@@ -308,12 +308,17 @@ async function mockSignIn(provider, email, options = {}) {
         fullName,
         password
       });
-    } else if (storedAccount?.password) {
-      if (!password) {
-        throw new Error('Escribe tu contraseña para continuar.');
+    } else {
+      if (!storedAccount) {
+        throw new Error('No encontramos una cuenta con ese correo. Crea una cuenta nueva para continuar.');
       }
-      if (storedAccount.password !== password) {
-        throw new Error('La contraseña no coincide.');
+      if (storedAccount.password) {
+        if (!password) {
+          throw new Error('Escribe tu contraseña para continuar.');
+        }
+        if (storedAccount.password !== password) {
+          throw new Error('La contraseña no coincide.');
+        }
       }
     }
   } else if (createAccount || storedAccount || fullName) {
