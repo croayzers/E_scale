@@ -501,6 +501,12 @@ function onPointerDown(e) {
     return;
   }
 
+  // Interacción con anotaciones existentes (selección / drag handle)
+  if (!isViewer()) {
+    const point = getDragPoint();
+    if (MeasureManager.handleInteractionPointerDown(point)) return;
+  }
+
   if (AppState.calibration.active && window.PlanManager) {
     const point = getDragPoint();
     if (point) window.PlanManager.handleCalibrationClick(point);
@@ -623,6 +629,12 @@ function onPointerMove(e) {
   setPointer(e);
   updateCursorReadout();
 
+  if (MeasureManager.isDraggingHandle()) {
+    const point = getDragPoint();
+    MeasureManager.handleInteractionPointerMove(point, e);
+    return;
+  }
+
   if (MeasureManager.isActive()) {
     const point = getDragPoint();
     MeasureManager.handleMouseMove(point, e.clientX, e.clientY);
@@ -671,6 +683,7 @@ function onPointerMove(e) {
 function onPointerUp(e) {
   _activePointers.delete(e.pointerId);
   clearTimeout(_longPressTimer); _longPressTimer = null;
+  MeasureManager.handleInteractionPointerUp();
   if (_activePointers.size >= 1) { dragging = null; mouseDown = false; return; }
   mouseDown = false;
   if (SceneManager.isPlanMoving()) {
@@ -1849,7 +1862,12 @@ function onKeyDown(e) {
     return;
   }
 
-  // ── Delete / Backspace: borrar selección ──
+  // ── Delete / Backspace: borrar anotación de medida seleccionada ──
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (MeasureManager.deleteSelected()) { e.preventDefault(); return; }
+  }
+
+  // ── Delete / Backspace: borrar selección de escena ──
   if ((e.key === 'Delete' || e.key === 'Backspace') && AppState.selectedIds.size > 0) {
     [...AppState.selectedIds].forEach(id => {
       const it = AppState.items.find(i => i.id === id);
