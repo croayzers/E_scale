@@ -31,12 +31,10 @@ PROJECT STRUCTURE
 │   │   ├── portal.js
 │   │   └── webhook.js
 │   ├── collab/
-│   │   ├── create.js
-│   │   └── join.js
+│   │   └── [action].js
 │   ├── email.js
 │   ├── org/
-│   │   ├── invite.js
-│   │   └── members.js
+│   │   └── [action].js
 │   ├── plans/
 │   │   └── search.js
 │   └── public-config.js

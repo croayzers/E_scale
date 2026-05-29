@@ -1,0 +1,119 @@
+const { json, methodNotAllowed, readJsonBody, badRequest, serverError } = require('../../lib/http');
+const {
+  resolveAuthenticatedContext,
+  createOrgInvitation,
+  listOrgInvitations,
+  deleteOrgInvitation,
+  listOrgMembers,
+  removeOrgMember
+} = require('../../lib/supabase');
+const { sendEmail } = require('../../lib/resend');
+const { env } = require('../../lib/env');
+
+function readBearerToken(req) {
+  const header = req.headers?.authorization || req.headers?.Authorization || '';
+  const match = String(header).match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : '';
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function inviteEmailHtml({ inviterName, orgName, invitedEmail, role, appUrl }) {
+  const roleLabel = { admin: 'Administrador', editor: 'Editor', viewer: 'Visualizador' }[role] || 'Editor';
+  return `<div style="font-family:'Inter',sans-serif;max-width:560px;color:#1a1a2c">
+  <h2 style="margin:0 0 8px;font-size:22px">Invitación a E-scale</h2>
+  <p style="margin:0 0 20px;color:#555;font-size:14px;line-height:1.6">
+    <strong>${esc(inviterName)}</strong> te ha invitado a colaborar en el equipo
+    <strong>${esc(orgName)}</strong> como <strong>${esc(roleLabel)}</strong>.
+  </p>
+  <p style="margin:0 0 24px;color:#555;font-size:14px;line-height:1.6">
+    Accede con tu cuenta <strong>${esc(invitedEmail)}</strong> y automáticamente formarás parte del equipo.
+  </p>
+  <a href="${esc(appUrl)}" style="display:inline-block;background:#1a1a2c;color:#fff;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none">
+    Acceder a E-scale
+  </a>
+  <p style="margin:24px 0 0;font-size:11px;color:#aaa">Si no esperabas esta invitación puedes ignorar este mensaje.</p>
+</div>`;
+}
+
+async function handleInvite(req, res, access) {
+  const orgId   = access.organization.id;
+  const orgName = access.organization.display_name || access.organization.displayName || 'tu empresa';
+  const role    = access.role || 'editor';
+  if (!['owner', 'admin'].includes(role)) return json(res, 403, { ok: false, reason: 'insufficient_role' });
+
+  if (req.method === 'GET') {
+    const invitations = await listOrgInvitations(orgId);
+    return json(res, 200, { ok: true, invitations });
+  }
+
+  const body = await readJsonBody(req);
+
+  if (req.method === 'DELETE') {
+    if (!body.invitationId) return badRequest(res, 'invitationId requerido');
+    await deleteOrgInvitation(body.invitationId);
+    return json(res, 200, { ok: true });
+  }
+
+  if (req.method === 'POST') {
+    const { email, invitedRole = 'editor' } = body;
+    if (!email || !email.includes('@')) return badRequest(res, 'Email inválido');
+    if (!['admin', 'editor', 'viewer'].includes(invitedRole)) return badRequest(res, 'Rol inválido');
+    const inviterName = access.user?.fullName || access.user?.email || 'Un compañero';
+    const invitation  = await createOrgInvitation(orgId, email, invitedRole, access.user?.id, inviterName);
+    if (!invitation) return json(res, 200, { ok: false, reason: 'duplicate', msg: 'Ya existe una invitación pendiente para ese email' });
+    const appUrl = env('ESCALE_PUBLIC_APP_URL') || 'https://escale.app';
+    try {
+      await sendEmail({
+        to: [email],
+        subject: `${inviterName} te invita a E-scale`,
+        html: inviteEmailHtml({ inviterName, orgName, invitedEmail: email, role: invitedRole, appUrl }),
+        text: `${inviterName} te ha invitado a ${orgName} en E-scale. Accede con ${email} en ${appUrl}`
+      });
+    } catch (emailErr) {
+      console.warn('[org/invite] Email no enviado:', emailErr.message);
+    }
+    return json(res, 200, { ok: true, invitation });
+  }
+
+  return methodNotAllowed(req, res, ['GET', 'POST', 'DELETE']);
+}
+
+async function handleMembers(req, res, access) {
+  const orgId = access.organization.id;
+
+  if (req.method === 'GET') {
+    const members = await listOrgMembers(orgId);
+    return json(res, 200, { ok: true, members, currentUserId: access.user?.id });
+  }
+
+  if (req.method === 'DELETE') {
+    const role = access.role || 'editor';
+    if (!['owner', 'admin'].includes(role)) return json(res, 403, { ok: false, reason: 'insufficient_role' });
+    const body = await readJsonBody(req);
+    if (!body.userId) return badRequest(res, 'userId requerido');
+    if (body.userId === access.user?.id) return badRequest(res, 'No puedes eliminarte a ti mismo');
+    await removeOrgMember(orgId, body.userId);
+    return json(res, 200, { ok: true });
+  }
+
+  return methodNotAllowed(req, res, ['GET', 'DELETE']);
+}
+
+module.exports = async function handler(req, res) {
+  const action = req.query?.action || req.url?.split('/').pop()?.split('?')[0];
+  try {
+    const accessToken = readBearerToken(req);
+    if (!accessToken) return json(res, 401, { ok: false, reason: 'auth_required' });
+    const access = await resolveAuthenticatedContext(accessToken, {});
+    if (!access?.authenticated || !access.organization?.id) return json(res, 403, { ok: false, reason: 'org_required' });
+
+    if (action === 'invite')  return await handleInvite(req, res, access);
+    if (action === 'members') return await handleMembers(req, res, access);
+    return json(res, 404, { ok: false, error: 'unknown_action' });
+  } catch (error) {
+    return serverError(res, error);
+  }
+};
