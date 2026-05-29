@@ -2,7 +2,7 @@
    UI MANAGER — Stats, tooltip, panel detalle, desgloses
    ───────────────────────────────────────────────────────── */
 
-let _appState, _sceneManager;
+let _appState, _sceneManager, _collabManager;
 let itemSettingsHandle;
 
 // Cached DOM refs populated on first use (DOM guaranteed ready after UIManager.init)
@@ -21,12 +21,14 @@ function _els() {
   return _domEls;
 }
 async function bindDeps() {
-  if (!_appState)     ({ AppState:     _appState     } = await import('../core/AppState.js'));
-  if (!_sceneManager) ({ SceneManager: _sceneManager } = await import('../scene/SceneManager.js'));
+  if (!_appState)      ({ AppState:      _appState      } = await import('../core/AppState.js'));
+  if (!_sceneManager)  ({ SceneManager:  _sceneManager  } = await import('../scene/SceneManager.js'));
+  if (!_collabManager) ({ CollabManager: _collabManager } = await import('../services/CollabManager.js'));
 }
 const dynamic = {
-  get AppState()     { return _appState; },
-  get SceneManager() { return _sceneManager; }
+  get AppState()       { return _appState; },
+  get SceneManager()   { return _sceneManager; },
+  get CollabManager()  { return _collabManager; }
 };
 
 /* ─── Stats e inventario ─── */
@@ -247,6 +249,10 @@ function updateItemSettingsHandle(item, mesh) {
   const A = dynamic.AppState;
   const S = dynamic.SceneManager;
   if (!A || !S || A.selectedIds.size !== 1 || !item || !mesh) {
+    hideItemSettingsHandle();
+    return;
+  }
+  if (dynamic.CollabManager?.localRole === 'viewer') {
     hideItemSettingsHandle();
     return;
   }
