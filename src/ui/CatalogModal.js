@@ -327,14 +327,18 @@ function open(categoryKey) {
   const modal = document.getElementById('catalog-modal');
   if (!modal) return;
 
+  const wasHidden = modal.classList.contains('hidden');
+
   // Si hay búsqueda activa, no la limpiamos al cambiar categoría
   renderCatalogContent();
 
-  document.dispatchEvent(new CustomEvent('escale:scene-overlay-open', {
-    detail: { kind: 'catalog', key: categoryKey }
-  }));
-
-  modal.classList.remove('hidden');
+  // Solo disparar el evento y mostrar la animación si el modal estaba cerrado
+  if (wasHidden) {
+    document.dispatchEvent(new CustomEvent('escale:scene-overlay-open', {
+      detail: { kind: 'catalog', key: categoryKey }
+    }));
+    modal.classList.remove('hidden');
+  }
 
   // Foco en búsqueda al abrir (solo en dispositivos no táctiles para no abrir el teclado virtual)
   if (!window.matchMedia('(pointer: coarse)').matches) {

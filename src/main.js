@@ -604,7 +604,8 @@ async function bootstrap() {
     updatePlanGuide();
   });
   document.getElementById('guide-calibrate-btn')?.addEventListener('click', () => {
-    document.getElementById('btn-calibrate')?.click();
+    onboardPulse.stop('btn-calibrate');
+    openCalibrationDemo();
   });
   document.getElementById('guide-zones-btn')?.addEventListener('click', e => {
     e.stopPropagation();
