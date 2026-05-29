@@ -3,16 +3,18 @@
   "buildCommand": "",
   "outputDirectory": ".",
   "functions": {
-    "api/analytics/capture.js": { "memory": 256, "maxDuration": 10 },
-    "api/app/bootstrap.js": { "memory": 256, "maxDuration": 10 },
-    "api/app/export-sync.js": { "memory": 256, "maxDuration": 10 },
-    "api/billing/checkout.js": { "memory": 256, "maxDuration": 10 },
-    "api/billing/portal.js": { "memory": 256, "maxDuration": 10 },
-    "api/billing/webhook.js": { "memory": 256, "maxDuration": 10 },
-    "api/email.js": { "memory": 256, "maxDuration": 10 },
-    "api/plans/search.js":   { "memory": 256, "maxDuration": 10 },
-    "api/collab/create.js":  { "memory": 256, "maxDuration": 15 },
-    "api/collab/join.js":    { "memory": 256, "maxDuration": 10 }
+    "api/analytics/capture.js":    { "memory": 256, "maxDuration": 10 },
+    "api/app/bootstrap.js":        { "memory": 256, "maxDuration": 10 },
+    "api/app/company-sync.js":     { "memory": 256, "maxDuration": 10 },
+    "api/app/export-sync.js":      { "memory": 256, "maxDuration": 10 },
+    "api/billing/checkout.js":     { "memory": 256, "maxDuration": 10 },
+    "api/billing/portal.js":       { "memory": 256, "maxDuration": 10 },
+    "api/billing/webhook.js":      { "memory": 256, "maxDuration": 10 },
+    "api/email.js":                { "memory": 256, "maxDuration": 10 },
+    "api/plans/search.js":         { "memory": 256, "maxDuration": 10 },
+    "api/collab/[action].js":      { "memory": 256, "maxDuration": 15 },
+    "api/org/[action].js":         { "memory": 256, "maxDuration": 10 },
+    "api/public-config.js":        { "memory": 256, "maxDuration": 10 }
   },
   "rewrites": [
     { "source": "/api/email/:action", "destination": "/api/email" },
