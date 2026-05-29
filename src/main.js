@@ -553,11 +553,13 @@ async function bootstrap() {
   document.getElementById('guide-calibrate-btn')?.addEventListener('click', () => {
     document.getElementById('btn-calibrate')?.click();
   });
-  document.getElementById('guide-zones-btn')?.addEventListener('click', () => {
+  document.getElementById('guide-zones-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
     HeaderActionMenus.openMenu('zones');
     pulseGuideTarget(document.getElementById('btn-zones-menu'));
   });
-  document.getElementById('guide-grid-btn')?.addEventListener('click', () => {
+  document.getElementById('guide-grid-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
     HeaderActionMenus.openMenu('grid');
     pulseGuideTarget(document.getElementById('btn-grid-menu'), btnMovePlan);
   });
