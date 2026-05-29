@@ -233,8 +233,10 @@
   </button>
 
   <div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:2px">
-    <button id="btn-calibrate" class="hdr-icon" title="Paso 1 Â· Medir plano" style="width:28px;height:28px">
+    <button id="btn-calibrate" class="hdr-chip" title="Medir plano">
       <i data-lucide="ruler" class="w-3.5 h-3.5"></i>
+      <span>Medir</span>
+      <i data-lucide="chevron-down" class="w-3 h-3" style="margin-left:1px;opacity:0.55"></i>
     </button>
     <span id="step-dot-1" style="width:5px;height:5px;border-radius:50%;background:#e53e3e;display:none"></span>
   </div>
@@ -330,6 +332,29 @@
 
   </div>
 </header>
+
+<!-- ============ MEASURE MENU ============ -->
+<div id="measure-menu" class="hdr-popover hidden" aria-hidden="true">
+  <div class="hdr-popover-head">
+    <div class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">Medir plano</div>
+  </div>
+  <div class="hdr-menu-block" style="border-top:none;padding-top:0;margin-top:8px;display:flex;flex-direction:column;gap:6px">
+    <button class="btn ghost" style="justify-content:flex-start;gap:10px;padding:10px 12px;text-align:left" data-measure-action="rescale">
+      <i data-lucide="ruler" class="w-4 h-4" style="flex-shrink:0"></i>
+      <div>
+        <div style="font-size:13px;font-weight:600">Re-escalar plano</div>
+        <div style="font-size:11px;opacity:0.55;margin-top:1px">Calibrar la escala real del plano base</div>
+      </div>
+    </button>
+    <button class="btn ghost" style="justify-content:flex-start;gap:10px;padding:10px 12px;text-align:left" data-measure-action="take">
+      <i data-lucide="pencil-ruler" class="w-4 h-4" style="flex-shrink:0"></i>
+      <div>
+        <div style="font-size:13px;font-weight:600">Tomar medidas</div>
+        <div style="font-size:11px;opacity:0.55;margin-top:1px">Dibujar cotas de distancia sobre el plano</div>
+      </div>
+    </button>
+  </div>
+</div>
 
 <div id="zones-menu" class="hdr-popover hidden" aria-hidden="true">
   <div class="hdr-popover-head">
@@ -727,6 +752,16 @@
   <span class="blink-dot" style="background:#4a90ff"></span>
   <span class="mono text-[11px] tracking-widest uppercase">Modo mover rejilla Â· Arrastra para reposicionar el grid</span>
   <button id="plan-move-done" class="ml-2 text-[10px] underline opacity-70 hover:opacity-100">Listo</button>
+</div>
+
+<!-- TOOLTIP MEDICIÓN (sigue al cursor) -->
+<div id="measure-tooltip" style="display:none;position:fixed;pointer-events:none;z-index:9999;background:rgba(17,17,17,0.88);color:#fff;font-family:'JetBrains Mono',monospace;font-size:12px;padding:4px 9px;border-radius:6px;white-space:nowrap"></div>
+
+<!-- BANNER MEDICIÓN -->
+<div id="measure-banner" style="display:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:60;background:rgba(10,18,30,0.93);border:1.5px solid rgba(59,130,246,0.55);border-radius:14px;padding:14px 18px;max-width:480px;width:calc(100% - 40px);align-items:center;gap:12px;color:#e2e8f0;font-size:13px">
+  <span style="font-size:18px;flex-shrink:0">📐</span>
+  <span id="measure-banner-text" style="flex:1">Haz clic en el primer punto de la medición</span>
+  <button id="measure-banner-cancel" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:16px;padding:2px 4px;flex-shrink:0;border-radius:4px" title="Cancelar medición">✕</button>
 </div>
 
 <!-- STATUS BAR -->

@@ -129,6 +129,10 @@
 .cal-demo-run .cd-br2     { animation: calAppear 0.15s ease 1.65s both; }
 .cal-demo-run .cd-lbl     { animation: calAppear 0.25s ease 1.7s both; }
 
+/* ============== MODO MEDICIÓN ============== */
+body.cursor-measure,
+body.cursor-measure * { cursor: crosshair !important; }
+
 /* ============== DEMO ZONAS ============== */
 @keyframes zdDraw { to { stroke-dashoffset: 0; } }
 @keyframes zdFill { from { opacity: 0; } to { opacity: 0.12; } }

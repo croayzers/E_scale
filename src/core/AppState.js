@@ -80,6 +80,7 @@ export const AppState = {
   showCotas: false,
   shadows: true,
   showDemos: true,
+  measure: { active: false, p1: null },
   inventoryCollapsed: false,
   workMode: null,   // 'base' | 'planning' — elegido en el modal de inicio
 

@@ -36,6 +36,7 @@ import { CollabInteractions }  from './services/CollabInteractions.js';
 import { SavedGroupLibrary }   from './core/SavedGroupLibrary.js';
 import { SavedGroupPanel }     from './ui/SavedGroupPanel.js';
 import { OrgContentManager }  from './services/OrgContentManager.js';
+import { MeasureManager }     from './ui/MeasureManager.js';
 
 function showStartupError(label, error) {
   console.error(`[E-scale] ${label} falló:`, error);
@@ -382,9 +383,25 @@ async function bootstrap() {
 
   // Arrancar en vista 2D (top)
   setTopCamera();
-  document.getElementById('btn-calibrate')?.addEventListener('click', () => {
-    onboardPulse.stop('btn-calibrate');
-    openCalibrationDemo();
+  // btn-calibrate ahora abre el measure-menu (gestionado por HeaderActionMenus).
+  // Las acciones del dropdown se manejan aquí para acceder a openCalibrationDemo/setTopCamera.
+  document.querySelectorAll('[data-measure-action]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      HeaderActionMenus.closeMenus();
+      const action = btn.dataset.measureAction;
+      if (action === 'rescale') {
+        onboardPulse.stop('btn-calibrate');
+        openCalibrationDemo();
+      } else if (action === 'take') {
+        setTopCamera();
+        MeasureManager.start();
+      }
+    });
+  });
+
+  document.getElementById('measure-banner-cancel')?.addEventListener('click', () => {
+    MeasureManager.cancel();
   });
 
   function openCalibrationDemo() {

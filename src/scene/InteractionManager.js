@@ -12,6 +12,7 @@ import { GroupManager }      from '../core/GroupManager.js';
 import { CollabManager }     from '../services/CollabManager.js';
 import { SavedGroupPlacer }  from '../core/SavedGroupPlacer.js';
 import { SavedGroupLibrary } from '../core/SavedGroupLibrary.js';
+import { MeasureManager }    from '../ui/MeasureManager.js';
 
 function isViewer() { return CollabManager.localRole === 'viewer'; }
 
@@ -494,6 +495,12 @@ function onPointerDown(e) {
   mouseDownPos = { x: e.clientX, y: e.clientY };
   mouseDownTime = Date.now();
 
+  if (MeasureManager.isActive()) {
+    const point = getDragPoint();
+    if (point) MeasureManager.handleClick(point);
+    return;
+  }
+
   if (AppState.calibration.active && window.PlanManager) {
     const point = getDragPoint();
     if (point) window.PlanManager.handleCalibrationClick(point);
@@ -615,6 +622,12 @@ function onPointerMove(e) {
   }
   setPointer(e);
   updateCursorReadout();
+
+  if (MeasureManager.isActive()) {
+    const point = getDragPoint();
+    MeasureManager.handleMouseMove(point, e.clientX, e.clientY);
+    return;
+  }
 
   if (SceneManager.isPlanMoving()) {
     const point = getDragPoint();
@@ -1847,6 +1860,7 @@ function onKeyDown(e) {
 
   // ── Escape: cancelar herramienta activa o limpiar selección ──
   if (e.key === 'Escape') {
+    if (MeasureManager.isActive()) { MeasureManager.cancel(); return; }
     if (formatModeActive) { toggleFormatMode(false); return; }
     if (SavedGroupPlacer.hasPendingGroupPlacement()) {
       SavedGroupPlacer.clearPlacement();

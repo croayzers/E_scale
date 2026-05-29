@@ -181,6 +181,7 @@ PROJECT STRUCTURE
 │       ├── FeedbackModal.js
 │       ├── HeaderActionMenus.js
 │       ├── InventoryPanel.js
+│       ├── MeasureManager.js
 │       ├── PlansModal.js
 │       ├── ProButtonManager.js
 │       ├── PropertyRenderer.js

@@ -5,6 +5,10 @@ import { ProButtonManager } from './ProButtonManager.js';
 import { PlansModal } from './PlansModal.js';
 
 const MENU_CONFIG = {
+  measure: {
+    buttonId: 'btn-calibrate',
+    menuId: 'measure-menu'
+  },
   zones: {
     buttonId: 'btn-zones-menu',
     menuId: 'zones-menu'
