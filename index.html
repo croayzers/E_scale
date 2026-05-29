@@ -238,7 +238,7 @@
       <span>Medir</span>
       <i data-lucide="chevron-down" class="w-3 h-3" style="margin-left:1px;opacity:0.55"></i>
     </button>
-    <span id="step-dot-1" style="width:5px;height:5px;border-radius:50%;background:#e53e3e;display:none"></span>
+    <span id="step-dot-1" style="width:5px;height:5px;border-radius:50%;background:var(--brand-primary);display:none"></span>
   </div>
 
   <div class="hdr-sep"></div>
@@ -250,19 +250,7 @@
       <span>Zonas</span>
       <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
     </button>
-    <span id="step-dot-2" style="width:5px;height:5px;border-radius:50%;background:#e53e3e;display:none"></span>
-  </div>
-
-  <div class="hdr-sep"></div>
-
-  <!-- Grid -->
-  <div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:2px">
-    <button id="btn-grid-menu" class="hdr-chip" title="Grid y rejilla">
-      <i data-lucide="grid-3x3" class="w-3.5 h-3.5"></i>
-      <span>Grid</span>
-      <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
-    </button>
-    <span id="step-dot-3" style="width:5px;height:5px;border-radius:50%;background:#e53e3e;display:none"></span>
+    <span id="step-dot-2" style="width:5px;height:5px;border-radius:50%;background:var(--brand-primary);display:none"></span>
   </div>
 
   <div class="hdr-sep"></div>
@@ -377,21 +365,8 @@
     <div id="zones-list" class="zones-list"></div>
   </div>
   <div id="zone-editor" class="hdr-menu-block"></div>
-</div>
-
-<div id="grid-menu" class="hdr-popover hidden" aria-hidden="true">
-  <div class="hdr-popover-head">
-    <div class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">Grid y subrejilla</div>
-    <div class="hdr-popover-meta">Grid vinculado a cada zona</div>
-  </div>
-  <div class="hdr-popover-note">Cada zona tiene su propio grid con tamaño y configuración independientes.</div>
   <div class="hdr-menu-block">
-    <div class="menu-section-label">Grids de zona</div>
-    <div id="zone-grids-list" class="zones-list"></div>
-  </div>
-  <div id="zone-grid-editor" class="hdr-menu-block"></div>
-  <div class="hdr-menu-block">
-    <div class="menu-section-label">Movimiento</div>
+    <div class="menu-section-label">Posición de rejilla</div>
     <div class="menu-inline-actions">
       <button id="btn-move-plan" class="btn ghost" type="button">
         <i data-lucide="move" class="w-3.5 h-3.5"></i>
@@ -721,17 +696,8 @@
       </div>
     </section>
 
-    <section id="guide-step-grid" class="plan-step" data-state="waiting">
-      <div class="plan-step-index">3</div>
-      <div class="plan-step-body">
-        <div class="plan-step-title">Grid</div>
-        <p>Ajusta el tamaño de la rejilla y, si hace falta, desplázala para que coincida con el plano cargado.</p>
-        <button id="guide-grid-btn" class="btn ghost plan-step-action"><i data-lucide="grid-3x3" class="w-3.5 h-3.5"></i>Abrir grid</button>
-      </div>
-    </section>
-
     <section id="guide-step-catalog" class="plan-step" data-state="waiting">
-      <div class="plan-step-index">4</div>
+      <div class="plan-step-index">3</div>
       <div class="plan-step-body">
         <div class="plan-step-title">Colocar objetos</div>
         <p>Abre una categorÃ­a en la barra inferior y aÃ±ade mesas, sillas, carpas y el resto del montaje.</p>

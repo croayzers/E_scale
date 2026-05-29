@@ -278,6 +278,7 @@ function bindZoneEditor(zone) {
   document.getElementById('zone-edit-delete')?.addEventListener('click', () => {
     AppState.remove(zone.id);
   });
+  bindZoneGridEditor(zone);
 }
 
 function zoneListMarkup(zone, active) {
@@ -353,6 +354,7 @@ function zoneEditorMarkup(zone) {
       <button id="zone-edit-select" class="btn ghost" type="button">Seleccionar</button>
       <button id="zone-edit-delete" class="btn ghost danger" type="button">Eliminar</button>
     </div>
+    ${zoneGridEditorMarkup(zone)}
   `;
 }
 
@@ -611,7 +613,6 @@ function init() {
   });
   document.addEventListener('escale:header-menu-opened', event => {
     if (event.detail?.menuKey === 'zones') renderZoneMenu();
-    if (event.detail?.menuKey === 'grid') refreshGridMenu();
   });
   document.addEventListener('escale:header-menus-refresh', () => {
     renderZoneMenu();

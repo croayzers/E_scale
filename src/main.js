@@ -143,8 +143,7 @@ async function bootstrap() {
     planGuideDismissed: false,
     steps: {
       planLoaded: false,
-      calibrated: false,
-      gridAdjusted: false
+      calibrated: false
     }
   };
 
@@ -201,12 +200,6 @@ async function bootstrap() {
   };
 
   const getZoneCount = () => AppState.items.filter(item => item.type === 'zone').length;
-
-  const markGridAdjustedComplete = () => {
-    if (!state.steps.planLoaded || !state.steps.calibrated) return;
-    state.steps.gridAdjusted = true;
-    updatePlanGuide();
-  };
 
   const setGuideStepState = (id, value) => {
     const node = document.getElementById(id);
@@ -283,11 +276,7 @@ async function bootstrap() {
       'guide-step-zones',
       zonesReady ? 'done' : state.steps.calibrated ? 'active' : 'waiting'
     );
-    setGuideStepState(
-      'guide-step-grid',
-      state.steps.gridAdjusted ? 'done' : zonesReady ? 'active' : 'waiting'
-    );
-    setGuideStepState('guide-step-catalog', state.steps.gridAdjusted ? 'active' : 'waiting');
+    setGuideStepState('guide-step-catalog', zonesReady ? 'active' : 'waiting');
 
     const nextText = document.getElementById('plan-guide-next-text');
     if (nextText) {
@@ -300,21 +289,17 @@ async function bootstrap() {
           ? 'Pulsa Medir plano y calibra con una referencia real del plano.'
           : !zonesReady
             ? 'Abre Zonas y dibuja una o varias zonas operativas sobre el plano.'
-            : !state.steps.gridAdjusted
-              ? 'Abre Grid y mueve la rejilla hasta hacerla coincidir con el plano.'
-              : 'Ya puedes colocar objetos desde la barra inferior.';
+            : 'Ya puedes colocar objetos desde la barra inferior.';
       }
     }
 
     const guideZones = document.getElementById('guide-zones-btn');
-    const guideGrid = document.getElementById('guide-grid-btn');
     const guideCatalog = document.getElementById('guide-catalog-btn');
     if (guideZones) guideZones.disabled = !state.steps.calibrated;
-    if (guideGrid) guideGrid.disabled = !state.steps.calibrated || !zonesReady;
-    if (guideCatalog) guideCatalog.disabled = !state.steps.gridAdjusted;
+    if (guideCatalog) guideCatalog.disabled = !zonesReady;
 
     // Pulse the border of whichever step card is currently active
-    ['guide-step-calibrate', 'guide-step-zones', 'guide-step-grid', 'guide-step-catalog'].forEach(id => {
+    ['guide-step-calibrate', 'guide-step-zones', 'guide-step-catalog'].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
       el.classList.toggle('step-onboard-pulse', el.dataset.state === 'active');
@@ -322,10 +307,8 @@ async function bootstrap() {
 
     const dot1 = document.getElementById('step-dot-1');
     const dot2 = document.getElementById('step-dot-2');
-    const dot3 = document.getElementById('step-dot-3');
     if (dot1) dot1.style.display = state.steps.planLoaded && !state.steps.calibrated ? 'block' : 'none';
     if (dot2) dot2.style.display = state.steps.calibrated && !zonesReady ? 'block' : 'none';
-    if (dot3) dot3.style.display = zonesReady && !state.steps.gridAdjusted ? 'block' : 'none';
   };
 
   const originalSetPlanTexture = SceneManager.setPlanTexture.bind(SceneManager);
@@ -335,7 +318,6 @@ async function bootstrap() {
     onboardPulse.start('btn-calibrate', 15000);
     state.steps.planLoaded = true;
     state.steps.calibrated = false;
-    state.steps.gridAdjusted = false;
     state.planGuideDismissed = false;
     document.getElementById('guide-calibration-point-1').textContent = 'Pendiente';
     document.getElementById('guide-calibration-point-2').textContent = 'Pendiente';
@@ -581,7 +563,6 @@ async function bootstrap() {
     document.getElementById('scene-canvas').style.cursor = '';
     document.getElementById('plan-move-banner').style.display = 'none';
     SceneManager.setControlsEnabled(true);
-    markGridAdjustedComplete();
     AppState.emitSceneInsights('grid-move');
     ZoneManager.refreshGridMenu();
   });
@@ -610,11 +591,6 @@ async function bootstrap() {
   document.getElementById('guide-zones-btn')?.addEventListener('click', e => {
     e.stopPropagation();
     openZonesDemo();
-  });
-  document.getElementById('guide-grid-btn')?.addEventListener('click', e => {
-    e.stopPropagation();
-    HeaderActionMenus.openMenu('grid');
-    pulseGuideTarget(document.getElementById('btn-grid-menu'), btnMovePlan);
   });
   document.getElementById('guide-catalog-btn')?.addEventListener('click', () => {
     document.getElementById('plan-guide')?.classList.add('hidden');

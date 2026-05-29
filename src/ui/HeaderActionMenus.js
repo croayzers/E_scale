@@ -13,10 +13,6 @@ const MENU_CONFIG = {
     buttonId: 'btn-zones-menu',
     menuId: 'zones-menu'
   },
-  grid: {
-    buttonId: 'btn-grid-menu',
-    menuId: 'grid-menu'
-  },
   pro: {
     buttonId: 'btn-pro-menu',
     menuId: 'pro-menu'
