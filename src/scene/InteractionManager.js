@@ -504,7 +504,10 @@ function onPointerDown(e) {
   // Interacción con anotaciones existentes (selección / drag handle)
   if (!isViewer()) {
     const point = getDragPoint();
-    if (MeasureManager.handleInteractionPointerDown(point)) return;
+    if (MeasureManager.handleInteractionPointerDown(point)) {
+      SceneManager.setControlsEnabled(false);
+      return;
+    }
   }
 
   if (AppState.calibration.active && window.PlanManager) {
@@ -683,7 +686,9 @@ function onPointerMove(e) {
 function onPointerUp(e) {
   _activePointers.delete(e.pointerId);
   clearTimeout(_longPressTimer); _longPressTimer = null;
+  const wasMeasureDragging = MeasureManager.isDraggingHandle();
   MeasureManager.handleInteractionPointerUp();
+  if (wasMeasureDragging) SceneManager.setControlsEnabled(true);
   if (_activePointers.size >= 1) { dragging = null; mouseDown = false; return; }
   mouseDown = false;
   if (SceneManager.isPlanMoving()) {
