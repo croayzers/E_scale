@@ -103,7 +103,9 @@ PROJECT STRUCTURE
 │   │   ├── GroupManager.js
 │   │   ├── InventoryRules.js
 │   │   ├── LayerManager.js
-│   │   └── PlanCatalog.js
+│   │   ├── PlanCatalog.js
+│   │   ├── SavedGroupLibrary.js
+│   │   └── SavedGroupPlacer.js
 │   ├── data/
 │   │   ├── elementsData.js
 │   │   └── planFeatures.js
@@ -180,6 +182,7 @@ PROJECT STRUCTURE
 │       ├── PlansModal.js
 │       ├── ProButtonManager.js
 │       ├── PropertyRenderer.js
+│       ├── SavedGroupPanel.js
 │       ├── TextSanitizer.js
 │       ├── UIManager.js
 │       └── ZoneManager.js

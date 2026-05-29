@@ -915,6 +915,77 @@
   </div>
 </div>
 
+<!-- Demo calibración -->
+<div id="cal-demo" class="modal-bg" role="dialog" aria-modal="true">
+  <div class="glass p-8" style="border-radius:16px;max-width:420px;width:calc(100% - 48px)">
+    <div class="mono text-[10px] tracking-widest uppercase mb-2" style="color:var(--muted)">Paso 1 · Calibrar escala</div>
+    <h3 class="display-font text-2xl mb-2 leading-tight">Medir el plano</h3>
+    <p class="text-sm mb-5" style="color:var(--muted)">Marca dos puntos sobre una distancia conocida (una pared, un pasillo…) e introduce el valor real.</p>
+
+    <!-- SVG demo animado -->
+    <div id="cal-demo-stage" style="background:rgba(10,10,11,0.04);border-radius:10px;padding:16px 20px;margin-bottom:20px;overflow:hidden">
+      <svg id="cal-demo-svg" viewBox="0 0 280 130" width="100%" height="auto" style="display:block">
+        <!-- Plano de fondo -->
+        <rect x="18" y="12" width="244" height="106" rx="5" fill="rgba(10,10,11,0.04)" stroke="#1a1a1c" stroke-width="1.2" stroke-dasharray="6,4" opacity="0.25"/>
+        <!-- Cursor sobre P1 -->
+        <g class="cd-cursor" opacity="0">
+          <line x1="62" y1="57" x2="62" y2="73" stroke="#1a1a1c" stroke-width="1.5"/>
+          <line x1="54" y1="65" x2="70" y2="65" stroke="#1a1a1c" stroke-width="1.5"/>
+        </g>
+        <!-- P1 ring (pulse) -->
+        <circle class="cd-p1-ring" cx="62" cy="65" r="10" fill="none" stroke="#1a1a1c" stroke-width="1" opacity="0"/>
+        <!-- P1 dot -->
+        <circle class="cd-p1-dot" cx="62" cy="65" r="5" fill="#1a1a1c" opacity="0"/>
+        <!-- P1 label -->
+        <text class="cd-p1-txt" x="62" y="90" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#6a6a6e" opacity="0">P1</text>
+        <!-- Cursor sobre P2 -->
+        <g class="cd-cursor2" opacity="0">
+          <line x1="218" y1="57" x2="218" y2="73" stroke="#1a1a1c" stroke-width="1.5"/>
+          <line x1="210" y1="65" x2="226" y2="65" stroke="#1a1a1c" stroke-width="1.5"/>
+        </g>
+        <!-- P2 ring (pulse) -->
+        <circle class="cd-p2-ring" cx="218" cy="65" r="10" fill="none" stroke="#1a1a1c" stroke-width="1" opacity="0"/>
+        <!-- P2 dot -->
+        <circle class="cd-p2-dot" cx="218" cy="65" r="5" fill="#1a1a1c" opacity="0"/>
+        <!-- P2 label -->
+        <text class="cd-p2-txt" x="218" y="90" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#6a6a6e" opacity="0">P2</text>
+        <!-- Línea de medida -->
+        <line class="cd-line" x1="62" y1="65" x2="218" y2="65" stroke="#1a1a1c" stroke-width="1.5" stroke-dasharray="156,156" stroke-dashoffset="156" opacity="0.7"/>
+        <!-- Brackets -->
+        <line class="cd-br1" x1="62" y1="55" x2="62" y2="75" stroke="#1a1a1c" stroke-width="1.5" opacity="0"/>
+        <line class="cd-br2" x1="218" y1="55" x2="218" y2="75" stroke="#1a1a1c" stroke-width="1.5" opacity="0"/>
+        <!-- Etiqueta distancia -->
+        <rect class="cd-lbl" x="112" y="42" width="57" height="17" rx="4" fill="#1a1a1c" opacity="0"/>
+        <text class="cd-lbl" x="140" y="55" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="white" opacity="0">10.5 m</text>
+      </svg>
+    </div>
+
+    <!-- Pasos -->
+    <ol style="list-style:none;padding:0;margin-bottom:24px;display:flex;flex-direction:column;gap:8px">
+      <li style="display:flex;align-items:center;gap:10px;font-size:13px">
+        <span style="width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--paper);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-family:'JetBrains Mono',monospace;flex-shrink:0">1</span>
+        Haz clic en el primer punto sobre el plano
+      </li>
+      <li style="display:flex;align-items:center;gap:10px;font-size:13px">
+        <span style="width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--paper);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-family:'JetBrains Mono',monospace;flex-shrink:0">2</span>
+        Haz clic en el segundo punto
+      </li>
+      <li style="display:flex;align-items:center;gap:10px;font-size:13px">
+        <span style="width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--paper);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-family:'JetBrains Mono',monospace;flex-shrink:0">3</span>
+        Introduce la distancia real en metros
+      </li>
+    </ol>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button id="cal-demo-cancel" class="btn ghost">Cancelar</button>
+      <button id="cal-demo-start" class="btn primary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M12 2l10 10-10 10"/></svg>
+        ¡A medir!
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal calibraciÃ³n -->
 <div id="modal" class="modal-bg">
   <div class="glass p-8 max-w-md w-full mx-6" style="border-radius:14px">
@@ -1317,6 +1388,25 @@
   <button id="btn-snap"></button>
   <button id="btn-cotas"></button>
   <button id="btn-shadows"></button>
+</div>
+
+<!-- ============ PANEL GRUPOS GUARDADOS ============ -->
+<div id="saved-group-panel" class="hidden" aria-label="Grupos guardados"
+     style="position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+            width:340px;z-index:35;border-radius:14px;overflow:hidden">
+  <div class="glass-mac p-4" style="max-height:70vh;overflow-y:auto">
+    <div class="flex items-center justify-between mb-3">
+      <div class="mono text-[10px] tracking-widest uppercase" style="color:var(--muted)">Grupos guardados</div>
+      <button id="saved-group-close" class="hdr-icon" style="width:22px;height:22px" title="Cerrar">
+        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+    <button id="saved-group-save-btn" class="btn ghost mb-3" style="width:100%;justify-content:center">
+      <i data-lucide="bookmark-plus" class="w-3.5 h-3.5"></i>
+      Guardar selección como grupo
+    </button>
+    <div id="saved-group-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
+  </div>
 </div>
 
 <!-- ============ PANEL INVENTARIO ============ -->

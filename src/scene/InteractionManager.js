@@ -10,6 +10,8 @@ import { ZoneManager }       from '../ui/ZoneManager.js';
 import { SelectionManager }  from './SelectionManager.js';
 import { GroupManager }      from '../core/GroupManager.js';
 import { CollabManager }     from '../services/CollabManager.js';
+import { SavedGroupPlacer }  from '../core/SavedGroupPlacer.js';
+import { SavedGroupLibrary } from '../core/SavedGroupLibrary.js';
 
 function isViewer() { return CollabManager.localRole === 'viewer'; }
 
@@ -58,10 +60,15 @@ function init() {
       updatePlacementIndicator(e.clientX, e.clientY);
       syncPlacementPreview(e.clientX, e.clientY);
     }
+    if (SavedGroupPlacer.hasPendingGroupPlacement()) {
+      updatePlacementIndicator(e.clientX, e.clientY);
+    }
   });
   document.addEventListener('pointerdown', onPlacementDocumentPointerDown, true);
   document.addEventListener('escale:catalog-placement-start', onPlacementStart);
   document.addEventListener('escale:catalog-placement-end', onPlacementEnd);
+  document.addEventListener('escale:group-placement-start', onPlacementStart);
+  document.addEventListener('escale:group-placement-end', onPlacementEnd);
   document.addEventListener('escale:item-settings-menu', event => {
     const item = AppState.items.find(entry => entry.id === Number(event.detail?.itemId));
     if (!item) return;
@@ -118,7 +125,12 @@ function getIntersectedItem() {
   const meshArray = [];
   SceneManager.meshes.forEach((g) => {
     g.traverse(child => {
-      if (child.isMesh && (child.userData.isMain === true || child.userData.baseColor !== undefined)) meshArray.push(child);
+      if (!child.isMesh) return;
+      if (child.userData.isTopStroke || child.userData.isPlacementPreview) return;
+      // Incluir cualquier mesh que pertenezca a un item (rootId asignado por ensureInteractiveGroup)
+      if (child.userData.rootId !== undefined || child.userData.isMain === true || child.userData.baseColor !== undefined) {
+        meshArray.push(child);
+      }
     });
   });
   const intersects = raycaster.intersectObjects(meshArray, false);
@@ -238,10 +250,10 @@ function hideBoxOverlay() {
 
 function syncPlacementCursor() {
   const canvas = document.getElementById('scene-canvas');
-  const active = CatalogModal.hasPendingPlacement() || ZoneManager.isPlacementActive();
+  const active = CatalogModal.hasPendingPlacement() || ZoneManager.isPlacementActive() || SavedGroupPlacer.hasPendingGroupPlacement();
   document.body.classList.toggle('placement-pending', active);
   if (canvas) {
-    canvas.style.cursor = CatalogModal.hasPendingPlacement()
+    canvas.style.cursor = CatalogModal.hasPendingPlacement() || SavedGroupPlacer.hasPendingGroupPlacement()
       ? 'copy'
       : ZoneManager.isPlacementActive()
         ? 'crosshair'
@@ -326,7 +338,7 @@ function isUiClickTarget(target) {
   return Boolean(target?.closest?.(
     '#catalog-modal, #dock, #header-mac, #inventory-panel, #context-menu, ' +
     '#company-modal, #welcome-modal, #settings-modal, #export-modal, #share-modal, #plans-modal, #detail-panel, ' +
-    '#export-preview-modal, #share-preview-modal, .modal-bg, button, input, select, textarea, label'
+    '#export-preview-modal, #share-preview-modal, #saved-group-panel, #sg-card-menu, .modal-bg, button, input, select, textarea, label'
   ));
 }
 
@@ -364,6 +376,17 @@ function activateCopiedPlacement() {
 }
 
 function onPlacementDocumentPointerDown(e) {
+  // Grupo guardado pendiente de colocación
+  if (SavedGroupPlacer.hasPendingGroupPlacement()) {
+    if (e.button !== 0 || isUiClickTarget(e.target)) return;
+    const point = resolvePlacementPoint(e.clientX, e.clientY);
+    if (point) {
+      SavedGroupPlacer.placeGroupAt({ x: point.x, z: point.z });
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    return;
+  }
   if (!CatalogModal.hasPendingPlacement()) return;
   if (e.button !== 0) return;
   if (isUiClickTarget(e.target)) return;
@@ -487,7 +510,14 @@ function onPointerDown(e) {
     // expandir la selección a todos los miembros del grupo antes del drag.
     const groupExpanded = GroupManager.handleGroupClick(item, shiftDown);
     if (!groupExpanded) {
-      AppState.select(item.id, shiftDown);
+      if (shiftDown) {
+        // Shift+click: añadir o quitar de la selección
+        AppState.select(item.id, true);
+      } else if (!AppState.selectedIds.has(item.id)) {
+        // Click en item no seleccionado: seleccionar solo este
+        AppState.select(item.id, false);
+      }
+      // Click en item ya seleccionado (sin Shift): conservar toda la selección para drag
     }
     if (!shiftDown) pendingClickItem = item;
 
@@ -601,6 +631,8 @@ function onPointerUp(e) {
     const item = pendingClickItem;
     pendingClickItem = null;
     if (dx < 5 && dy < 5 && !isViewer()) {
+      // Click limpio sin drag: mostrar settings del item clickado.
+      // La selección múltiple se preserva (no se estrecha).
       showContextMenu(e.clientX, e.clientY, item);
     }
   }
@@ -1613,10 +1645,16 @@ function handleContextAction(action, value, id) {
       break;
     case 'delete': AppState.remove(id); break;
 
-    case 'group-selected':   GroupManager.groupSelected(); break;
-    case 'group-dissolve':   GroupManager.ungroupSelected(); break;
-    case 'group-select-all': GroupManager.selectGroup(item.groupId); break;
-    case 'group-duplicate':  GroupManager.duplicateGroup(item.groupId); break;
+    case 'group-selected':      GroupManager.groupSelected(); break;
+    case 'group-dissolve':      GroupManager.ungroupSelected(); break;
+    case 'group-select-all':    GroupManager.selectGroup(item.groupId); break;
+    case 'group-duplicate':     GroupManager.duplicateGroup(item.groupId); break;
+    case 'group-toggle-closed': GroupManager.toggleGroupClosed(item.groupId); break;
+    case 'save-as-group': {
+      const name = prompt('Nombre del grupo:');
+      if (name?.trim()) SavedGroupLibrary.saveCurrentSelection(name.trim());
+      break;
+    }
     case 'carpa-preset': {
       const [L, W] = value.split('x').map(parseFloat);
       AppState.update(id, { dims: { ...item.dims, length: L, width: W } });
@@ -1747,6 +1785,10 @@ function onKeyDown(e) {
   // ── Escape: cancelar herramienta activa o limpiar selección ──
   if (e.key === 'Escape') {
     if (formatModeActive) { toggleFormatMode(false); return; }
+    if (SavedGroupPlacer.hasPendingGroupPlacement()) {
+      SavedGroupPlacer.clearPlacement();
+      return;
+    }
     if (CatalogModal.hasPendingPlacement()) {
       CatalogModal.clearPendingPlacement();
       return;

@@ -102,6 +102,20 @@ function duplicateGroup(groupId) {
   toast(`Grupo duplicado · ${items.length} elementos`);
 }
 
+/* ─── Abrir / cerrar grupo (modo movimiento unitario) ──── */
+
+function toggleGroupClosed(groupId) {
+  const members = getGroupItems(groupId);
+  if (!members.length) return;
+  AppState.pushHistory();
+  const newState = !members[0].groupClosed;
+  members.forEach(item => { item.groupClosed = newState; });
+  AppState.emitSceneInsights('group-toggle-closed');
+  toast(newState
+    ? 'Grupo cerrado · Los items se mueven como unidad'
+    : 'Grupo abierto · Items editables individualmente');
+}
+
 /* ─── Handle click on grouped item ─────────────────────────────
    Returns true if the click was "consumed" (group expanded).
    Returns false if normal click flow should proceed.
@@ -112,8 +126,14 @@ function handleGroupClick(item, shiftDown) {
   if (!gid || shiftDown) return false;
 
   const groupIds = getGroupItems(gid).map(i => i.id);
-  const allAlreadySelected = groupIds.length > 0 && groupIds.every(id => AppState.selectedIds.has(id));
 
+  // Grupo cerrado: siempre seleccionar todo sin pasar al item individual
+  if (item.groupClosed) {
+    AppState.selectMany(groupIds, false);
+    return true;
+  }
+
+  const allAlreadySelected = groupIds.length > 0 && groupIds.every(id => AppState.selectedIds.has(id));
   if (allAlreadySelected) return false; // Group already active, pass through for context menu
 
   AppState.selectMany(groupIds, false);
@@ -162,6 +182,14 @@ function contextMenuHTML(item) {
           <span>Disolver</span>
           <small>Ctrl+⇧+G</small>
         </button>` : ''}
+        ${gid ? `<button data-action="group-toggle-closed" class="ctx-action-btn">
+          <i data-lucide="${item.groupClosed ? 'lock-open' : 'lock'}" class="w-3.5 h-3.5"></i>
+          <span>${item.groupClosed ? 'Abrir grupo' : 'Cerrar grupo'}</span>
+        </button>` : ''}
+        ${multiSelected ? `<button data-action="save-as-group" class="ctx-action-btn">
+          <i data-lucide="bookmark-plus" class="w-3.5 h-3.5"></i>
+          <span>Guardar grupo</span>
+        </button>` : ''}
       </div>
     </div>`;
 }
@@ -175,6 +203,7 @@ export const GroupManager = {
   selectGroup,
   duplicateGroup,
   handleGroupClick,
+  toggleGroupClosed,
   contextMenuHTML,
 };
 

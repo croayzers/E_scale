@@ -33,6 +33,8 @@ import { CollabInviteModal }   from './ui/CollabInviteModal.js';
 import { CollabJoinModal }     from './ui/CollabJoinModal.js';
 import { CollabIsland }        from './ui/CollabIsland.js';
 import { CollabInteractions }  from './services/CollabInteractions.js';
+import { SavedGroupLibrary }   from './core/SavedGroupLibrary.js';
+import { SavedGroupPanel }     from './ui/SavedGroupPanel.js';
 
 function showStartupError(label, error) {
   console.error(`[E-scale] ${label} falló:`, error);
@@ -86,6 +88,8 @@ async function bootstrap() {
   await safeInit('PlansModal', () => PlansModal.init());
   await safeInit('ZoneManager', () => ZoneManager.init());
   await safeInit('InventoryPanel', () => InventoryPanel.init());
+  safeInit('SavedGroupLibrary', () => SavedGroupLibrary.load());
+  safeInit('SavedGroupPanel', () => SavedGroupPanel.init());
   safeInit('MessageManager', () => MessageManager.init());
   safeInit('FeedbackModal',  () => FeedbackModal.init());
   AppBridge.init();
@@ -376,6 +380,34 @@ async function bootstrap() {
   document.getElementById('btn-upload-plan')?.addEventListener('click', setTopCamera);
   document.getElementById('btn-calibrate')?.addEventListener('click', () => {
     onboardPulse.stop('btn-calibrate');
+    openCalibrationDemo();
+  });
+
+  function openCalibrationDemo() {
+    if (!AppState.plan.texture) {
+      alert('Carga un plano base primero (botón superior).');
+      return;
+    }
+    const overlay = document.getElementById('cal-demo');
+    if (!overlay) return;
+    overlay.classList.add('visible');
+    // Lanzar animación SVG
+    const svg = document.getElementById('cal-demo-svg');
+    if (svg) {
+      svg.parentElement.classList.remove('cal-demo-run');
+      void svg.parentElement.offsetWidth;
+      svg.parentElement.classList.add('cal-demo-run');
+    }
+  }
+
+  function closeCalibrationDemo() {
+    document.getElementById('cal-demo')?.classList.remove('visible');
+  }
+
+  document.getElementById('cal-demo-cancel')?.addEventListener('click', closeCalibrationDemo);
+
+  document.getElementById('cal-demo-start')?.addEventListener('click', () => {
+    closeCalibrationDemo();
     const guide = document.getElementById('plan-guide');
     if (guide && !guide.classList.contains('hidden')) {
       guide.classList.remove('guide-panel-pulse');

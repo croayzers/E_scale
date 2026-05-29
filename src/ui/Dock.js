@@ -1,6 +1,7 @@
 import { CatalogModal } from './CatalogModal.js';
 import { CATALOG_CATEGORIES } from '../schemas/CatalogCategories.js';
 import { SubscriptionManager } from '../services/SubscriptionManager.js';
+import { SavedGroupPanel } from './SavedGroupPanel.js';
 
 function isProPlan() {
   const code = SubscriptionManager.currentPlanCode();
@@ -23,6 +24,8 @@ function init() {
   CATALOG_CATEGORIES.forEach(category => {
     host.appendChild(makeCategoryButton(category));
   });
+
+  host.appendChild(makeSavedGroupsButton());
 
   const sep = document.createElement('div');
   sep.className = 'dock-sep';
@@ -52,6 +55,28 @@ function makeCategoryButton(category) {
     button.appendChild(pip);
   }
   button.addEventListener('click', () => toggleCategory(category.key, button));
+  return button;
+}
+
+function makeSavedGroupsButton() {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.id = 'dock-savedgroups-btn';
+  button.dataset.dockKind = 'savedgroups';
+  button.title = 'Grupos guardados';
+  button.innerHTML = `<i data-lucide="bookmark" class="w-5 h-5"></i>`;
+  button.addEventListener('click', () => {
+    const wasActive = button.classList.contains('active');
+    clearAllButtons();
+    CatalogModal.close();
+    if (wasActive) {
+      SavedGroupPanel.close();
+      return;
+    }
+    button.classList.add('active');
+    document.dispatchEvent(new CustomEvent('escale:inventory-close'));
+    SavedGroupPanel.open();
+  });
   return button;
 }
 

@@ -99,8 +99,8 @@ function init() {
     SceneManager.updatePlanOpacity(AppState.plan.opacity);
   });
 
-  // Calibración
-  document.getElementById('btn-calibrate')?.addEventListener('click', toggleCalibration);
+  // Calibración — el demo-overlay activa la calibración real
+  document.getElementById('cal-demo-start')?.addEventListener('click', toggleCalibration);
   document.getElementById('cancel-calibration')?.addEventListener('click', cancelCalibration);
   emitCalibrationProgress();
 }

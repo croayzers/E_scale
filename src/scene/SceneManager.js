@@ -331,7 +331,9 @@ function collectInteractiveMeshes() {
   meshes.forEach(group => {
     group.traverse(child => {
       if (!child?.isMesh || child.userData?.isPlacementPreview || child.userData?.isTopStroke) return;
-      if (child.userData?.isMain === true || child.userData?.baseColor !== undefined) meshArray.push(child);
+      if (child.userData?.rootId !== undefined || child.userData?.isMain === true || child.userData?.baseColor !== undefined) {
+        meshArray.push(child);
+      }
     });
   });
   return meshArray;
@@ -886,7 +888,7 @@ function highlightSelection() {
           if (typeof material.opacity === 'number') {
             material.opacity = isSelected
               ? Math.min(1, baseOp * 1.5)
-              : isLocked || layerLocked ? baseOp * 0.45 : baseOp;
+              : layerLocked ? baseOp * 0.45 : baseOp;
             material.needsUpdate = true;
           }
           if (material.color?.setHex) {
@@ -915,10 +917,10 @@ function highlightSelection() {
           material.color.setHex(child.userData.baseColor);
         }
 
-        // ── Locked items: reduce opacity ──
+        // ── Layer-locked items: reduce opacity ──
         if (material.transparent !== undefined) {
           const baseOp = child.userData.baseOpacity ?? 1;
-          if (isLocked || layerLocked) {
+          if (layerLocked) {
             material.transparent = true;
             material.opacity = baseOp * 0.45;
           } else {
