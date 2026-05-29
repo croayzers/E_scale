@@ -640,7 +640,7 @@ function onPointerMove(e) {
 
   if (MeasureManager.isActive()) {
     const point = getDragPoint();
-    MeasureManager.handleMouseMove(point, e.clientX, e.clientY);
+    MeasureManager.handleMouseMove(point, e.clientX, e.clientY, e.shiftKey);
     return;
   }
 

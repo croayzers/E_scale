@@ -111,12 +111,14 @@ function handleClick(point) {
     guideP1Dot.position.set(point.x, Y, point.z);
     _banner('Haz clic en el segundo punto para fijar la medida');
   } else {
-    const p2 = { x: point.x, z: point.z };
+    const raw = { x: point.x, z: point.z };
+    const p2  = state.snappedP2 ?? raw;
     const dx = p2.x - state.p1.x, dz = p2.z - state.p1.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
     if (dist >= 0.01) _createAnnotation(state.p1, p2);
     // Reinicia para permitir otra medida inmediata
     state.p1 = null;
+    state.snappedP2 = null;
     guideGroup.visible = false;
     _hideTooltip();
     _banner('Haz clic en el primer punto de la medición');
@@ -124,17 +126,20 @@ function handleClick(point) {
 }
 
 /** Actualiza línea guía y tooltip en hover durante creación. */
-function handleMouseMove(point, cx, cy) {
+function handleMouseMove(point, cx, cy, shift = false) {
   const state = AppState.measure;
   if (!state?.active || !state.p1 || !point) return;
 
+  const snapped = _snapEndpoint(state.p1, point, shift);
+  state.snappedP2 = snapped;
+
   const pos = guideLine.geometry.attributes.position;
-  pos.setXYZ(0, state.p1.x, Y, state.p1.z);
-  pos.setXYZ(1, point.x,    Y, point.z);
+  pos.setXYZ(0, state.p1.x,  Y, state.p1.z);
+  pos.setXYZ(1, snapped.x,   Y, snapped.z);
   pos.needsUpdate = true;
   guideLine.geometry.computeBoundingSphere();
 
-  const dx = point.x - state.p1.x, dz = point.z - state.p1.z;
+  const dx = snapped.x - state.p1.x, dz = snapped.z - state.p1.z;
   _showTooltip(_fmt(Math.sqrt(dx*dx + dz*dz)), cx, cy);
 }
 
