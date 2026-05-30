@@ -222,3 +222,61 @@ body.cursor-measure * { cursor: crosshair !important; }
 .zones-demo-run .zd-zone-fill { animation: zdFill   0.35s ease 1.7s both; }
 .zones-demo-run .zd-lbl-bg   { animation: calAppear 0.25s ease 1.85s both; }
 .zones-demo-run .zd-lbl-txt  { animation: calAppear 0.25s ease 1.9s both; }
+
+/* ══════════════════════════════════════════════════════
+   SPLASH SCREEN + GRID_ONDA
+   ══════════════════════════════════════════════════════ */
+#splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #07070a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+#splash-logo {
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+}
+#splash-wordmark {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  color: #ffffff;
+  margin-top: -4px;
+}
+#splash-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.32);
+  margin-top: -10px;
+}
+#splash-bar-wrap {
+  width: 180px;
+  height: 1.5px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+#splash-bar {
+  height: 100%;
+  width: 0%;
+  background: #ffffff;
+  border-radius: 1px;
+}
+#splash-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 185;
+}
+

@@ -38,6 +38,7 @@ import { OrgContentManager }  from './services/OrgContentManager.js';
 import { MeasureManager }     from './ui/MeasureManager.js';
 import { PlanSaveModal }      from './ui/PlanSaveModal.js';
 import { PredictiveArray }    from './ui/PredictiveArray.js';
+import { SplashScreen }      from './ui/SplashScreen.js';
 
 function showStartupError(label, error) {
   console.error(`[E-scale] ${label} falló:`, error);
@@ -683,7 +684,8 @@ async function bootstrap() {
     void AnalyticsManager.track('work_mode_choice', { mode });
     const action = _pendingWelcomeAction;
     _pendingWelcomeAction = null;
-    action?.();
+    // Pantalla de carga cinemática → Grid_onda → app
+    SplashScreen.start(() => action?.());
   }
 
   document.getElementById('work-mode-base')?.addEventListener('click', () => commitWorkMode('base'));
