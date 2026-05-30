@@ -249,7 +249,7 @@ function ensureBoxOverlay() {
   if (!el) {
     el = document.createElement('div');
     el.id = 'box-select';
-    el.style.cssText = 'position:fixed;border:1.5px dashed #d4ff3a;background:rgba(212,255,58,0.10);pointer-events:none;z-index:50;display:none';
+    el.style.cssText = 'position:fixed;border:1.5px solid rgba(59,130,246,0.7);background:rgba(59,130,246,0.08);border-radius:3px;pointer-events:none;z-index:50;display:none';
     document.body.appendChild(el);
   }
   return el;

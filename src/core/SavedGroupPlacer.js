@@ -35,6 +35,9 @@ function placeGroupAt({ x, z }) {
   const newGroupId = GroupManager.generateGroupId();
   const newIds = [];
 
+  // Las copias de portapapeles no deben agruparse — solo los grupos guardados
+  const isClipboard = def.id === 'clipboard';
+
   AppState._suppressHistory = true;
   try {
     def.itemTemplates.forEach(template => {
@@ -44,9 +47,15 @@ function placeGroupAt({ x, z }) {
       delete clone._relX;
       delete clone._relZ;
       delete clone.id;
-      clone.groupId = newGroupId;
-      clone.savedGroupId = def.id;
-      clone.groupClosed = false;
+      if (!isClipboard) {
+        clone.groupId = newGroupId;
+        clone.savedGroupId = def.id;
+        clone.groupClosed = false;
+      } else {
+        delete clone.groupId;
+        delete clone.savedGroupId;
+        clone.groupClosed = false;
+      }
       clone.locked = false;
       const placed = AppState.add(clone);
       newIds.push(placed.id);
