@@ -188,16 +188,55 @@ function _buildCanvas() {
 }
 
 /* ════════════════════════════════════════════════════════
-   DOCK EXPAND
+   DOCK: colapsar al inicio → expandir tras el wave
    ════════════════════════════════════════════════════════ */
-function _expandDock() {
-  const dock = document.getElementById('dock');
+export function collapseDock() {
+  const dock  = document.getElementById('dock');
+  const items = document.getElementById('dock-items');
+  const logo  = document.getElementById('dock-brand-logo');
   if (!dock) return;
-  dock.classList.remove('dock-collapsed');
-  // El logo desaparece suavemente
-  const logo = document.getElementById('dock-brand-logo');
-  if (logo && window.gsap) {
-    window.gsap.to(logo, { opacity: 0, duration: 0.3, onComplete() { logo.style.display = 'none'; } });
+  // Guardar dimensiones reales para la expansión
+  dock._expandW = dock.scrollWidth + 'px';
+  dock._expandH = dock.scrollHeight + 'px';
+  // Colapsar
+  items && (items.style.display = 'none');
+  logo  && (logo.style.display  = 'flex');
+  dock.style.cssText += `;width:52px;height:52px;border-radius:50%;padding:6px;
+    overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:default;`;
+}
+
+function _expandDock() {
+  const dock  = document.getElementById('dock');
+  const items = document.getElementById('dock-items');
+  const logo  = document.getElementById('dock-brand-logo');
+  if (!dock || items?.style.display !== 'none') return; // ya expandido
+
+  const gsap = window.gsap;
+  const targetW = dock._expandW || '';
+  const targetH = dock._expandH || '';
+
+  if (gsap) {
+    // Fade out logo
+    gsap.to(logo, { opacity: 0, duration: 0.2, onComplete() {
+      logo && (logo.style.display = 'none');
+      items && (items.style.display = '');
+      // Animación spring de expansión
+      gsap.fromTo(dock,
+        { width: '52px', height: '52px', borderRadius: '50%', padding: '6px' },
+        { width: targetW, height: targetH, borderRadius: '14px', padding: '4px 6px',
+          duration: 0.55, ease: 'back.out(1.4)',
+          onComplete() {
+            dock.style.width = ''; dock.style.height = '';
+            dock.style.borderRadius = ''; dock.style.padding = '';
+            dock.style.overflow = ''; dock.style.cursor = '';
+          }
+        }
+      );
+    }});
+  } else {
+    logo  && (logo.style.display  = 'none');
+    items && (items.style.display = '');
+    dock.style.cssText = '';
   }
 }
 

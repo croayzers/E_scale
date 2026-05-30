@@ -38,7 +38,7 @@ import { OrgContentManager }  from './services/OrgContentManager.js';
 import { MeasureManager }     from './ui/MeasureManager.js';
 import { PlanSaveModal }      from './ui/PlanSaveModal.js';
 import { PredictiveArray }    from './ui/PredictiveArray.js';
-import { SplashScreen }      from './ui/SplashScreen.js';
+import { SplashScreen, collapseDock } from './ui/SplashScreen.js';
 import { ContextSpawnMenu }  from './ui/ContextSpawnMenu.js';
 
 function showStartupError(label, error) {
@@ -88,6 +88,7 @@ async function bootstrap() {
   await safeInit('ShareManager', () => ShareManager.init());
   await safeInit('CatalogModal', () => CatalogModal.init());
   await safeInit('Dock', () => Dock.init());
+  collapseDock(); // colapsar dock antes de mostrar la app
   await safeInit('TemplateManager', () => TemplateManager.init());
   await safeInit('HeaderActionMenus', () => HeaderActionMenus.init());
   await safeInit('PlansModal', () => PlansModal.init());
