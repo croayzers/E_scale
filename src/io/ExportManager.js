@@ -187,21 +187,26 @@ let _areaModeSelecting = false; // false = navegar, true = seleccionar
 
 function _setAreaMode(selecting) {
   _areaModeSelecting = selecting;
-  const overlay   = document.getElementById('area-overlay');
-  const label     = document.getElementById('area-mode-label');
-  const helpSpan  = document.getElementById('area-help');
+  const overlay  = document.getElementById('area-overlay');
+  const label    = document.getElementById('area-mode-label');
+  const helpSpan = document.getElementById('area-help');
+  const svg      = document.getElementById('area-svg');
   if (!overlay) return;
+
   if (selecting) {
     overlay.style.pointerEvents = '';
     overlay.style.cursor = 'crosshair';
+    if (svg) svg.style.display = '';
     if (label) label.innerHTML = '&#9654; Seleccionar area';
     if (helpSpan) helpSpan.textContent = 'Click y arrastra para seleccionar';
   } else {
     overlay.style.pointerEvents = 'none';
     overlay.style.cursor = 'default';
-    // Mantener visibles la barra superior y el SVG, pero no capturar eventos del canvas
-    document.getElementById('area-svg').style.pointerEvents = 'none';
-    if (label) label.innerHTML = '&#8982; Mover camara';
+    if (svg) svg.style.display = 'none';
+    // Resetear selección anterior al volver a modo navegar
+    areaStart = null; areaEnd = null; areaSelecting = false;
+    updateHole(0, 0, 0, 0);
+    if (label) label.innerHTML = '&#9654; Seleccionar area';
     if (helpSpan) helpSpan.textContent = 'Ajusta la vista, luego selecciona el area';
   }
   // La barra superior siempre recibe eventos
