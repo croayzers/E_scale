@@ -396,7 +396,7 @@ function copySelectedItem() {
   if (AppState.selectedIds.size > 1) {
     const items = [...AppState.selectedIds]
       .map(id => AppState.items.find(i => i.id === id))
-      .filter(Boolean);
+      .filter(i => i && i.type !== 'zone'); // las zonas no se duplican
     const cx = items.reduce((s, i) => s + i.x, 0) / items.length;
     const cz = items.reduce((s, i) => s + i.z, 0) / items.length;
     copiedGroupTemplates = items.map(item => {

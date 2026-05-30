@@ -514,6 +514,12 @@ function syncModalUI() {
 
   prefillPendingFromEmail(pending.email || AppState.company.authEmail);
 
+  // Nombre empresa: org display_name → parte local del email → vacío
+  if (!pending.name) {
+    const orgName = AppState.company?.licenseDetectedOrganizationName || '';
+    const emailLocal = (AppState.company?.authEmail || '').split('@')[0] || '';
+    pending.name = orgName || emailLocal || '';
+  }
   document.getElementById('company-name').value = pending.name || '';
   const companyEmailField = document.getElementById('company-email');
   const companyEmailHelp = document.getElementById('company-email-help');
@@ -529,7 +535,18 @@ function syncModalUI() {
       ? `Correo recuperado del acceso: ${lockedEmail}`
       : 'Puedes editar este correo si quieres guardar la empresa con otro contacto.';
   }
-  document.getElementById('company-cliente').value = pending.cliente || '';
+  // Cliente: valor guardado o "[Cliente]" por defecto
+  document.getElementById('company-cliente').value = pending.cliente || '[Cliente]';
+
+  // Lugar del evento: nombre del plano si hay → "Evento de (Cliente)" → vacío
+  if (!pending.venue) {
+    const planStatus = document.getElementById('plan-status')?.textContent?.trim();
+    const hasPlan = planStatus && planStatus !== 'Vacío' && planStatus !== 'Vacío' && planStatus !== '';
+    const cliente = document.getElementById('company-cliente')?.value?.trim() || '';
+    pending.venue = hasPlan ? planStatus
+      : cliente && cliente !== '[Cliente]' ? `Evento de ${cliente}`
+      : '';
+  }
   document.getElementById('company-venue').value = pending.venue || '';
 
   const primary = colorFor(pending, 'colorPrimary');
