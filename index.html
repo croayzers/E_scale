@@ -1546,8 +1546,11 @@
 <div id="area-overlay" class="fixed inset-0 z-[90] hidden" style="cursor:crosshair">
   <div class="glass-dark px-5 py-3 fixed top-6 left-1/2 -translate-x-1/2 flex items-center gap-3">
     <span class="blink-dot"></span>
-    <span class="mono text-[11px] tracking-widest uppercase">Arrastra Â· <span id="area-help">Click y arrastra</span></span>
-    <button id="area-cancel" class="ml-2 text-[10px] underline opacity-70">Cancelar (Esc)</button>
+    <span class="mono text-[11px] tracking-widest uppercase"><span id="area-help">Click y arrastra</span></span>
+    <button id="area-mode-toggle" class="ml-1 mono text-[10px] px-3 py-1 rounded-full border border-white/30 bg-white/10 hover:bg-white/20 transition-all" title="Alternar entre mover cámara y seleccionar área">
+      <span id="area-mode-label">&#8982; Mover camara</span>
+    </button>
+    <button id="area-cancel" class="ml-1 text-[10px] underline opacity-70">Cancelar (Esc)</button>
   </div>
   <svg id="area-svg" class="absolute inset-0 w-full h-full pointer-events-none">
     <defs>
@@ -1563,18 +1566,18 @@
 </div>
 
 <!-- Modo Foto overlay -->
-<div id="photo-mode-overlay" class="fixed inset-0 z-[85] hidden">
+<div id="photo-mode-overlay" class="fixed inset-0 z-[85] hidden" style="pointer-events:none">
   <div id="photo-frame" style="position:absolute;inset:40px;border:2px solid rgba(255,255,255,0.5);border-radius:4px;box-shadow:0 0 0 9999px rgba(10,10,11,0.45);pointer-events:none">
     <div style="position:absolute;top:-2px;left:-2px;width:22px;height:22px;border-top:3px solid #fff;border-left:3px solid #fff;border-radius:3px 0 0 0"></div>
     <div style="position:absolute;top:-2px;right:-2px;width:22px;height:22px;border-top:3px solid #fff;border-right:3px solid #fff;border-radius:0 3px 0 0"></div>
     <div style="position:absolute;bottom:-2px;left:-2px;width:22px;height:22px;border-bottom:3px solid #fff;border-left:3px solid #fff;border-radius:0 0 0 3px"></div>
     <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-bottom:3px solid #fff;border-right:3px solid #fff;border-radius:0 0 3px 0"></div>
   </div>
-  <div style="position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(10,10,11,0.75);color:#f5f3ee;padding:8px 18px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;white-space:nowrap">
+  <div style="position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(10,10,11,0.75);color:#f5f3ee;padding:8px 18px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;white-space:nowrap;pointer-events:auto">
     <span class="blink-dot" style="display:inline-block;margin-right:8px"></span>
     <span id="photo-mode-label">MODO FOTO · Ajusta la vista ISO y pulsa <strong>Foto</strong></span>
   </div>
-  <div style="position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;gap:12px;align-items:center">
+  <div style="position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;gap:12px;align-items:center;pointer-events:auto">
     <button id="photo-cancel-btn" style="background:rgba(10,10,11,0.6);color:#f5f3ee;border:1px solid rgba(255,255,255,0.2);padding:9px 20px;border-radius:20px;font-size:12px;cursor:pointer">Cancelar</button>
     <button id="photo-capture-btn" style="background:#ef4444;color:#fff;border:none;padding:12px 32px;border-radius:24px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(239,68,68,0.5);letter-spacing:0.04em">&#9679;&nbsp;&nbsp;<span id="photo-capture-label">FOTO</span></button>
   </div>

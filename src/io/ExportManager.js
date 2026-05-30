@@ -85,6 +85,7 @@ function init() {
     overlay.addEventListener('pointerup', onAreaEnd);
   }
 
+  document.getElementById('area-mode-toggle')?.addEventListener('click', toggleAreaMode);
   document.getElementById('area-cancel')?.addEventListener('click', cancelArea);
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && overlay && !overlay.classList.contains('hidden')) cancelArea();
@@ -182,6 +183,35 @@ async function capturePhoto() {
   }
 }
 
+let _areaModeSelecting = false; // false = navegar, true = seleccionar
+
+function _setAreaMode(selecting) {
+  _areaModeSelecting = selecting;
+  const overlay   = document.getElementById('area-overlay');
+  const label     = document.getElementById('area-mode-label');
+  const helpSpan  = document.getElementById('area-help');
+  if (!overlay) return;
+  if (selecting) {
+    overlay.style.pointerEvents = '';
+    overlay.style.cursor = 'crosshair';
+    if (label) label.innerHTML = '&#9654; Seleccionar area';
+    if (helpSpan) helpSpan.textContent = 'Click y arrastra para seleccionar';
+  } else {
+    overlay.style.pointerEvents = 'none';
+    overlay.style.cursor = 'default';
+    // Mantener visibles la barra superior y el SVG, pero no capturar eventos del canvas
+    document.getElementById('area-svg').style.pointerEvents = 'none';
+    if (label) label.innerHTML = '&#8982; Mover camara';
+    if (helpSpan) helpSpan.textContent = 'Ajusta la vista, luego selecciona el area';
+  }
+  // La barra superior siempre recibe eventos
+  overlay.querySelector('.glass-dark').style.pointerEvents = 'auto';
+}
+
+function toggleAreaMode() {
+  _setAreaMode(!_areaModeSelecting);
+}
+
 function startPlanoSelection() {
   closeModal();
   SceneManager.setCamera('top');
@@ -195,6 +225,7 @@ function startPlanoSelection() {
     areaStart = null;
     areaEnd = null;
     updateHole(0, 0, 0, 0);
+    _setAreaMode(false); // empieza en modo navegar
   }, 150);
 }
 
@@ -203,9 +234,11 @@ function cancelArea() {
   areaSelecting = false;
   areaStart = null;
   areaEnd = null;
+  _setAreaMode(false);
 }
 
 function onAreaStart(event) {
+  if (!_areaModeSelecting) return;
   areaSelecting = true;
   areaStart = { x: event.clientX, y: event.clientY };
   areaEnd = { x: event.clientX, y: event.clientY };
@@ -995,12 +1028,13 @@ function startAmbas() {
   UIManager.hideDetail();
 
   setTimeout(() => {
-    document.getElementById('area-overlay')?.classList.remove('hidden');
+    const ov = document.getElementById('area-overlay');
+    ov?.classList.remove('hidden');
+    ov.dataset.mode = 'ambas';
     areaStart = null;
     areaEnd = null;
     updateHole(0, 0, 0, 0);
-    // Marcar que el flujo es "ambas" para que onAreaEnd sepa qué hacer
-    document.getElementById('area-overlay').dataset.mode = 'ambas';
+    _setAreaMode(false); // empieza en modo navegar
   }, 150);
 }
 
