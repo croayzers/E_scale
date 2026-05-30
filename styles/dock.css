@@ -16,15 +16,15 @@
 .hdr-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  font-size: 12px;
+  gap: 4px;
+  padding: 4px 7px;
+  font-size: 11px;
   font-family: 'Inter Tight', sans-serif;
   font-weight: 500;
   color: var(--ink);
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background 140ms;
   white-space: nowrap;
@@ -33,10 +33,10 @@
 .hdr-chip.active { background: rgba(0,0,0,0.08); }
 
 .hdr-icon {
-  width: 30px; height: 30px;
+  width: 26px; height: 26px;
   display: inline-flex; align-items: center; justify-content: center;
   border: none; background: transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   color: var(--ink);
   transition: background 140ms;
@@ -44,9 +44,9 @@
 .hdr-icon:hover { background: rgba(0,0,0,0.08); }
 
 .hdr-sep {
-  width: 1px; height: 18px;
+  width: 1px; height: 14px;
   background: rgba(0,0,0,0.12);
-  margin: 0 2px;
+  margin: 0 1px;
 }
 
 .hdr-segmented {
