@@ -669,29 +669,52 @@ async function composePrintCanvas(imageDataUrl, view) {
 }
 
 function printPng({ view = '2d' } = {}) {
-  // Gate: si faltan datos de empresa, abrimos primero ese modal
-  CompanyManager.requireReady(() => _doPrintPng({ view }));
+  CompanyManager.requireReady(() => _startPrintPngWithOverlay({ view }));
 }
 
-async function _doPrintPng({ view = '2d' } = {}) {
-  try {
-    document.dispatchEvent(new CustomEvent('escale:inventory-close'));
-    const normalizedView = String(view).toLowerCase() === '3d' ? '3d' : '2d';
-    const imageDataUrl = await captureSceneDataUrl(normalizedView);
-    const canvas = await composePrintCanvas(imageDataUrl, normalizedView);
-    const company = AppState.company || {};
-    const safeName = getCompanyDisplayName(company)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-    canvas.toBlob(blob => {
-      if (!blob) return;
-      downloadBlob(blob, `${safeName || 'escale'}_captura_${normalizedView}_${Date.now()}.png`);
-    }, 'image/png');
-  } catch (error) {
-    console.error(error);
-    alert('No se pudo generar la captura PNG.');
-  }
+function _startPrintPngWithOverlay({ view = '2d' } = {}) {
+  const normalizedView = String(view).toLowerCase() === '3d' ? '3d' : '2d';
+  document.dispatchEvent(new CustomEvent('escale:inventory-close'));
+
+  // Poner la cámara en la vista correcta
+  setExportCamera(normalizedView === '3d' ? '3d' : 'top');
+  UIManager.hideDetail?.();
+  UIManager.hideTooltip?.();
+
+  const label    = document.getElementById('photo-mode-label');
+  const btnLabel = document.getElementById('photo-capture-label');
+  const hint     = normalizedView === '3d'
+    ? 'Ajusta la vista 3D y pulsa <strong>Capturar</strong>'
+    : 'Ajusta la vista 2D y pulsa <strong>Capturar</strong>';
+  if (label)    label.innerHTML = `IMPRIMIR PNG · ${hint}`;
+  if (btnLabel) btnLabel.textContent = 'CAPTURAR';
+
+  document.getElementById('photo-mode-overlay')?.classList.remove('hidden');
+
+  document.getElementById('photo-capture-btn').addEventListener('click', async () => {
+    if (label)    label.innerHTML = 'MODO FOTO · Ajusta la vista ISO y pulsa <strong>Foto</strong>';
+    if (btnLabel) btnLabel.textContent = 'FOTO';
+    hidePhotoModeOverlay();
+    try {
+      const imageDataUrl = await captureSceneDataUrl(normalizedView);
+      const canvas = await composePrintCanvas(imageDataUrl, normalizedView);
+      const company = AppState.company || {};
+      const safeName = getCompanyDisplayName(company)
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      canvas.toBlob(blob => {
+        if (!blob) return;
+        downloadBlob(blob, `${safeName || 'escale'}_captura_${normalizedView}_${Date.now()}.png`);
+      }, 'image/png');
+    } catch (error) {
+      console.error(error);
+      alert('No se pudo generar la captura PNG.');
+    }
+  }, { once: true });
+
+  document.getElementById('photo-cancel-btn').addEventListener('click', () => {
+    if (label)    label.innerHTML = 'MODO FOTO · Ajusta la vista ISO y pulsa <strong>Foto</strong>';
+    if (btnLabel) btnLabel.textContent = 'FOTO';
+  }, { once: true });
 }
 
 async function renderPreview(result, modeLabel) {
