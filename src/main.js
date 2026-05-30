@@ -715,6 +715,13 @@ async function bootstrap() {
   if (!welcomeUnlocked && welcomeModal) welcomeModal.style.display = 'none';
   if (window.lucide) lucide.createIcons();
 
+  // Auto-login: splash sin pasar por el flujo de bienvenida
+  const hasSession = AuthManager.isAuthenticated?.() ||
+    ['authenticated', 'authenticated_local'].includes(AppState.company?.authStatus);
+  if (!welcomeUnlocked && !isCollabInvite && hasSession) {
+    SplashScreen.start();
+  }
+
   console.info('[E-scale] arranque OK');
 }
 
