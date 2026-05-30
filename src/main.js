@@ -38,6 +38,7 @@ import { SavedGroupPanel }     from './ui/SavedGroupPanel.js';
 import { OrgContentManager }  from './services/OrgContentManager.js';
 import { MeasureManager }     from './ui/MeasureManager.js';
 import { PlanSaveModal }      from './ui/PlanSaveModal.js';
+import { PredictiveArray }    from './ui/PredictiveArray.js';
 
 function showStartupError(label, error) {
   console.error(`[E-scale] ${label} falló:`, error);
@@ -339,8 +340,12 @@ async function bootstrap() {
   document.addEventListener('escale:inventory-close', () => {
     if (state.inventoryOpen) setInventoryOpen(false);
   });
-  document.addEventListener('escale:scene-insights-changed', () => {
+  document.addEventListener('escale:scene-insights-changed', e => {
     updatePlanGuide();
+    const reason = e.detail?.reason;
+    if (['select', 'select-many', 'deselect', 'add', 'remove', 'undo'].includes(reason)) {
+      PredictiveArray.onSelectionChanged();
+    }
   });
   document.addEventListener('escale:plan-calibrated', () => {
     onboardPulse.stop('btn-calibrate');

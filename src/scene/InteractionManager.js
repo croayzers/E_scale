@@ -13,6 +13,7 @@ import { CollabManager }     from '../services/CollabManager.js';
 import { SavedGroupPlacer }  from '../core/SavedGroupPlacer.js';
 import { SavedGroupLibrary } from '../core/SavedGroupLibrary.js';
 import { MeasureManager }    from '../ui/MeasureManager.js';
+import { PredictiveArray }  from '../ui/PredictiveArray.js';
 
 function isViewer() { return CollabManager.localRole === 'viewer'; }
 
@@ -508,6 +509,8 @@ function onPointerDown(e) {
       SceneManager.setControlsEnabled(false);
       return;
     }
+    // Clic sobre fantasmas predictivos
+    if (PredictiveArray.isActive() && PredictiveArray.handleInteractionPointerDown(point)) return;
   }
 
   if (AppState.calibration.active && window.PlanManager) {
@@ -1887,6 +1890,7 @@ function onKeyDown(e) {
 
   // ── Escape: cancelar herramienta activa o limpiar selección ──
   if (e.key === 'Escape') {
+    if (PredictiveArray.isActive()) { PredictiveArray.clear(); return; }
     if (MeasureManager.isActive()) { MeasureManager.cancel(); return; }
     if (formatModeActive) { toggleFormatMode(false); return; }
     if (SavedGroupPlacer.hasPendingGroupPlacement()) {

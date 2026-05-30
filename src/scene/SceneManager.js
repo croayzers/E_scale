@@ -879,6 +879,58 @@ function removeItem(id) {
   // DESPUÉS del splice, y desde spawn() tras un rebuild().
 }
 
+/* ─── Predictive Array: fantasmas temporales en escena ─── */
+function spawnGhost(item, ghostIdx = 0) {
+  if (!scene) return null;
+  const group = createModelForCurrentView(item) || new THREE.Group();
+
+  // Estilo fantasma: 40 % opacidad, tinte azul-cian
+  group.traverse(child => {
+    if (child.isMesh && child.material) {
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      child.material = mats.map(m => {
+        const c = m?.clone?.() || m;
+        if (!c) return c;
+        c.transparent = true;
+        c.depthWrite  = false;
+        c.opacity     = 0.38;
+        if ('emissive' in c) { c.emissive = new THREE.Color(0x3b82f6); c.emissiveIntensity = 0.22; }
+        return c;
+      });
+      child.castShadow = false;
+      child.receiveShadow = false;
+    }
+  });
+
+  group.position.set(item.x || 0, item.y || 0, item.z || 0);
+  group.rotation.y = item.rotY || 0;
+  group.userData.isPredictiveGhost = true;
+  group.userData.ghostIdx = ghostIdx;
+
+  // Anillo indicador en la base
+  const ringSegs = 40;
+  const ringPts  = [];
+  const rr = 0.55;
+  for (let i = 0; i <= ringSegs; i++) {
+    const a = (i / ringSegs) * Math.PI * 2;
+    ringPts.push(new THREE.Vector3(Math.cos(a) * rr, 0.018, Math.sin(a) * rr));
+  }
+  const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
+  const ring = new THREE.Line(ringGeo,
+    new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.7, depthTest: false }));
+  ring.renderOrder = 940;
+  group.add(ring);
+
+  scene.add(group);
+  return group;
+}
+
+function despawnGhost(group) {
+  if (!group || !scene) return;
+  scene.remove(group);
+  disposeGroup(group);
+}
+
 function disposeGroup(group) {
   const disposed = new WeakSet();
   const items = [];
@@ -1631,6 +1683,8 @@ export const SceneManager = {
   updateMultiPlacementPreview,
   clearMultiPlacementPreview,
   setHoveredItem,
+  spawnGhost,
+  despawnGhost,
   rebuildGrids,
   applyShadowState,
   setPlanTexture, updatePlanSize, updatePlanOpacity,
