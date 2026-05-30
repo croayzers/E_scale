@@ -514,11 +514,20 @@ function syncModalUI() {
 
   prefillPendingFromEmail(pending.email || AppState.company.authEmail);
 
-  // Nombre empresa: org display_name → parte local del email → vacío
+  // Nombre empresa: org display_name → dominio sin TLD capitalizado → vacío
   if (!pending.name) {
-    const orgName = AppState.company?.licenseDetectedOrganizationName || '';
-    const emailLocal = (AppState.company?.authEmail || '').split('@')[0] || '';
-    pending.name = orgName || emailLocal || '';
+    const orgDisplay = AppState.company?.organizationDisplayName || '';
+    // Dominio del email sin TLD, capitalizado (sibariscatering.com → Sibariscatering)
+    const email = AppState.company?.authEmail || '';
+    const domain = email.split('@')[1] || '';
+    const domainBase = domain.split('.')[0] || '';
+    const domainName = domainBase
+      ? domainBase.charAt(0).toUpperCase() + domainBase.slice(1)
+      : '';
+    // Ignorar org display_name si coincide con la parte local del email (auto-generado)
+    const emailLocal = email.split('@')[0] || '';
+    const orgIsGeneric = orgDisplay.toLowerCase() === emailLocal.toLowerCase();
+    pending.name = (!orgIsGeneric && orgDisplay) ? orgDisplay : (domainName || '');
   }
   document.getElementById('company-name').value = pending.name || '';
   const companyEmailField = document.getElementById('company-email');

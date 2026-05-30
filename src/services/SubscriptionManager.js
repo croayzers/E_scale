@@ -107,6 +107,7 @@ function applyBootstrapResponse(response) {
 
   const plan = setPlan(planCode, {
     organizationId: organization?.id || '',
+    organizationDisplayName: organization?.display_name || '',
     organizationRole: license.role || '',
     billingCustomerId: response?.billing?.stripeCustomerId || '',
     subscriptionStatus: response?.billing?.subscriptionStatus || (planCode === 'free_lite' ? 'Free Lite' : 'Activo'),
