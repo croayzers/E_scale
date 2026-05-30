@@ -208,36 +208,64 @@ export function collapseDock() {
 function _expandDock() {
   const dock  = document.getElementById('dock');
   const items = document.getElementById('dock-items');
-  const logo  = document.getElementById('dock-brand-logo');
   if (!dock || items?.style.display !== 'none') return; // ya expandido
 
   const gsap = window.gsap;
   const targetW = dock._expandW || '';
   const targetH = dock._expandH || '';
 
-  if (gsap) {
+  if (!gsap) {
+    document.getElementById('dock-brand-logo').style.display = 'none';
+    items && (items.style.display = '');
+    dock.style.cssText = '';
+    return;
+  }
+
+  const logo = document.getElementById('dock-brand-logo');
+
+  // Fase 1: esperar 5s con el dock en círculo
+  setTimeout(() => {
     // Fade out logo
     gsap.to(logo, { opacity: 0, duration: 0.2, onComplete() {
       logo && (logo.style.display = 'none');
+
+      // Mostrar el dock expandido de golpe (sin animación de tamaño), botones invisibles
       items && (items.style.display = '');
-      // Animación spring de expansión
-      gsap.fromTo(dock,
-        { width: '52px', height: '52px', borderRadius: '50%', padding: '6px' },
-        { width: targetW, height: targetH, borderRadius: '14px', padding: '4px 6px',
-          duration: 0.55, ease: 'back.out(1.4)',
-          onComplete() {
-            dock.style.width = ''; dock.style.height = '';
-            dock.style.borderRadius = ''; dock.style.padding = '';
-            dock.style.overflow = ''; dock.style.cursor = '';
-          }
-        }
-      );
+      const allChildren = Array.from(items.children);
+      allChildren.forEach(el => { el.style.opacity = '0'; el.style.transition = 'none'; });
+
+      dock.style.width = ''; dock.style.height = '';
+      dock.style.borderRadius = ''; dock.style.padding = '';
+      dock.style.overflow = ''; dock.style.cursor = '';
+
+      // Fase 2: revelar botones de 2 en 2 desde el centro
+      const catButtons = allChildren.filter(el => el.dataset?.dockKind === 'category');
+      const rest        = allChildren.filter(el => el.dataset?.dockKind !== 'category');
+
+      const centerIdx  = catButtons.findIndex(b => b.dataset.cat === 'scenography');
+      const pivotLeft  = centerIdx >= 0 ? centerIdx : Math.floor(catButtons.length / 2) - 1;
+      const pivotRight = pivotLeft + 1;
+
+      const pairs = [];
+      let l = pivotLeft, r = pivotRight;
+      while (l >= 0 || r < catButtons.length) {
+        const pair = [];
+        if (l >= 0)                pair.push(catButtons[l--]);
+        if (r < catButtons.length) pair.push(catButtons[r++]);
+        pairs.push(pair);
+      }
+      if (rest.length) pairs.push(rest);
+
+      pairs.forEach((pair, i) => {
+        setTimeout(() => {
+          pair.forEach(el => {
+            el.style.transition = 'opacity 0.6s';
+            el.style.opacity = '1';
+          });
+        }, i * 200);
+      });
     }});
-  } else {
-    logo  && (logo.style.display  = 'none');
-    items && (items.style.display = '');
-    dock.style.cssText = '';
-  }
+  }, 3000);
 }
 
 /* ════════════════════════════════════════════════════════
