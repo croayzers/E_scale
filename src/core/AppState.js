@@ -127,10 +127,10 @@ export const AppState = {
     cloudSyncStatus: 'local_only'
   },
 
-  snap: { enabled: true, spacing: 0.25 },
+  snap: { enabled: true, spacing: 1 },
   grid: {
     majorSize: 1,
-    subSize: 0.25,
+    subSize: 1,
     opacity: 15,
     extent: 60,
     extentX: 60,
