@@ -21,6 +21,7 @@ let exportIntent = {
   kind: 'pdf',
   featureKey: 'pdfExport'
 };
+let _ambasPlanoDataUrl = null; // guardamos el plano capturado para el flujo "Ambas"
 
 function normalizeExportIntent(options = {}) {
   const kind = options.kind === 'inventory' ? 'inventory' : 'pdf';
@@ -71,6 +72,7 @@ function init() {
   document.getElementById('export-cancel')?.addEventListener('click', closeModal);
   document.getElementById('export-choice-3d')?.addEventListener('click', export3D);
   document.getElementById('export-choice-plano')?.addEventListener('click', startPlanoSelection);
+  document.getElementById('export-choice-ambas')?.addEventListener('click', startAmbas);
 
   document.getElementById('export-preview-close')?.addEventListener('click', closePreview);
   document.getElementById('export-preview-cancel')?.addEventListener('click', closePreview);
@@ -236,7 +238,14 @@ function onAreaEnd() {
     return;
   }
 
-  capturePlanoArea(rect);
+  const areaOverlay = document.getElementById('area-overlay');
+  const mode = areaOverlay?.dataset.mode;
+  if (mode === 'ambas') {
+    delete areaOverlay.dataset.mode;
+    capturePlanoAreaForAmbas(rect);
+  } else {
+    capturePlanoArea(rect);
+  }
 }
 
 function computeRect() {
@@ -256,6 +265,36 @@ function updateHole(x, y, w, h) {
     element.setAttribute('width', w);
     element.setAttribute('height', h);
   });
+}
+
+async function capturePlanoAreaForAmbas(rect) {
+  document.getElementById('area-overlay')?.classList.add('hidden');
+  const renderer = SceneManager.renderer;
+  const origPR = renderer.getPixelRatio();
+  const origW  = renderer.domElement.width  / origPR;
+  const origH  = renderer.domElement.height / origPR;
+  try {
+    renderer.setPixelRatio(EXPORT_SCALE);
+    renderer.setSize(origW, origH, false);
+    await waitFrame();
+    renderer.render(SceneManager.scene, SceneManager.activeCam);
+    await waitFrame();
+
+    const src = renderer.domElement;
+    const out = document.createElement('canvas');
+    out.width  = Math.round(rect.w * EXPORT_SCALE);
+    out.height = Math.round(rect.h * EXPORT_SCALE);
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#f5f3ee';
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.drawImage(src, rect.x * EXPORT_SCALE, rect.y * EXPORT_SCALE, rect.w * EXPORT_SCALE, rect.h * EXPORT_SCALE, 0, 0, out.width, out.height);
+    _ambasPlanoDataUrl = out.toDataURL('image/png');
+  } finally {
+    renderer.setPixelRatio(origPR);
+    renderer.setSize(origW, origH, false);
+    renderer.render(SceneManager.scene, SceneManager.activeCam);
+  }
+  await captureAmbasIso();
 }
 
 async function capturePlanoArea(rect) {
@@ -937,6 +976,203 @@ function buildInventoryCsvDownload(modeLabel) {
 function downloadInventoryCsv() {
   const csv = buildInventoryCsvDownload('CSV');
   downloadBlob(csv.blob, csv.filename);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AMBAS: Plano → 3D → PDF de 2 páginas
+   ═══════════════════════════════════════════════════════════ */
+
+function startAmbas() {
+  closeModal();
+  _ambasPlanoDataUrl = null;
+
+  // Fase 1: igual que startPlanoSelection pero al capturar el área
+  // guardamos la imagen y pasamos a la fase ISO
+  SceneManager.setCamera('top');
+  document.getElementById('cam-top')?.classList.add('active');
+  document.getElementById('cam-iso')?.classList.remove('active');
+  UIManager.hideTooltip();
+  UIManager.hideDetail();
+
+  setTimeout(() => {
+    document.getElementById('area-overlay')?.classList.remove('hidden');
+    areaStart = null;
+    areaEnd = null;
+    updateHole(0, 0, 0, 0);
+    // Marcar que el flujo es "ambas" para que onAreaEnd sepa qué hacer
+    document.getElementById('area-overlay').dataset.mode = 'ambas';
+  }, 150);
+}
+
+async function captureAmbasIso() {
+  // Fase 2: cambiar a ISO, mostrar overlay con texto "Listo"
+  setExportCamera('3d');
+  UIManager.hideDetail?.();
+  UIManager.hideTooltip?.();
+
+  const overlay  = document.getElementById('photo-mode-overlay');
+  const label    = document.getElementById('photo-mode-label');
+  const btnLabel = document.getElementById('photo-capture-label');
+  if (label)    label.innerHTML = 'AMBAS · Ajusta la vista 3D y pulsa <strong>Listo</strong>';
+  if (btnLabel) btnLabel.textContent = 'LISTO';
+
+  overlay?.classList.remove('hidden');
+
+  document.getElementById('photo-capture-btn').addEventListener('click', async () => {
+    // Restaurar etiquetas para próximos usos normales
+    if (label)    label.innerHTML = 'MODO FOTO · Ajusta la vista ISO y pulsa <strong>Foto</strong>';
+    if (btnLabel) btnLabel.textContent = 'FOTO';
+    hidePhotoModeOverlay();
+    openPreviewShell('Generando PDF con Plano + 3D...');
+
+    try {
+      const isoDataUrl = await captureHighResSceneDataUrl('3d');
+      await buildAndPreviewDual(_ambasPlanoDataUrl, isoDataUrl);
+    } catch (error) {
+      handlePreviewError(error);
+    } finally {
+      _ambasPlanoDataUrl = null;
+    }
+  }, { once: true });
+
+  document.getElementById('photo-cancel-btn').addEventListener('click', () => {
+    if (label)    label.innerHTML = 'MODO FOTO · Ajusta la vista ISO y pulsa <strong>Foto</strong>';
+    if (btnLabel) btnLabel.textContent = 'FOTO';
+    _ambasPlanoDataUrl = null;
+  }, { once: true });
+}
+
+async function buildAndPreviewDual(planoDataUrl, isoDataUrl) {
+  PlanningRegistry.record('export');
+  const modeLabel = 'AMBAS · Plano + 3D';
+  const pdfResult = await buildPdfBlobDual(planoDataUrl, isoDataUrl, modeLabel);
+  const result = exportIntent.kind === 'inventory'
+    ? attachInventoryDownload(pdfResult, modeLabel)
+    : pdfResult;
+  const syncPromise = persistExport(modeLabel, result);
+  await renderPreview(result, modeLabel);
+  await syncPromise;
+}
+
+async function buildPdfBlobDual(planoDataUrl, isoDataUrl, modeLabel) {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  await _addPdfPage(pdf, planoDataUrl, 'Plano', 'Vista cenital', modeLabel, false);
+  pdf.addPage();
+  await _addPdfPage(pdf, isoDataUrl, '3D', 'Vista isometrica', modeLabel, true);
+
+  const company = AppState.company || {};
+  const safeName = (company.name || 'escale')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+  const filename = `${safeName || 'escale'}_ambas_${Date.now()}.pdf`;
+  const blob = pdf.output('blob');
+  return { blob, filename };
+}
+
+async function _addPdfPage(pdf, imageDataUrl, viewLabel, cameraLabel, modeLabel, isSecondPage) {
+  const pageWidth = 297;
+  const pageHeight = 210;
+  const margin = 12;
+  const company = AppState.company || {};
+  const eventName = document.getElementById('inventory-event-name')?.value?.trim() || '';
+  const brandPrimary   = parseColor(company.colorPrimary,   [37, 99, 235]);
+  const brandSecondary = parseColor(company.colorSecondary, [120, 120, 120]);
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(20);
+  setPdfColor(pdf, brandPrimary);
+  pdf.text('E-scale', margin, margin + 6);
+
+  let headX = margin + pdf.getTextWidth('E-scale') + 5;
+  if (company.logo) {
+    try {
+      const logoImage = await loadImage(company.logo);
+      const logoHeight = 9;
+      const logoWidth  = (logoImage.naturalWidth / logoImage.naturalHeight) * logoHeight;
+      const format     = company.logo.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      pdf.addImage(company.logo, format, headX, margin, logoWidth, logoHeight);
+      headX += logoWidth + 4;
+    } catch (_) {}
+  }
+
+  const displayName = getCompanyDisplayName(company);
+  if (displayName) {
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(13);
+    setPdfColor(pdf, brandPrimary);
+    pdf.text(displayName, headX, margin + 6);
+  }
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(8);
+  pdf.setTextColor(100);
+  pdf.text(`Planificador 3D · ${modeLabel}`, margin, margin + 11);
+
+  let infoY = margin + 15;
+  if (eventName) { pdf.text(`Evento: ${eventName}`, margin, infoY); infoY += 4; }
+  if (company.venue) { pdf.text(`Lugar: ${company.venue}`, margin, infoY); infoY += 4; }
+
+  const now = new Date();
+  const dateText = `${now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })} · ${now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+  pdf.text(dateText, pageWidth - margin, margin + 6, { align: 'right' });
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(10);
+  setPdfColor(pdf, brandSecondary);
+  pdf.text(viewLabel, pageWidth - margin, margin + 13, { align: 'right' });
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(8);
+  pdf.setTextColor(100);
+  pdf.text(cameraLabel, pageWidth - margin, margin + 18, { align: 'right' });
+
+  const separatorY = Math.max(margin + 18, infoY + 1);
+  setPdfColor(pdf, brandPrimary, 'draw');
+  pdf.setLineWidth(0.3);
+  pdf.line(margin, separatorY, pageWidth - margin, separatorY);
+
+  const imageArea = { x: margin, y: separatorY + 6, w: pageWidth - margin * 2, h: pageHeight - separatorY - margin - 12 };
+  const image = await loadImage(imageDataUrl);
+  const imageRatio = image.width / image.height;
+  const areaRatio  = imageArea.w / imageArea.h;
+  const drawW = imageRatio > areaRatio ? imageArea.w : imageArea.h * imageRatio;
+  const drawH = imageRatio > areaRatio ? imageArea.w / imageRatio : imageArea.h;
+  const drawX = imageArea.x + (imageArea.w - drawW) / 2;
+  const drawY = imageArea.y + (imageArea.h - drawH) / 2;
+
+  setPdfColor(pdf, brandPrimary, 'draw');
+  pdf.setLineWidth(0.2);
+  pdf.rect(drawX - 1, drawY - 1, drawW + 2, drawH + 2);
+  pdf.addImage(imageDataUrl, 'PNG', drawX, drawY, drawW, drawH, undefined, 'NONE');
+
+  if (SubscriptionManager.currentPlanCode() === 'free_lite') {
+    const PX = 4;
+    const wmCanvas = document.createElement('canvas');
+    wmCanvas.width  = Math.round(pageWidth  * PX);
+    wmCanvas.height = Math.round(pageHeight * PX);
+    const wmCtx = wmCanvas.getContext('2d');
+    wmCtx.save();
+    wmCtx.globalAlpha = 0.15;
+    wmCtx.translate(wmCanvas.width / 2, wmCanvas.height / 2);
+    wmCtx.rotate(-Math.PI / 8);
+    wmCtx.fillStyle = '#0f172a';
+    wmCtx.font = `bold ${Math.round(wmCanvas.width / 9)}px Inter Tight, Arial, sans-serif`;
+    wmCtx.textAlign = 'center';
+    wmCtx.textBaseline = 'middle';
+    wmCtx.fillText('Escale3D.com', 0, 0);
+    wmCtx.restore();
+    pdf.addImage(wmCanvas.toDataURL('image/png'), 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'NONE');
+  }
+
+  pdf.setFontSize(7);
+  setPdfColor(pdf, brandSecondary);
+  const footerBits = ['E-scale'];
+  if (company.name)  footerBits.push(company.name);
+  if (company.venue) footerBits.push(company.venue);
+  if (company.email) footerBits.push(company.email);
+  pdf.text(footerBits.join(' · '), margin, pageHeight - 5);
+  pdf.text(`Pagina ${isSecondPage ? 2 : 1} / 2`, pageWidth - margin, pageHeight - 5, { align: 'right' });
 }
 
 export const ExportManager = {

@@ -1408,16 +1408,21 @@
     <div class="mono text-[10px] tracking-widest uppercase mb-2" style="color:var(--muted)">Exportar</div>
     <h3 id="export-modal-title" class="display-font text-3xl mb-2 leading-tight">Elige el tipo</h3>
     <p id="export-modal-copy" class="text-[12px] mb-2" style="color:var(--muted)">Escoge si quieres una exportacion cenital o isometrica antes de descargar el PDF.</p>
-    <div class="grid grid-cols-2 gap-4 my-6">
+    <div class="grid grid-cols-3 gap-4 my-6">
       <button id="export-choice-plano" class="p-5 text-left border border-black/15 hover:border-black hover:bg-black hover:text-white transition-all">
         <i data-lucide="square-dashed-mouse-pointer" class="w-7 h-7 mb-3"></i>
         <div class="display-font text-xl mb-1">Plano</div>
-        <div class="text-[11px] opacity-70">2D cenital, selecciona Ã¡rea</div>
+        <div class="text-[11px] opacity-70">2D cenital, selecciona area</div>
       </button>
       <button id="export-choice-3d" class="p-5 text-left border border-black/15 hover:border-black hover:bg-black hover:text-white transition-all">
         <i data-lucide="box" class="w-7 h-7 mb-3"></i>
         <div class="display-font text-xl mb-1">3D</div>
-        <div class="text-[11px] opacity-70">Vista isomÃ©trica actual</div>
+        <div class="text-[11px] opacity-70">Vista isometrica actual</div>
+      </button>
+      <button id="export-choice-ambas" class="p-5 text-left border border-black/15 hover:border-black hover:bg-black hover:text-white transition-all">
+        <i data-lucide="layout-panel-left" class="w-7 h-7 mb-3"></i>
+        <div class="display-font text-xl mb-1">Ambas</div>
+        <div class="text-[11px] opacity-70">Plano + 3D, dos paginas</div>
       </button>
     </div>
     <div class="flex justify-end"><button id="export-cancel" class="btn ghost">Cancelar</button></div>
@@ -1567,11 +1572,11 @@
   </div>
   <div style="position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(10,10,11,0.75);color:#f5f3ee;padding:8px 18px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;white-space:nowrap">
     <span class="blink-dot" style="display:inline-block;margin-right:8px"></span>
-    MODO FOTO · Ajusta la vista ISO y pulsa <strong>Foto</strong>
+    <span id="photo-mode-label">MODO FOTO · Ajusta la vista ISO y pulsa <strong>Foto</strong></span>
   </div>
   <div style="position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;gap:12px;align-items:center">
     <button id="photo-cancel-btn" style="background:rgba(10,10,11,0.6);color:#f5f3ee;border:1px solid rgba(255,255,255,0.2);padding:9px 20px;border-radius:20px;font-size:12px;cursor:pointer">Cancelar</button>
-    <button id="photo-capture-btn" style="background:#ef4444;color:#fff;border:none;padding:12px 32px;border-radius:24px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(239,68,68,0.5);letter-spacing:0.04em">&#9679;&nbsp;&nbsp;FOTO</button>
+    <button id="photo-capture-btn" style="background:#ef4444;color:#fff;border:none;padding:12px 32px;border-radius:24px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(239,68,68,0.5);letter-spacing:0.04em">&#9679;&nbsp;&nbsp;<span id="photo-capture-label">FOTO</span></button>
   </div>
 </div>
 
