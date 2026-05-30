@@ -166,25 +166,30 @@ async function save() {
   const saveBtn = document.getElementById('psm-save');
   if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Guardando…'; }
 
-  if (OrgContentManager.canSync()) {
-    try {
-      await OrgContentManager.saveFloorPlan({
-        name:         nombre,
-        ciudad,
-        tipo,
-        imageDataUrl: _getPlanImage(),
-        widthM:       AppState.plan.widthM,
-        lengthM:      AppState.plan.lengthM,
-        opacity:      AppState.plan.opacity,
-      });
+  try {
+    const result = await OrgContentManager.saveFloorPlan({
+      name:         nombre,
+      ciudad,
+      tipo,
+      imageDataUrl: _getPlanImage(),
+      widthM:       AppState.plan.widthM,
+      lengthM:      AppState.plan.lengthM,
+      opacity:      AppState.plan.opacity,
+    });
+    if (result?.skipped) {
+      document.dispatchEvent(new CustomEvent('escale:toast', {
+        detail: { msg: `Ya existe un plano llamado "${nombre}"`, kind: 'info' }
+      }));
+    } else if (result) {
       document.dispatchEvent(new CustomEvent('escale:toast', {
         detail: { msg: `Plano "${nombre}" guardado y compartido con la empresa`, kind: 'success' }
       }));
-    } catch {
-      document.dispatchEvent(new CustomEvent('escale:toast', {
-        detail: { msg: 'No se pudo guardar en la nube, continúa sin problema', kind: 'info' }
-      }));
     }
+  } catch (err) {
+    console.error('[PlanSaveModal] Error guardando plano:', err);
+    document.dispatchEvent(new CustomEvent('escale:toast', {
+      detail: { msg: 'No se pudo guardar en la nube', kind: 'warning' }
+    }));
   }
 
   close();
