@@ -33,40 +33,65 @@ let _p1Screen  = null;         // {x, y}   — pantalla
 let _walls     = [];           // [{mesh3d, labelEl, p1, p2, labelVisible}]
 let _ctxWall   = null;         // pared con menú abierto
 
-/* ─── Contenedor de etiquetas HTML ──────────────────────────────────────── */
+/* ─── Contenedor de etiquetas HTML (persistente, fuera del overlay) ─────── */
 let _labelContainer = null;
 let _rafId = null;
+let _globalContextMenuBound = false;
 
 function _ensureLabelContainer() {
   if (_labelContainer) return;
   _labelContainer = document.createElement('div');
+  _labelContainer.id = 'wall-labels-container';
   _labelContainer.style.cssText =
-    'position:absolute;inset:0;pointer-events:none;z-index:62;overflow:hidden';
-  document.getElementById('wall-painter-overlay')?.appendChild(_labelContainer);
+    'position:fixed;inset:0;pointer-events:none;z-index:55;overflow:hidden';
+  document.body.appendChild(_labelContainer);
 }
 
-// Actualiza la posición 2D de todas las etiquetas proyectando desde 3D
-function _updateLabels() {
-  if (!_active) return;
-  const cam = SceneManager.activeCam;
-  if (cam && _labelContainer) {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    _walls.forEach(wall => {
-      if (!wall.labelEl || !wall.labelVisible) return;
-      const cx = (wall.p1.x + wall.p2.x) / 2;
-      const cz = (wall.p1.z + wall.p2.z) / 2;
-      const v = new THREE.Vector3(cx, _wallHeight + 0.2, cz).project(cam);
-      const sx = (v.x + 1) / 2 * w;
-      const sy = (-v.y + 1) / 2 * h;
-      // Ocultar si está detrás de la cámara
-      if (v.z > 1) { wall.labelEl.style.display = 'none'; return; }
-      wall.labelEl.style.display = '';
-      wall.labelEl.style.left = `${sx}px`;
-      wall.labelEl.style.top  = `${sy}px`;
-    });
+// Loop RAF permanente — sigue corriendo aunque WallPainter esté inactivo
+function _startLabelLoop() {
+  if (_rafId) return;
+  function tick() {
+    const cam = SceneManager.activeCam;
+    if (cam && _labelContainer && _walls.length) {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      _walls.forEach(wall => {
+        if (!wall.labelEl) return;
+        if (!wall.labelVisible) { wall.labelEl.style.display = 'none'; return; }
+        const cx = (wall.p1.x + wall.p2.x) / 2;
+        const cz = (wall.p1.z + wall.p2.z) / 2;
+        const v  = new THREE.Vector3(cx, wall.height + 0.25, cz).project(cam);
+        if (v.z > 1) { wall.labelEl.style.display = 'none'; return; }
+        wall.labelEl.style.display = '';
+        wall.labelEl.style.left = `${(v.x + 1) / 2 * w}px`;
+        wall.labelEl.style.top  = `${(-v.y + 1) / 2 * h}px`;
+      });
+    }
+    _rafId = requestAnimationFrame(tick);
   }
-  _rafId = requestAnimationFrame(_updateLabels);
+  tick();
+}
+
+/* ─── Menú contextual de pared (persistente en scene-canvas) ────────────── */
+function _ensureGlobalContextMenu() {
+  if (_globalContextMenuBound) return;
+  _globalContextMenuBound = true;
+  const canvas = document.getElementById('scene-canvas');
+  if (!canvas) return;
+  canvas.addEventListener('contextmenu', e => {
+    if (_active) return; // WallPainter activo lo maneja por su propio canvas
+    if (!_walls.length) return;
+    const wall = _pickWall(e.clientX, e.clientY);
+    if (!wall) return;
+    e.preventDefault();
+    e.stopPropagation();
+    _openCtxMenu(wall, e.clientX, e.clientY);
+  });
+  // Cerrar menú al hacer clic en cualquier parte
+  document.addEventListener('pointerdown', e => {
+    const menu = document.getElementById('wall-ctx-menu');
+    if (menu && !menu.contains(e.target)) _closeCtxMenu();
+  });
 }
 
 /* ─── Conversión coordenadas ─────────────────────────────────────────────── */
@@ -218,7 +243,7 @@ function _buildWall(p1w, p2w) {
     mesh, labelEl,
     p1: { x: p1w.wx, z: p1w.wz },
     p2: { x: p2w.x,  z: p2w.z  },
-    len, labelVisible: true
+    len, height: _wallHeight, labelVisible: true
   };
   _walls.push(wallData);
   return wallData;
@@ -471,9 +496,10 @@ function activate() {
   _ctx = _cvs?.getContext('2d');
   _resizeCanvas();
 
-  // Contenedor de etiquetas HTML y loop de actualización
+  // Contenedor de etiquetas y loop RAF permanente
   _ensureLabelContainer();
-  _updateLabels();
+  _startLabelLoop();
+  _ensureGlobalContextMenu();
 
   // Desactivar OrbitControls para que no compitan con el dibujo
   SceneManager.setControlsEnabled(false);
@@ -533,8 +559,7 @@ function deactivate() {
 
   document.getElementById('wall-painter-overlay')?.classList.add('hidden');
 
-  // Parar el RAF de etiquetas
-  if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+  // El RAF de etiquetas sigue corriendo para mantener las medidas visibles
 
   // Reactivar OrbitControls
   SceneManager.setControlsEnabled(true);

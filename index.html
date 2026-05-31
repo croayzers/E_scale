@@ -1654,16 +1654,18 @@
   <!-- Tooltip dinámico de medidas -->
   <div id="wall-painter-tooltip" style="pointer-events:none;position:absolute;background:rgba(10,10,11,0.82);color:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 10px;border-radius:6px;white-space:nowrap;display:none"></div>
 
-  <!-- Menú contextual de pared -->
-  <div id="wall-ctx-menu" style="pointer-events:auto;display:none;position:absolute;background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:10px;box-shadow:0 8px 24px -8px rgba(0,0,0,0.22);padding:4px;min-width:170px;z-index:100">
-    <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;font-size:13px;color:var(--ink);cursor:pointer">
-      <input type="color" id="wall-ctx-color" value="#1a1a2c" style="width:22px;height:22px;border:none;border-radius:4px;cursor:pointer;padding:0;background:none">
-      Color de la pared
-    </label>
-    <div style="height:1px;background:rgba(0,0,0,0.07);margin:2px 4px"></div>
-    <button class="wall-ctx-item" id="wall-ctx-toggle-label">Ocultar medida</button>
-    <button class="wall-ctx-item wall-ctx-danger" id="wall-ctx-delete">Eliminar pared</button>
-  </div>
+</div>
+
+<!-- Menú contextual de pared (fuera del overlay, siempre disponible) -->
+<div id="wall-ctx-menu" style="pointer-events:auto;display:none;position:fixed;background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:10px;box-shadow:0 8px 24px -8px rgba(0,0,0,0.22);padding:4px;min-width:170px;z-index:200">
+  <div class="mono" style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:6px 12px 4px">Pared</div>
+  <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;font-size:13px;color:var(--ink);cursor:pointer">
+    <input type="color" id="wall-ctx-color" value="#1a1a2c" style="width:22px;height:22px;border:none;border-radius:4px;cursor:pointer;padding:0;background:none">
+    Color de la pared
+  </label>
+  <div style="height:1px;background:rgba(0,0,0,0.07);margin:2px 4px"></div>
+  <button class="wall-ctx-item" id="wall-ctx-toggle-label">Ocultar medida</button>
+  <button class="wall-ctx-item wall-ctx-danger" id="wall-ctx-delete">Eliminar pared</button>
 </div>
 
 <!-- Elementos legacy ocultos (compatibilidad con cÃ³digo existente) -->
