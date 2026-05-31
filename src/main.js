@@ -458,6 +458,11 @@ async function bootstrap() {
 
   document.getElementById('cal-demo-start')?.addEventListener('click', () => {
     closeCalibrationDemo();
+    const shortcuts = document.getElementById('wp-shortcuts-panel');
+    if (shortcuts) {
+      shortcuts.classList.add('wp-shortcuts-glow');
+      setTimeout(() => shortcuts.classList.remove('wp-shortcuts-glow'), 5000);
+    }
     showCalBanner(CAL_BANNER_MSGS.start);
     state.planGuideDismissed = false;
     setTopCamera();
