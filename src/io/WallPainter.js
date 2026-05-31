@@ -167,7 +167,7 @@ function _clearGuide() {
   _ctx.clearRect(0, 0, _cvs.width, _cvs.height);
 }
 
-function _drawGuide(p1s, p2s, isRect) {
+function _drawGuide(p1s, p2s, isRect, snapPoint = null) {
   _clearGuide();
   _ctx.save();
   _ctx.strokeStyle = '#2563eb';
@@ -196,6 +196,18 @@ function _drawGuide(p1s, p2s, isRect) {
   _ctx.arc(p1s.x, p1s.y, 5, 0, Math.PI * 2);
   _ctx.fill();
   _ctx.restore();
+
+  // Indicador de snap: círculo vacío en el punto snapeado
+  if (snapPoint) {
+    _ctx.save();
+    _ctx.strokeStyle = '#2563eb';
+    _ctx.lineWidth = 1.5;
+    _ctx.setLineDash([]);
+    _ctx.beginPath();
+    _ctx.arc(snapPoint.x, snapPoint.y, 7, 0, Math.PI * 2);
+    _ctx.stroke();
+    _ctx.restore();
+  }
 }
 
 /* ─── Tooltip ────────────────────────────────────────────────────────────── */
@@ -492,8 +504,7 @@ function _onPointerMove(e) {
   const snappedEp = !_altDown ? _applyEndpointSnap(raw) : raw;
   const isSnapped = snappedEp !== raw && (snappedEp.x !== raw.x || snappedEp.z !== raw.z);
 
-  // Cambiar cursor para indicar snap de extremo
-  if (_cvs) _cvs.style.cursor = isSnapped ? 'cell' : 'crosshair';
+  if (_cvs) _cvs.style.cursor = 'crosshair';
 
   if (!_drawing || !_p1) { _hideTooltip(); return; }
 
@@ -508,15 +519,14 @@ function _onPointerMove(e) {
     ? _worldToScreen(p2w.x, p2w.z)
     : { x: e.clientX, y: e.clientY };
 
-  _drawGuide(_p1Screen, p2s, _tool === 'rect');
+  _drawGuide(_p1Screen, p2s, _tool === 'rect', isSnapped ? p2s : null);
 
   // Tooltip con medidas
   const dx = p2w.x - _p1.wx;
   const dz = p2w.z - _p1.wz;
   if (_tool === 'line') {
     const len = Math.sqrt(dx * dx + dz * dz);
-    const snapHint = isSnapped ? ' · 🔗' : '';
-    _showTooltip(`${len.toFixed(2)} m${snapHint}`, e.clientX, e.clientY);
+    _showTooltip(`${len.toFixed(2)} m`, e.clientX, e.clientY);
   } else {
     _showTooltip(`Ancho: ${Math.abs(dx).toFixed(2)} m | Fondo: ${Math.abs(dz).toFixed(2)} m`, e.clientX, e.clientY);
   }
