@@ -10,6 +10,10 @@ const {
   saveOrgFloorPlan,
   loadOrgFloorPlanById,
   deleteOrgFloorPlan,
+  listOrgTemplates,
+  saveOrgTemplate,
+  loadOrgTemplateById,
+  deleteOrgTemplate,
 } = require('../../lib/supabase');
 const { sendEmail } = require('../../lib/resend');
 const { env } = require('../../lib/env');
@@ -136,6 +140,44 @@ async function handlePlans(req, res, access) {
   return methodNotAllowed(req, res, ['GET', 'POST', 'DELETE']);
 }
 
+async function handleTemplates(req, res, access) {
+  const orgId = access.organization.id;
+
+  if (req.method === 'GET') {
+    if (req.query?.id) {
+      const tpl = await loadOrgTemplateById(orgId, String(req.query.id).trim());
+      if (!tpl) return json(res, 404, { ok: false });
+      return json(res, 200, { ok: true, template: tpl });
+    }
+    const kind = req.query?.kind || null;
+    const templates = await listOrgTemplates(orgId, kind);
+    return json(res, 200, { ok: true, templates });
+  }
+
+  if (req.method === 'POST') {
+    const body = await readJsonBody(req);
+    const { name, kind, data } = body;
+    if (!name?.trim() || !kind || !data) return badRequest(res, 'name, kind y data requeridos');
+    const result = await saveOrgTemplate({
+      orgId, userId: access.user?.id,
+      userName: access.user?.fullName || access.user?.email,
+      name, kind, data
+    });
+    if (result?.skipped) return json(res, 200, { ok: true, skipped: true });
+    return json(res, 200, { ok: true, template: result });
+  }
+
+  if (req.method === 'DELETE') {
+    const body = await readJsonBody(req);
+    const id = String(body?.id || '').trim();
+    if (!id) return badRequest(res, 'id requerido');
+    await deleteOrgTemplate(orgId, id);
+    return json(res, 200, { ok: true });
+  }
+
+  return methodNotAllowed(req, res, ['GET', 'POST', 'DELETE']);
+}
+
 module.exports = async function handler(req, res) {
   const action = req.query?.action || req.url?.split('/').pop()?.split('?')[0];
   try {
@@ -151,9 +193,10 @@ module.exports = async function handler(req, res) {
     if (!access?.authenticated) return json(res, 401, { ok: false, reason: 'auth_required' });
     if (!access.organization?.id) return json(res, 403, { ok: false, reason: 'org_required', message: 'El usuario no pertenece a ninguna organización aún.' });
 
-    if (action === 'invite')  return await handleInvite(req, res, access);
-    if (action === 'members') return await handleMembers(req, res, access);
-    if (action === 'plans')   return await handlePlans(req, res, access);
+    if (action === 'invite')     return await handleInvite(req, res, access);
+    if (action === 'members')    return await handleMembers(req, res, access);
+    if (action === 'plans')      return await handlePlans(req, res, access);
+    if (action === 'templates')  return await handleTemplates(req, res, access);
     return json(res, 404, { ok: false, error: 'unknown_action' });
   } catch (error) {
     return serverError(res, error);

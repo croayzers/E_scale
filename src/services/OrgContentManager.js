@@ -16,7 +16,7 @@ function _orgId()  { return AppState.company?.organizationId || null; }
 function _userId() { return AppState.company?.authUserId || null; }
 function _name()   { return AppState.company?.authDisplayName || AppState.company?.authEmail || null; }
 
-export function canSync() { return Boolean(_db() && _orgId()); }
+export function canSync() { return Boolean(_db()); }
 
 async function _getToken() {
   const db = _db();
@@ -102,61 +102,49 @@ export async function deleteFloorPlan(id) {
 }
 
 /* ════════════════════════════════════════════════════════
-   PLANTILLAS — sigue usando el cliente Supabase
+   PLANTILLAS — server-side via /api/org/templates (bypass RLS)
    ════════════════════════════════════════════════════════ */
 
+async function _templateFetch(method, params = {}, body = null) {
+  const token = await _getToken();
+  if (!token) return null;
+  let url = '/api/org/templates';
+  const qs = new URLSearchParams(params).toString();
+  if (qs) url += '?' + qs;
+  const opts = { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  if (!res.ok) return null;
+  return res.json();
+}
+
 export async function saveTemplate({ name, kind, data }) {
-  if (!canSync()) return null;
-  const trimName = name.trim();
-  const { data: dup } = await _db()
-    .from(T_TEMPLATES)
-    .select('id')
-    .eq('organization_id', _orgId())
-    .eq('kind', kind)
-    .eq('name', trimName)
-    .maybeSingle();
-  if (dup) return { skipped: true };
-  const { data: row, error } = await _db()
-    .from(T_TEMPLATES)
-    .insert({
-      organization_id:         _orgId(),
-      created_by_user_id:      _userId(),
-      created_by_display_name: _name(),
-      name: trimName,
-      kind,
-      data,
-    })
-    .select('id, name, kind, created_by_display_name, created_at')
-    .single();
-  if (error) throw new Error(error.message);
-  return row;
+  const token = await _getToken();
+  if (!token) return null;
+  const res = await _templateFetch('POST', {}, { name, kind, data });
+  if (!res?.ok) return null;
+  if (res.skipped) return { skipped: true };
+  return res.template || null;
 }
 
 export async function listTemplates(kind) {
-  if (!canSync()) return [];
-  const { data, error } = await _db()
-    .from(T_TEMPLATES)
-    .select('id, name, kind, created_by_display_name, created_at')
-    .eq('organization_id', _orgId())
-    .eq('kind', kind)
-    .order('created_at', { ascending: false });
-  return error ? [] : (data ?? []);
+  const token = await _getToken();
+  if (!token) return [];
+  const res = await _templateFetch('GET', kind ? { kind } : {});
+  return res?.templates ?? [];
 }
 
 export async function loadTemplate(id) {
-  if (!canSync()) return null;
-  const { data, error } = await _db()
-    .from(T_TEMPLATES)
-    .select('id, name, kind, data')
-    .eq('id', id)
-    .eq('organization_id', _orgId())
-    .single();
-  return error ? null : data;
+  const token = await _getToken();
+  if (!token) return null;
+  const res = await _templateFetch('GET', { id });
+  return res?.template ?? null;
 }
 
 export async function deleteTemplate(id) {
-  if (!canSync()) return;
-  await _db().from(T_TEMPLATES).delete().eq('id', id).eq('organization_id', _orgId());
+  const token = await _getToken();
+  if (!token) return;
+  await _templateFetch('DELETE', {}, { id });
 }
 
 export const OrgContentManager = {
