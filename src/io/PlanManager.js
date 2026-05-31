@@ -12,7 +12,6 @@ import { AppState }            from '../core/AppState.js';
 import { SceneManager }        from '../scene/SceneManager.js';
 import { OrgContentManager }   from '../services/OrgContentManager.js';
 import { SubscriptionManager } from '../services/SubscriptionManager.js';
-import { WallPainter }         from './WallPainter.js';
 
 function canSearchPlans() { return true; }
 function canSharePlan()   { return OrgContentManager.canSync() && Boolean(AppState.plan?.texture); }
@@ -39,7 +38,9 @@ function init() {
 
   document.getElementById('plan-drop-create')?.addEventListener('click', () => {
     closePlanDropdown();
-    WallPainter.activate();
+    import('./WallPainter.js').then(({ WallPainter }) => {
+      WallPainter.activate();
+    }).catch(err => console.error('[WallPainter] Error al cargar:', err));
   });
   // 'Compartir con empresa' reemplazado por el flujo automático post-calibración
   // El botón #plan-drop-org permanece oculto (hidden) en el HTML
