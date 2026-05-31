@@ -618,7 +618,7 @@ async function composePrintCanvas(imageDataUrl, view) {
   ctx.fillStyle = '#64748b';
   const info = [
     eventName ? `Evento: ${eventName}` : '',
-    company.venue ? `Lugar: ${company.venue}` : '',
+    company.venueName ? `Lugar: ${company.venueName}` : '',
     company.email || ''
   ].filter(Boolean).join('  ·  ');
   ctx.fillText(info || 'Planificador de espacios profesional', margin, 82);
@@ -830,8 +830,8 @@ async function buildPdfBlob(imageDataUrl, modeLabel) {
     pdf.text(`Evento: ${eventName}`, margin, infoY);
     infoY += 4;
   }
-  if (company.venue) {
-    pdf.text(`Lugar: ${company.venue}`, margin, infoY);
+  if (company.venueName) {
+    pdf.text(`Lugar: ${company.venueName}`, margin, infoY);
     infoY += 4;
   }
 
@@ -973,7 +973,7 @@ async function buildPdfBlob(imageDataUrl, modeLabel) {
   pdf.setFontSize(7);
   setPdfColor(pdf, brandSecondary);
   const footerBits = ['Powered by E-scale.com'];
-  if (company.venue) footerBits.push(company.venue);
+  if (company.venueName) footerBits.push(company.venueName);
   if (company.email) footerBits.push(company.email);
   pdf.text(footerBits.join(' · '), margin, pageHeight - 5);
   pdf.text('Pagina 1 / 1', pageWidth - margin, pageHeight - 5, { align: 'right' });
@@ -1000,7 +1000,7 @@ function buildInventoryCsvDownload(modeLabel) {
   const rows = [
     ['Empresa', company.name || ''],
     ['Email', company.email || ''],
-    ['Lugar', company.venue || ''],
+    ['Lugar', company.venueName || ''],
     ['Evento', eventName],
     ['Plan', SubscriptionManager.currentPlanCode()],
     ['Logo', company.logoFileName || company.logoRelativePath || (company.logo ? 'logo_cargado' : 'sin_logo')],
@@ -1170,7 +1170,7 @@ async function _addPdfPage(pdf, imageDataUrl, viewLabel, cameraLabel, modeLabel,
 
   let infoY = margin + 15;
   if (eventName) { pdf.text(`Evento: ${eventName}`, margin, infoY); infoY += 4; }
-  if (company.venue) { pdf.text(`Lugar: ${company.venue}`, margin, infoY); infoY += 4; }
+  if (company.venueName) { pdf.text(`Lugar: ${company.venueName}`, margin, infoY); infoY += 4; }
 
   const now = new Date();
   const dateText = `${now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })} · ${now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
@@ -1225,7 +1225,7 @@ async function _addPdfPage(pdf, imageDataUrl, viewLabel, cameraLabel, modeLabel,
   pdf.setFontSize(7);
   setPdfColor(pdf, brandSecondary);
   const footerBits = ['Powered by E-scale.com'];
-  if (company.venue) footerBits.push(company.venue);
+  if (company.venueName) footerBits.push(company.venueName);
   if (company.email) footerBits.push(company.email);
   pdf.text(footerBits.join(' · '), margin, pageHeight - 5);
   pdf.text(`Pagina ${pageNum} / ${totalPages}`, pageWidth - margin, pageHeight - 5, { align: 'right' });
@@ -1257,7 +1257,7 @@ function _addInventoryPage(pdf, modeLabel, pageNum, totalPages) {
 
   let infoY = margin + 15;
   if (eventName) { pdf.text(`Evento: ${eventName}`, margin, infoY); infoY += 4; }
-  if (company.venue) { pdf.text(`Lugar: ${company.venue}`, margin, infoY); infoY += 4; }
+  if (company.venueName) { pdf.text(`Lugar: ${company.venueName}`, margin, infoY); infoY += 4; }
 
   const now = new Date();
   const dateText = `${now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })} · ${now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
@@ -1329,7 +1329,7 @@ function _addInventoryPage(pdf, modeLabel, pageNum, totalPages) {
   pdf.setFontSize(7);
   setPdfColor(pdf, brandSecondary);
   const footerBits = ['Powered by E-scale.com'];
-  if (company.venue) footerBits.push(company.venue);
+  if (company.venueName) footerBits.push(company.venueName);
   if (company.email) footerBits.push(company.email);
   pdf.text(footerBits.join(' · '), margin, pageHeight - 5);
   pdf.text(`Pagina ${pageNum} / ${totalPages}`, pageWidth - margin, pageHeight - 5, { align: 'right' });

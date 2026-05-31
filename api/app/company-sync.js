@@ -50,7 +50,7 @@ module.exports = async function handler(req, res) {
       'company_synced',
       {
         email: company.email || '',
-        venue: company.venue || '',
+        venue: company.venue || '', venueName: company.venueName || '',
         source: access.source || 'membership'
       },
       access.user?.id || null
