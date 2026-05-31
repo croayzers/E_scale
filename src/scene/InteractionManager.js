@@ -796,9 +796,14 @@ function showContextMenu(x, y, item) {
   }));
   menu.innerHTML = buildContextMenuHTML(item);
   menu.classList.add('visible');
-  const w = menu.offsetWidth, h = menu.offsetHeight;
-  menu.style.left = Math.min(x, window.innerWidth - w - 10) + 'px';
-  menu.style.top = Math.min(y, window.innerHeight - h - 10) + 'px';
+  if (!window.matchMedia('(pointer: coarse)').matches) {
+    const w = menu.offsetWidth, h = menu.offsetHeight;
+    menu.style.left = Math.min(x, window.innerWidth - w - 10) + 'px';
+    menu.style.top  = Math.min(y, window.innerHeight - h - 10) + 'px';
+  } else {
+    menu.style.left = '';
+    menu.style.top  = '';
+  }
   if (window.lucide) lucide.createIcons();
   const advDetails = menu.querySelector('.ctx-advanced');
   if (advDetails) advDetails.addEventListener('toggle', () => { _ctxAdvancedOpen = advDetails.open; });

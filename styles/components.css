@@ -3779,7 +3779,48 @@ body.format-mode-active #btn-format-tool {
     width: 100% !important;
   }
 
-  /* Menú contextual: targets más grandes */
+  /* Menú contextual: bottom sheet en móvil */
+  #context-menu {
+    position: fixed !important;
+    left: 0 !important; right: 0 !important;
+    bottom: 0 !important; top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    max-height: 72dvh !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 4px 4px 20px !important;
+    box-shadow: 0 -4px 32px rgba(0,0,0,0.18) !important;
+  }
+  #context-menu::before {
+    content: '';
+    display: block;
+    width: 36px; height: 4px;
+    background: rgba(0,0,0,0.15);
+    border-radius: 2px;
+    margin: 8px auto 10px;
+  }
+  #context-menu.visible {
+    animation: ctxInMobile 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both !important;
+  }
+  @keyframes ctxInMobile {
+    from { transform: translateY(100%); opacity: 0.8; }
+    to   { transform: translateY(0);   opacity: 1; }
+  }
+  /* Compactar campos en móvil */
+  .ctx-editor { gap: 8px !important; }
+  .ctx-block { padding: 6px 4px !important; }
+  .ctx-field-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+  .ctx-field span, .ctx-readonly span { font-size: 9px !important; }
+  .ctx-input { padding: 4px 6px !important; font-size: 12px !important; }
+  .ctx-action-btn { padding: 6px 4px !important; font-size: 10px !important; }
+  .ctx-action-btn small { font-size: 9px !important; }
+  .ctx-actions { gap: 4px !important; }
+  .ctx-label { font-size: 9px !important; margin-bottom: 4px !important; }
+  .ctx-title { font-size: 13px !important; }
   .ctx-item { padding: 10px 14px !important; font-size: 13px !important; }
 
   /* Popovers del header: full-width */
