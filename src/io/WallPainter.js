@@ -582,7 +582,13 @@ function _initListeners() {
   document.getElementById('wp-undo')?.addEventListener('click', _undoLast);
   document.getElementById('wp-clear')?.addEventListener('click', _clearAll);
   document.getElementById('wp-transform')?.addEventListener('click', () => { _transform(); deactivate(); });
-  document.getElementById('wp-finish-2d')?.addEventListener('click', () => deactivate());
+  document.getElementById('wp-finish-2d')?.addEventListener('click', () => {
+    const prev = _wallHeight;
+    _wallHeight = 0.05;
+    _transform();
+    _wallHeight = prev;
+    deactivate();
+  });
   document.getElementById('wp-cancel')?.addEventListener('click', () => { _clearAll(); deactivate(); });
 
   document.getElementById('wp-wall-height')?.addEventListener('input', e => {
