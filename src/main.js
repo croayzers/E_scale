@@ -40,6 +40,7 @@ import { PlanSaveModal }      from './ui/PlanSaveModal.js';
 import { PredictiveArray }    from './ui/PredictiveArray.js';
 import { SplashScreen, collapseDock } from './ui/SplashScreen.js';
 import { ContextSpawnMenu }  from './ui/ContextSpawnMenu.js';
+import { SceneModeManager } from './ui/SceneModeManager.js';
 
 function showStartupError(label, error) {
   console.error(`[E-scale] ${label} falló:`, error);
@@ -166,6 +167,7 @@ async function bootstrap() {
 
   // AICopilot disabled
   safeInit('ContextSpawnMenu', () => ContextSpawnMenu.init());
+  safeInit('SceneModeManager', () => SceneModeManager.init());
   safeInit('CollabJoinModal',    () => CollabJoinModal.init());
   safeInit('CollabInviteModal',  () => CollabInviteModal.init());
   safeInit('CollabIsland',       () => CollabIsland.init());

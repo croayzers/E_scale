@@ -1647,4 +1647,31 @@ export const SceneManager = {
   get meshes() { return meshes; },
   get dragPlane() { return dragPlane; },
   startGridFade,
+  setSkyColor,
+  setLightAngle,
 };
+
+function setSkyColor(hexOrNull) {
+  if (!scene) return;
+  if (hexOrNull === null || hexOrNull === 'transparent') {
+    scene.background = null;
+    scene.fog = null;
+  } else {
+    const col = new THREE.Color(hexOrNull);
+    scene.background = col;
+    if (scene.fog) scene.fog.color.set(col);
+    else scene.fog = new THREE.Fog(col, 60, 140);
+  }
+}
+
+function setLightAngle(deg) {
+  if (!directionalLight) return;
+  const rad = (deg * Math.PI) / 180;
+  const dist = 28;
+  directionalLight.position.set(
+    Math.sin(rad) * dist,
+    25,
+    Math.cos(rad) * dist
+  );
+  directionalLight.shadow.camera.updateProjectionMatrix?.();
+}

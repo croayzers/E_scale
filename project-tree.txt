@@ -191,6 +191,7 @@ PROJECT STRUCTURE
 │       ├── ProButtonManager.js
 │       ├── PropertyRenderer.js
 │       ├── SavedGroupPanel.js
+│       ├── SceneModeManager.js
 │       ├── SplashScreen.js
 │       ├── TextSanitizer.js
 │       ├── UIManager.js

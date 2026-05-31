@@ -1,0 +1,177 @@
+import { AppState }    from '../core/AppState.js';
+import { SceneManager } from '../scene/SceneManager.js';
+
+const SKY_PRESETS = {
+  day:   { hex: '#f5f3ee', fog: '#f5f3ee', label: 'Blanco día'  },
+  blue:  { hex: '#bfdbfe', fog: '#bfdbfe', label: 'Azul claro'  },
+  dusk:  { hex: '#1e3a5f', fog: '#1e3a5f', label: 'Azul oscuro' },
+  night: { hex: '#0a0a0b', fog: '#0a0a0b', label: 'Negro noche' },
+};
+
+let _nightMode = false;
+let _currentSky = 'day';
+let _currentUi  = 'light';
+let _lightDeg   = 45;
+
+function _applyUiTheme(theme) {
+  _currentUi = theme;
+  document.body.classList.toggle('ui-dark', theme === 'dark');
+  document.querySelectorAll('.smp-ui-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.ui === theme)
+  );
+}
+
+function _applySky(key) {
+  _currentSky = key;
+  const preset = SKY_PRESETS[key];
+  if (preset) SceneManager.setSkyColor(preset.hex);
+  document.querySelectorAll('.smp-swatch').forEach(b =>
+    b.classList.toggle('active', b.dataset.sky === key)
+  );
+}
+
+function _applyNightMode(night) {
+  _nightMode = night;
+  const btn = document.getElementById('btn-scene-mode');
+  if (btn) {
+    btn.classList.toggle('active', night);
+    btn.innerHTML = night
+      ? '<i data-lucide="sun" class="w-4 h-4"></i>'
+      : '<i data-lucide="moon" class="w-4 h-4"></i>';
+    if (window.lucide) lucide.createIcons({ nodes: [btn] });
+  }
+  if (night) {
+    _applySky('night');
+    _applyUiTheme('dark');
+    _applyLightAngle(200);
+    _setShadows(true);
+  } else {
+    _applySky('day');
+    _applyUiTheme('light');
+    _applyLightAngle(45);
+    _setShadows(AppState.shadows ?? true);
+  }
+}
+
+function _applyLightAngle(deg) {
+  _lightDeg = deg;
+  SceneManager.setLightAngle(deg);
+  const range = document.getElementById('smp-light-range');
+  const val   = document.getElementById('smp-light-deg');
+  if (range) range.value = String(deg);
+  if (val)   val.textContent = `${deg}°`;
+}
+
+function _setShadows(enabled) {
+  AppState.shadows = enabled;
+  SceneManager.applyShadowState();
+  const chk = document.getElementById('smp-shadows');
+  if (chk) chk.checked = enabled;
+}
+
+function _setCotas(visible) {
+  AppState.showCotas = visible;
+  SceneManager.drawCotas();
+  const chk = document.getElementById('smp-cotas');
+  if (chk) chk.checked = visible;
+}
+
+function _openPanel() {
+  const panel = document.getElementById('scene-mode-panel');
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'flex';
+  document.getElementById('btn-scene-mode')?.classList.toggle('active', !isOpen && _nightMode);
+  if (!isOpen) {
+    // Sync estado actual en los controles
+    document.querySelectorAll('.smp-swatch').forEach(b =>
+      b.classList.toggle('active', b.dataset.sky === _currentSky)
+    );
+    document.querySelectorAll('.smp-ui-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.ui === _currentUi)
+    );
+    const range = document.getElementById('smp-light-range');
+    const val   = document.getElementById('smp-light-deg');
+    if (range) range.value = String(_lightDeg);
+    if (val)   val.textContent = `${_lightDeg}°`;
+    const chkS = document.getElementById('smp-shadows');
+    if (chkS)  chkS.checked = AppState.shadows ?? true;
+    const chkC = document.getElementById('smp-cotas');
+    if (chkC)  chkC.checked = AppState.showCotas ?? false;
+    if (window.lucide) lucide.createIcons({ nodes: [panel] });
+  }
+}
+
+export const SceneModeManager = {
+  init() {
+    const btn   = document.getElementById('btn-scene-mode');
+    const panel = document.getElementById('scene-mode-panel');
+    if (!btn || !panel) return;
+
+    // Botón Luna: toggle noche / día completo
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      // Si el panel está cerrado, abrirlo; si está abierto y pulsamos de nuevo, toggle noche
+      if (panel.style.display === 'none' || panel.style.display === '') {
+        panel.style.display = 'flex';
+        if (window.lucide) lucide.createIcons({ nodes: [panel] });
+        // Sync
+        document.querySelectorAll('.smp-swatch').forEach(b =>
+          b.classList.toggle('active', b.dataset.sky === _currentSky)
+        );
+        document.querySelectorAll('.smp-ui-btn').forEach(b =>
+          b.classList.toggle('active', b.dataset.ui === _currentUi)
+        );
+        const range = document.getElementById('smp-light-range');
+        const val   = document.getElementById('smp-light-deg');
+        if (range) range.value = String(_lightDeg);
+        if (val)   val.textContent = `${_lightDeg}°`;
+        const chkS = document.getElementById('smp-shadows');
+        if (chkS) chkS.checked = AppState.shadows ?? true;
+        const chkC = document.getElementById('smp-cotas');
+        if (chkC) chkC.checked = AppState.showCotas ?? false;
+      } else {
+        _applyNightMode(!_nightMode);
+      }
+    });
+
+    document.getElementById('smp-close')?.addEventListener('click', () => {
+      panel.style.display = 'none';
+    });
+
+    // Cielo
+    panel.querySelectorAll('.smp-swatch').forEach(b => {
+      b.addEventListener('click', () => _applySky(b.dataset.sky));
+    });
+
+    // Interfaz
+    panel.querySelectorAll('.smp-ui-btn').forEach(b => {
+      b.addEventListener('click', () => _applyUiTheme(b.dataset.ui));
+    });
+
+    // Dirección luz
+    document.getElementById('smp-light-range')?.addEventListener('input', e => {
+      _applyLightAngle(parseInt(e.target.value));
+    });
+
+    // Sombras
+    document.getElementById('smp-shadows')?.addEventListener('change', e => {
+      _setShadows(e.target.checked);
+    });
+
+    // Cotas
+    document.getElementById('smp-cotas')?.addEventListener('change', e => {
+      _setCotas(e.target.checked);
+    });
+
+    // Cerrar al clicar fuera
+    document.addEventListener('pointerdown', e => {
+      if (!panel.contains(e.target) && e.target !== btn) {
+        panel.style.display = 'none';
+      }
+    });
+
+    // Estado inicial
+    _applyLightAngle(45);
+  }
+};
