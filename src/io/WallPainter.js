@@ -494,15 +494,16 @@ function _onKeyUp(e) {
   if (e.key === 'Alt')   _altDown   = false;
 }
 
+function _forwardToScene(e) {
+  document.getElementById('scene-canvas')?.dispatchEvent(new PointerEvent(e.type, e));
+}
+
 function _onPointerDown(e) {
   if (!_active) return;
   if (e.button === 2) return;
   _downPos = { x: e.clientX, y: e.clientY };
   _isDragging = false;
-  if (_tool !== 'door') {
-    const scene = document.getElementById('scene-canvas');
-    scene?.dispatchEvent(new PointerEvent(e.type, e));
-  }
+  _forwardToScene(e); // siempre reenviar para que OrbitControls pueda iniciar pan
 }
 
 function _onPointerUp(e) {
@@ -510,10 +511,7 @@ function _onPointerUp(e) {
   if (e.button === 2) return;
 
   if (_isDragging) {
-    if (_tool !== 'door') {
-      const scene = document.getElementById('scene-canvas');
-      scene?.dispatchEvent(new PointerEvent(e.type, e));
-    }
+    _forwardToScene(e);
     _downPos = null; _isDragging = false;
     return;
   }
@@ -567,12 +565,11 @@ function _onPointerMove(e) {
   if (!_active) return;
   _cursorScreen = { x: e.clientX, y: e.clientY };
 
-  if (_downPos && _tool !== 'door') {
+  if (_downPos) {
     const moved = Math.abs(e.clientX - _downPos.x) + Math.abs(e.clientY - _downPos.y);
     if (moved > 4) {
       _isDragging = true;
-      const scene = document.getElementById('scene-canvas');
-      scene?.dispatchEvent(new PointerEvent(e.type, e));
+      _forwardToScene(e);
       return;
     }
   }
