@@ -247,7 +247,8 @@ function _drawDoorArc(s1, s2, door) {
   const radiusPx = Math.hypot(hB.x - hA.x, hB.y - hA.y);
   if (radiusPx < 3) return;
 
-  const wallAngle = Math.atan2(s2.y - s1.y, s2.x - s1.x);
+  // Ángulo desde la bisagra hacia el extremo libre
+  const wallAngle = Math.atan2(hB.y - hA.y, hB.x - hA.x);
 
   _ctx.save();
   _ctx.strokeStyle = '#1a1a2c';
@@ -295,7 +296,8 @@ function _drawDoorArcPreview(s1, s2, d, side) {
   const hB = _lerpScreen(s1, s2, tLib);
   const radiusPx = Math.hypot(hB.x - hA.x, hB.y - hA.y);
   if (radiusPx < 3) return;
-  const wallAngle = Math.atan2(s2.y - s1.y, s2.x - s1.x);
+  // Ángulo desde la bisagra hacia el extremo libre
+  const wallAngle = Math.atan2(hB.y - hA.y, hB.x - hA.x);
   const perpAngle = wallAngle - (Math.PI / 2) * side; // izq o der
 
   _ctx.save();
@@ -536,10 +538,11 @@ function _buildWallMesh(p1, p2, color) {
 }
 
 function _buildDoorArcMesh(pA, pB, seg, side = 1) {
-  // Dirección unitaria de la pared (de p1 a p2)
-  const wallDx = seg.p2.x - seg.p1.x;
-  const wallDz = seg.p2.z - seg.p1.z;
+  // Dirección unitaria desde bisagra (pA) hacia extremo libre (pB)
+  const wallDx = pB.x - pA.x;
+  const wallDz = pB.z - pA.z;
   const wallLen = Math.sqrt(wallDx*wallDx + wallDz*wallDz);
+  if (wallLen < 0.01) return;
   const ux = wallDx / wallLen, uz = wallDz / wallLen;
 
   // Perpendicular: side=1 → izquierda (uz,-ux), side=-1 → derecha (-uz,ux)
