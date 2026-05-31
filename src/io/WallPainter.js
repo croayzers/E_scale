@@ -407,28 +407,22 @@ function _addSeg(p1, p2) {
 
 /* ─── Añadir puerta (3 clics) ────────────────────────────────────────────── */
 function _doorClick(wx, wz) {
-  // Estado 3: elegir lado por proximidad en pantalla usando _cursorScreen
+  // Estado 3: elegir lado — producto cruzado 2D en pantalla (bisagra→libre vs bisagra→cursor)
   if (_doorPending) {
     const d = _doorPending;
     const s1 = _worldToScreen(d.seg.p1.x, d.seg.p1.z);
     const s2 = _worldToScreen(d.seg.p2.x, d.seg.p2.z);
-    const hA = _lerpScreen(s1, s2, d.t1);
-    const hB = _lerpScreen(s1, s2, d.t2);
-    const radiusPx = Math.hypot(hB.x - hA.x, hB.y - hA.y);
-    const wallAngle = Math.atan2(s2.y - s1.y, s2.x - s1.x);
-    const cx = _cursorScreen.x, cy = _cursorScreen.y;
-
-    // Centro de cada arco en pantalla: hA + perp*r*0.5 (en el ángulo medio del arco 45°)
-    let bestSide = 1, bestDist = Infinity;
-    for (const s of [1, -1]) {
-      const perpAngle = wallAngle - (Math.PI / 2) * s;
-      const midAngle  = perpAngle + (Math.PI / 4) * s; // 45° = mitad del arco
-      const acx = hA.x + Math.cos(midAngle) * radiusPx * 0.7;
-      const acy = hA.y + Math.sin(midAngle) * radiusPx * 0.7;
-      const dist = Math.hypot(cx - acx, cy - acy);
-      if (dist < bestDist) { bestDist = dist; bestSide = s; }
-    }
-    _doors.push({ segIdx: d.segIdx, t1: d.t1, t2: d.t2, side: bestSide });
+    // hA = bisagra, hB = libre (en pantalla)
+    const hA = _lerpScreen(s1, s2, d.tBisagra);
+    const hB = _lerpScreen(s1, s2, d.tBisagra === d.t1 ? d.t2 : d.t1);
+    // Vector bisagra→libre en pantalla
+    const dx = hB.x - hA.x, dy = hB.y - hA.y;
+    // Vector bisagra→cursor en pantalla
+    const cx = _cursorScreen.x - hA.x, cy = _cursorScreen.y - hA.y;
+    // Producto cruzado 2D: >0 cursor a la izquierda del vector (side=1), <0 derecha (side=-1)
+    const cross = dx * cy - dy * cx;
+    const side = cross >= 0 ? 1 : -1;
+    _doors.push({ segIdx: d.segIdx, t1: d.t1, t2: d.t2, tBisagra: d.tBisagra, side });
     _doorPending = null;
     _hideTooltip();
     return;
