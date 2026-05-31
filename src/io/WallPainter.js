@@ -72,7 +72,8 @@ function _startLabelLoop() {
 }
 
 /* ─── Menú contextual de pared (persistente en scene-canvas) ────────────── */
-let _globalDownPos = null;
+let _globalDownPos  = null;
+let _globalDownWall = null; // pared detectada en pointerdown — evita mover cámara
 
 function _ensureGlobalContextMenu() {
   if (_globalContextMenuBound) return;
@@ -81,23 +82,27 @@ function _ensureGlobalContextMenu() {
   if (!canvas) return;
 
   canvas.addEventListener('pointerdown', e => {
-    if (e.button !== 0) return;
-    _globalDownPos = { x: e.clientX, y: e.clientY };
-  });
+    if (_active || e.button !== 0 || !_walls.length) return;
+    const wall = _pickWall(e.clientX, e.clientY);
+    if (!wall) { _globalDownWall = null; _globalDownPos = null; return; }
+    // Hay pared bajo el cursor: bloquear OrbitControls para esta pulsación
+    e.stopPropagation();
+    _globalDownWall = wall;
+    _globalDownPos  = { x: e.clientX, y: e.clientY };
+  }, true); // capture — antes que OrbitControls
 
   canvas.addEventListener('pointerup', e => {
-    if (_active) return;
-    if (!_walls.length) return;
-    if (e.button !== 0) return;
+    if (_active || e.button !== 0) return;
+    const wall = _globalDownWall;
     const down = _globalDownPos;
-    _globalDownPos = null;
-    if (!down) return;
+    _globalDownWall = null;
+    _globalDownPos  = null;
+    if (!wall || !down) { _closeCtxMenu(); return; }
+    // Ignorar si fue un drag
     if (Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y) > 5) return;
-    const wall = _pickWall(e.clientX, e.clientY);
-    if (!wall) { _closeCtxMenu(); return; }
     e.stopPropagation();
     _openCtxMenu(wall, e.clientX, e.clientY);
-  });
+  }, true);
 
   // Cerrar menú al clicar fuera (permanente, no depende de si WallPainter está activo)
   document.addEventListener('pointerdown', e => {
