@@ -8,11 +8,15 @@
      · DWG  (binario):      intenta extraer thumbnail BMP embebido
    ───────────────────────────────────────────────────────── */
 
-import { AppState }          from '../core/AppState.js';
-import { SceneManager }      from '../scene/SceneManager.js';
-import { OrgContentManager } from '../services/OrgContentManager.js';
+import { AppState }            from '../core/AppState.js';
+import { SceneManager }        from '../scene/SceneManager.js';
+import { OrgContentManager }   from '../services/OrgContentManager.js';
+import { SubscriptionManager } from '../services/SubscriptionManager.js';
 
-function canSearchPlans() { return true; }
+function canSearchPlans() {
+  const code = SubscriptionManager.currentPlanCode();
+  return code === 'pro' || code === 'premium';
+}
 function canSharePlan()   { return OrgContentManager.canSync() && Boolean(AppState.plan?.texture); }
 
 function init() {
@@ -27,6 +31,7 @@ function init() {
   });
   document.getElementById('plan-drop-search')?.addEventListener('click', () => {
     closePlanDropdown();
+    if (!SubscriptionManager.ensureFeature('planSearch')) return;
     openSearchModal();
   });
   // 'Compartir con empresa' reemplazado por el flujo automático post-calibración
