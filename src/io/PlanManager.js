@@ -13,10 +13,7 @@ import { SceneManager }        from '../scene/SceneManager.js';
 import { OrgContentManager }   from '../services/OrgContentManager.js';
 import { SubscriptionManager } from '../services/SubscriptionManager.js';
 
-function canSearchPlans() {
-  const code = SubscriptionManager.currentPlanCode();
-  return code === 'pro' || code === 'premium';
-}
+function canSearchPlans() { return true; }
 function canSharePlan()   { return OrgContentManager.canSync() && Boolean(AppState.plan?.texture); }
 
 function init() {
