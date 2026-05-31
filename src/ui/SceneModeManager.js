@@ -71,7 +71,7 @@ function _setShadows(enabled) {
 
 function _setCotas(visible) {
   AppState.showCotas = visible;
-  SceneManager.drawCotas();
+  SceneManager.redrawCotas();
   const chk = document.getElementById('smp-cotas');
   if (chk) chk.checked = visible;
 }

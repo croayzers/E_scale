@@ -46,7 +46,7 @@ function _ensureLabelContainer() {
   _labelContainer = document.createElement('div');
   _labelContainer.id = 'wall-labels-container';
   _labelContainer.style.cssText =
-    'position:fixed;inset:0;pointer-events:none;z-index:55;overflow:hidden';
+    'position:fixed;inset:0;pointer-events:none;z-index:200;overflow:hidden';
   document.body.appendChild(_labelContainer);
 }
 
@@ -228,12 +228,12 @@ function _transform() {
   });
   _meshes = [];
 
-  for (const seg of _segs) {
-    _buildWallMesh(seg.p1, seg.p2, seg.color);
+  for (let i = 0; i < _segs.length; i++) {
+    _buildWallMesh(_segs[i].p1, _segs[i].p2, _segs[i].color, i);
   }
 }
 
-function _buildWallMesh(p1, p2, color) {
+function _buildWallMesh(p1, p2, color, segIdx = -1) {
   const dx = p2.x - p1.x, dz = p2.z - p1.z;
   const len = Math.sqrt(dx*dx + dz*dz);
   if (len < 0.05) return;
@@ -246,6 +246,7 @@ function _buildWallMesh(p1, p2, color) {
   mesh.rotation.y = angle;
   mesh.castShadow = mesh.receiveShadow = true;
   mesh.userData.isWall = true;
+  mesh.userData.segIdx = segIdx;
   SceneManager.scene.add(mesh);
   _meshes.push(mesh);
 }
@@ -534,8 +535,7 @@ function activate() {
   document.getElementById('wp-tool-rect')?.addEventListener('click', () => _setTool('rect'));
   document.getElementById('wp-undo')?.addEventListener('click', _undoLast);
   document.getElementById('wp-clear')?.addEventListener('click', _clearAll);
-  document.getElementById('wp-transform')?.addEventListener('click', _transform);
-  document.getElementById('wp-finish')?.addEventListener('click', deactivate);
+  document.getElementById('wp-transform')?.addEventListener('click', () => { _transform(); deactivate(); });
   document.getElementById('wp-cancel')?.addEventListener('click', () => { _clearAll(); deactivate(); });
   document.getElementById('wp-wall-height')?.addEventListener('input', e => {
     _wallHeight = parseFloat(e.target.value) || 2.5;
@@ -575,11 +575,22 @@ function activate() {
   });
   document.getElementById('wall-ctx-delete')?.addEventListener('click', () => {
     if (!_ctxSeg) return;
-    const idx = _meshes.indexOf(_ctxSeg);
-    if (idx >= 0) {
+    const meshIdx = _meshes.indexOf(_ctxSeg);
+    const segIdx  = _ctxSeg.userData.segIdx;
+    if (meshIdx >= 0) {
       SceneManager.scene.remove(_ctxSeg);
       _ctxSeg.geometry.dispose(); _ctxSeg.material.dispose();
-      _meshes.splice(idx, 1);
+      _meshes.splice(meshIdx, 1);
+    }
+    // Eliminar segmento 2D y su etiqueta
+    if (segIdx >= 0 && segIdx < _segs.length) {
+      _segs.splice(segIdx, 1);
+      const lbl = _labels.splice(segIdx, 1)[0];
+      lbl?.el.remove();
+      // Reajustar segIdx en los meshes restantes
+      _meshes.forEach(m => {
+        if (m.userData.segIdx > segIdx) m.userData.segIdx--;
+      });
     }
     _closeCtxMenu();
   });

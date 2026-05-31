@@ -623,7 +623,7 @@ async function bootstrap() {
     cotasToggle.checked = AppState.showCotas;
     cotasToggle.addEventListener('change', () => {
       AppState.showCotas = cotasToggle.checked;
-      SceneManager.drawCotas();
+      SceneManager.redrawCotas();
     });
   }
 
@@ -788,6 +788,22 @@ async function bootstrap() {
       TemplateManager.load();
       openAfterWelcome();
     });
+  });
+
+  // Botón pantalla completa
+  document.getElementById('btn-fullscreen')?.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    const btn = document.getElementById('btn-fullscreen');
+    if (!btn) return;
+    const icon = document.fullscreenElement ? 'minimize' : 'maximize';
+    btn.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i>`;
+    if (window.lucide) lucide.createIcons({ nodes: [btn] });
   });
 
   refreshHeaderStats();
