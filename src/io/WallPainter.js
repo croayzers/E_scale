@@ -43,10 +43,8 @@ let _doors  = [];  // [{segIdx, t1, t2}]  — hueco sobre el segmento
 let _meshes = [];  // THREE.Mesh[] creados al transformar
 let _labels = [];  // {el, seg} para etiquetas
 
-// Modo puerta: estado de los 2 clics
-let _doorPt1 = null;  // {x,z} — bisagra (1er clic)
-let _doorSeg = null;  // índice segmento
-let _doorT1  = null;
+// Modo puerta
+let _doorBisagra = null;  // {pt:{x,z}, segIdx, t, width} — tras 1er clic
 
 // Menú contextual (click en seg)
 let _ctxSeg   = null;
@@ -228,15 +226,13 @@ function _drawDot(s, color) {
   _ctx.restore();
 }
 
-// Función unificada: dibuja arco de puerta dado bisagra y libre en pantalla
-// alpha=1 para puerta confirmada, alpha<1 para preview
-function _drawDoorArcScreen(hA, hB, side, alpha = 1) {
-  const radiusPx = Math.hypot(hB.x - hA.x, hB.y - hA.y);
-  if (radiusPx < 3) return;
-
-  const wallAngle = Math.atan2(hB.y - hA.y, hB.x - hA.x);
-  const perpAngle = wallAngle - (Math.PI / 2) * side;
-
+/* ─── Dibujo de puerta ────────────────────────────────────────────────────── */
+// hBisagra: punto bisagra en pantalla
+// angleRad: ángulo de apertura de la hoja (desde bisagra, en coords canvas)
+// widthPx: ancho de la puerta en píxeles
+// alpha: 1=confirmada, <1=preview
+function _drawDoorSymbol(hBisagra, angleRad, widthPx, alpha = 1) {
+  if (widthPx < 3) return;
   _ctx.save();
   _ctx.globalAlpha = alpha;
   _ctx.strokeStyle = alpha < 1 ? '#2563eb' : '#1a1a2c';
@@ -244,43 +240,48 @@ function _drawDoorArcScreen(hA, hB, side, alpha = 1) {
   _ctx.lineCap     = 'round';
   _ctx.setLineDash([]);
 
-  // Hueco (línea discontinua)
-  _ctx.save();
-  _ctx.setLineDash([4, 3]);
+  // Hoja de puerta (línea en el ángulo de apertura)
+  const leafX = hBisagra.x + Math.cos(angleRad) * widthPx;
+  const leafY = hBisagra.y + Math.sin(angleRad) * widthPx;
   _ctx.beginPath();
-  _ctx.moveTo(hA.x, hA.y);
-  _ctx.lineTo(hB.x, hB.y);
-  _ctx.stroke();
-  _ctx.restore();
-
-  // Hoja de puerta
-  _ctx.beginPath();
-  _ctx.moveTo(hA.x, hA.y);
-  _ctx.lineTo(hA.x + Math.cos(perpAngle) * radiusPx, hA.y + Math.sin(perpAngle) * radiusPx);
+  _ctx.moveTo(hBisagra.x, hBisagra.y);
+  _ctx.lineTo(leafX, leafY);
   _ctx.stroke();
 
-  // Arco 90°
+  // Arco de 90° desde el eje de la pared hasta la hoja abierta
+  // El eje de la pared es la dirección guardada en el door
+  // Aquí lo dibujamos como arco desde angleRad hasta angleRad+90° o -90°
+  // Detectamos el sentido por la posición de la hoja respecto al segmento
   _ctx.beginPath();
-  if (side === 1) {
-    _ctx.arc(hA.x, hA.y, radiusPx, perpAngle, wallAngle, false);
-  } else {
-    _ctx.arc(hA.x, hA.y, radiusPx, wallAngle, perpAngle, false);
-  }
+  _ctx.arc(hBisagra.x, hBisagra.y, widthPx, angleRad - Math.PI/2, angleRad, false);
   _ctx.stroke();
 
   _ctx.restore();
 }
 
 function _drawDoorArc(s1, s2, door) {
-  const hA = _lerpScreen(s1, s2, door.tBisagra);
-  const hB = _lerpScreen(s1, s2, door.tBisagra === door.t1 ? door.t2 : door.t1);
-  _drawDoorArcScreen(hA, hB, door.side ?? 1, 1);
-}
+  const hBisagra = _lerpScreen(s1, s2, door.tBisagra);
+  // Convertir el ángulo guardado (en mundo) a pantalla no es directo,
+  // así que recalculamos: el extremo de la hoja cerrada está en la dirección wallAngle
+  // y la hoja abierta está en angleOpen
+  const hFree = _lerpScreen(s1, s2, door.tBisagra === door.t1 ? door.t2 : door.t1);
+  const wallAngle = Math.atan2(hFree.y - hBisagra.y, hFree.x - hBisagra.x);
+  const widthPx   = Math.hypot(hFree.x - hBisagra.x, hFree.y - hBisagra.y);
 
-function _drawDoorArcPreview(s1, s2, tBis, tLib, side) {
-  const hA = _lerpScreen(s1, s2, tBis);
-  const hB = _lerpScreen(s1, s2, tLib);
-  _drawDoorArcScreen(hA, hB, side, 0.4);
+  // Hueco
+  _ctx.save();
+  _ctx.strokeStyle = '#1a1a2c';
+  _ctx.lineWidth = 1.8;
+  _ctx.setLineDash([4, 3]);
+  _ctx.beginPath();
+  _ctx.moveTo(hBisagra.x, hBisagra.y);
+  _ctx.lineTo(hFree.x, hFree.y);
+  _ctx.stroke();
+  _ctx.restore();
+
+  // Símbolo: la hoja abierta está en wallAngle + door.openAngle
+  const openAngle = wallAngle + door.openAngle;
+  _drawDoorSymbol(hBisagra, openAngle, widthPx, 1);
 }
 
 /* ─── Guía de dibujo (preview mientras se arrastra) ─────────────────────── */
@@ -351,47 +352,47 @@ function _addSeg(p1, p2) {
   _labels.push({ el: labelEl, seg });
 }
 
-/* ─── Añadir puerta (2 clics, lado por posición del cursor) ─────────────── */
-// Calcula el side (1/-1) según en qué lado del hueco está el cursor en pantalla
-function _doorSideFromCursor(seg, tBisagra, tLibre) {
+/* ─── Añadir puerta ──────────────────────────────────────────────────────── */
+// _doorBisagra: {pt, segIdx, t, width} — fijado en el 1er clic
+// El 1er clic fija bisagra en el segmento y mide la distancia cursor→segmento como ancho
+// Al mover: la puerta rota libremente siguiendo el cursor (openAngle = atan2 cursor-bisagra)
+// El 2do clic confirma el ángulo actual
+
+function _doorCurrentOpenAngle(seg) {
+  // Ángulo desde la bisagra al cursor en mundo, relativo al eje de la pared
   const s1 = _worldToScreen(seg.p1.x, seg.p1.z);
   const s2 = _worldToScreen(seg.p2.x, seg.p2.z);
-  const hA = _lerpScreen(s1, s2, tBisagra);
-  const hB = _lerpScreen(s1, s2, tLibre);
-  const dx = hB.x - hA.x, dy = hB.y - hA.y;
-  const cx = _cursorScreen.x - hA.x, cy = _cursorScreen.y - hA.y;
-  const cross = dx * cy - dy * cx;
-  return cross >= 0 ? 1 : -1;
+  const hBis = _lerpScreen(s1, s2, _doorBisagra.t);
+  const wallAngleScreen = Math.atan2(s2.y - s1.y, s2.x - s1.x);
+  const toCursor = Math.atan2(_cursorScreen.y - hBis.y, _cursorScreen.x - hBis.x);
+  // openAngle relativo al eje de la pared
+  return toCursor - wallAngleScreen;
 }
 
 function _doorClick(wx, wz) {
-  const hit = _findClosestSegPoint(wx, wz);
-  if (!hit) return;
-
-  if (!_doorPt1) {
-    // 1er clic: fijar bisagra
-    _doorPt1 = hit.pt;
-    _doorSeg  = hit.segIdx;
-    _doorT1   = hit.t;
-    _showTooltip('2° clic: extremo libre — el lado se elige por posición del cursor', _cursorScreen.x, _cursorScreen.y);
+  if (!_doorBisagra) {
+    // 1er clic: snap a cualquier punto del segmento, medir distancia cursor→bisagra como ancho
+    const hit = _findClosestSegPoint(wx, wz);
+    if (!hit) return;
+    // Ancho = distancia desde el cursor al punto snapeado en el segmento (mínimo 0.5m)
+    const snapWorld = hit.pt;
+    const distM = Math.max(0.5, Math.hypot(wx - snapWorld.x, wz - snapWorld.z));
+    // Si el cursor está muy cerca del punto, usar distancia hasta el extremo más cercano del segmento
+    const seg = _segs[hit.segIdx];
+    const autoWidth = distM < 0.3 ? Math.min(1.0, seg.len * 0.3) : distM;
+    _doorBisagra = { pt: snapWorld, segIdx: hit.segIdx, t: hit.t, width: autoWidth };
+    _showTooltip(`Puerta ${autoWidth.toFixed(2)}m · Rota y confirma`, _cursorScreen.x, _cursorScreen.y);
   } else {
-    // 2do clic: confirmar con el lado actual del cursor
-    if (hit.segIdx !== _doorSeg) {
-      _doorPt1 = hit.pt; _doorSeg = hit.segIdx; _doorT1 = hit.t;
-      return;
-    }
-    const tBisagra = _doorT1, tLibre = hit.t;
-    const t1 = Math.min(tBisagra, tLibre);
-    const t2 = Math.max(tBisagra, tLibre);
-    const seg = _segs[_doorSeg];
-    const gapLen = seg.len * (t2 - t1);
-    if (gapLen < 0.2 || gapLen > seg.len * 0.95) {
-      _doorPt1 = null; _doorSeg = null; _doorT1 = null;
-      return;
-    }
-    const side = _doorSideFromCursor(seg, tBisagra, tLibre);
-    _doors.push({ segIdx: _doorSeg, t1, t2, tBisagra, side });
-    _doorPt1 = null; _doorSeg = null; _doorT1 = null;
+    // 2do clic: confirmar ángulo actual
+    const seg     = _segs[_doorBisagra.segIdx];
+    const openAngle = _doorCurrentOpenAngle(seg);
+    const halfW   = _doorBisagra.width / 2;
+    // Calcular t1/t2 del hueco centrado en la bisagra
+    const t1 = Math.max(0, _doorBisagra.t - halfW / seg.len);
+    const t2 = Math.min(1, _doorBisagra.t + halfW / seg.len);
+    if ((t2 - t1) * seg.len < 0.2) { _doorBisagra = null; return; }
+    _doors.push({ segIdx: _doorBisagra.segIdx, t1, t2, tBisagra: _doorBisagra.t, openAngle, width: _doorBisagra.width });
+    _doorBisagra = null;
     _hideTooltip();
   }
 }
@@ -428,14 +429,8 @@ function _transform() {
           _buildWallMesh(pA, pB, seg.color);
         } else {
           const door = doorsOnSeg.find(d => tA >= d.t1 - 0.001 && tB <= d.t2 + 0.001);
-          // pBisagra: el extremo del hueco que fue el 1er clic
-          const pBisagra = door?.tBisagra !== undefined
-            ? _segPt(seg, door.tBisagra)
-            : pA;
-          const pLibre = door?.tBisagra !== undefined
-            ? _segPt(seg, door.tBisagra === door.t1 ? door.t2 : door.t1)
-            : pB;
-          _buildDoorArcMesh(pBisagra, pLibre, seg, door?.side ?? 1);
+          const pBisagra = door ? _segPt(seg, door.tBisagra) : pA;
+          _buildDoorArcMesh(pBisagra, seg, door?.openAngle ?? 0, door?.width ?? 1);
         }
       }
     }
@@ -466,55 +461,55 @@ function _buildWallMesh(p1, p2, color) {
   _meshes.push(mesh);
 }
 
-function _buildDoorArcMesh(pA, pB, seg, side = 1) {
-  // Dirección unitaria desde bisagra (pA) hacia extremo libre (pB)
-  const wallDx = pB.x - pA.x;
-  const wallDz = pB.z - pA.z;
+function _buildDoorArcMesh(pBisagra, seg, openAngle, doorWidth) {
+  // Dirección unitaria de la pared (seg.p1 → seg.p2) en mundo
+  const wallDx = seg.p2.x - seg.p1.x, wallDz = seg.p2.z - seg.p1.z;
   const wallLen = Math.sqrt(wallDx*wallDx + wallDz*wallDz);
   if (wallLen < 0.01) return;
   const ux = wallDx / wallLen, uz = wallDz / wallLen;
+  // Ángulo de la pared en mundo XZ (atan2 con ejes Three.js: x=X, z=Z, Y arriba)
+  const wallAngle3D = Math.atan2(ux, uz); // igual que en _buildWallMesh
 
-  // Perpendicular en mundo 3D correspondiente al lado visual 2D.
-  // En canvas Y va hacia abajo, en Three.js Z va hacia arriba en vista TOP,
-  // por lo que girar 90° horario en pantalla (side=1) = (-uz, ux) en XZ.
-  const nx = -uz * side, nz = ux * side;
+  // openAngle viene del canvas 2D (Y invertido). Convertir:
+  // En canvas: eje +X = derecha, +Y = abajo → en 3D TOP: +X = derecha, -Z = arriba en pantalla
+  // Así que openAngle en 3D = -(openAngle canvas) para el plano XZ
+  const angle3D = wallAngle3D - openAngle;
 
-  const doorWidth = Math.hypot(pB.x - pA.x, pB.z - pA.z);
-  const ARC_SEGS  = 32;
-  const Y         = 0.02;
-
-  // El arco rota el punto (pA + perp*doorWidth) alrededor de pA, 0→90°
-  // Rotación 2D en XZ: punto inicial = pA + (nx, nz)*r
-  // Tras rotar θ: x' = px + r*(nx*cosθ - nz*sinθ), z' = pz + r*(nz*cosθ + nx*sinθ)
-  const arcPts = [];
-  for (let i = 0; i <= ARC_SEGS; i++) {
-    const theta = (Math.PI / 2) * (i / ARC_SEGS);
-    const rx = nx * Math.cos(theta) - nz * Math.sin(theta);
-    const rz = nz * Math.cos(theta) + nx * Math.sin(theta);
-    arcPts.push(new THREE.Vector3(pA.x + rx * doorWidth, Y, pA.z + rz * doorWidth));
-  }
-
+  const ARC_SEGS = 32;
+  const Y = 0.02;
   const mat = new THREE.LineBasicMaterial({ color: 0x1a1a2c });
 
-  // Arco
-  const arcLine = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints(arcPts), mat
+  // Hoja de puerta en la posición de apertura (angle3D)
+  const leafEnd = new THREE.Vector3(
+    pBisagra.x + Math.sin(angle3D) * doorWidth,
+    Y,
+    pBisagra.z + Math.cos(angle3D) * doorWidth
   );
-  arcLine.userData.isWall = true;
-  SceneManager.scene.add(arcLine);
-  _meshes.push(arcLine);
-
-  // Hoja de puerta cerrada (línea recta pA → pA + perp*doorWidth)
   const leafLine = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(pA.x, Y, pA.z),
-      new THREE.Vector3(pA.x + nx * doorWidth, Y, pA.z + nz * doorWidth)
-    ]),
-    mat.clone()
+      new THREE.Vector3(pBisagra.x, Y, pBisagra.z), leafEnd
+    ]), mat
   );
   leafLine.userData.isWall = true;
   SceneManager.scene.add(leafLine);
   _meshes.push(leafLine);
+
+  // Arco desde la dirección de la pared hasta la hoja abierta
+  const arcPts = [];
+  for (let i = 0; i <= ARC_SEGS; i++) {
+    const a = wallAngle3D + (angle3D - wallAngle3D) * (i / ARC_SEGS);
+    arcPts.push(new THREE.Vector3(
+      pBisagra.x + Math.sin(a) * doorWidth,
+      Y,
+      pBisagra.z + Math.cos(a) * doorWidth
+    ));
+  }
+  const arcLine = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(arcPts), mat.clone()
+  );
+  arcLine.userData.isWall = true;
+  SceneManager.scene.add(arcLine);
+  _meshes.push(arcLine);
 }
 
 
@@ -691,37 +686,42 @@ function _onPointerMove(e) {
   const worldPos = _screenToWorld(e.clientX, e.clientY);
   if (!worldPos) return;
 
-  // Modo puerta: mostrar snap al segmento + medida si ya hay primer punto
+  // Modo puerta
   if (_tool === 'door') {
-    const hit = _findClosestSegPoint(worldPos.x, worldPos.z);
-    if (hit) {
-      const s = _worldToScreen(hit.pt.x, hit.pt.z);
-      _ctx.save();
-      _ctx.strokeStyle = '#f59e0b';
-      _ctx.lineWidth = 1.5;
-      _ctx.setLineDash([]);
-      _ctx.beginPath();
-      _ctx.arc(s.x, s.y, 7, 0, Math.PI*2);
-      _ctx.stroke();
-      _ctx.restore();
-
-      if (_doorPt1 && _doorSeg === hit.segIdx) {
-        const seg  = _segs[_doorSeg];
-        const tBis = _doorT1, tLib = hit.t;
-        const gapLen = seg.len * Math.abs(tLib - tBis);
-        const side = _doorSideFromCursor(seg, tBis, tLib);
-        // Preview arco dinámico en el lado actual del cursor
-        const ss1 = _worldToScreen(seg.p1.x, seg.p1.z);
-        const ss2 = _worldToScreen(seg.p2.x, seg.p2.z);
-        _drawDoorArcPreview(ss1, ss2, tBis, tLib, side);
-        _showTooltip(`Puerta: ${gapLen.toFixed(2)} m`, e.clientX, e.clientY);
-      } else if (_doorPt1) {
-        _showTooltip('Mismo segmento', e.clientX, e.clientY);
+    if (!_doorBisagra) {
+      // Antes del 1er clic: mostrar snap al segmento
+      const hit = _findClosestSegPoint(worldPos.x, worldPos.z);
+      if (hit) {
+        const s = _worldToScreen(hit.pt.x, hit.pt.z);
+        _ctx.save();
+        _ctx.strokeStyle = '#f59e0b'; _ctx.lineWidth = 1.5; _ctx.setLineDash([]);
+        _ctx.beginPath(); _ctx.arc(s.x, s.y, 7, 0, Math.PI*2); _ctx.stroke();
+        _ctx.restore();
+        _showTooltip('Clic: fijar bisagra de la puerta', e.clientX, e.clientY);
       } else {
-        _showTooltip('1er punto: bisagra', e.clientX, e.clientY);
+        _hideTooltip();
       }
     } else {
-      _hideTooltip();
+      // Tras el 1er clic: preview de la puerta rotando
+      const seg = _segs[_doorBisagra.segIdx];
+      const s1  = _worldToScreen(seg.p1.x, seg.p1.z);
+      const s2  = _worldToScreen(seg.p2.x, seg.p2.z);
+      const hBis = _lerpScreen(s1, s2, _doorBisagra.t);
+      const wallAngleScreen = Math.atan2(s2.y - s1.y, s2.x - s1.x);
+      const openAngle = _doorCurrentOpenAngle(seg);
+      // Ancho en píxeles
+      const halfW = _doorBisagra.width / 2;
+      const widthPx = Math.hypot(s2.x - s1.x, s2.y - s1.y) * (_doorBisagra.width / seg.len);
+      // Hueco preview
+      const hT1 = _lerpScreen(s1, s2, Math.max(0, _doorBisagra.t - halfW / seg.len));
+      const hT2 = _lerpScreen(s1, s2, Math.min(1, _doorBisagra.t + halfW / seg.len));
+      _ctx.save();
+      _ctx.strokeStyle = '#2563eb'; _ctx.lineWidth = 1.5; _ctx.setLineDash([4,3]);
+      _ctx.beginPath(); _ctx.moveTo(hT1.x, hT1.y); _ctx.lineTo(hT2.x, hT2.y); _ctx.stroke();
+      _ctx.restore();
+      // Puerta rotando
+      _drawDoorSymbol(hBis, wallAngleScreen + openAngle, widthPx, 0.7);
+      _showTooltip(`${(_doorBisagra.width).toFixed(2)} m · Clic para confirmar`, e.clientX, e.clientY);
     }
     return;
   }
@@ -789,7 +789,7 @@ function _cancelDrawing() {
   _drawing  = false;
   _p1 = null; _p1Screen = null;
   _guideState = null;
-  _doorPt1 = null; _doorSeg = null; _doorT1 = null;
+  _doorBisagra = null;
   _hideTooltip(); _hideDistInput();
 }
 
