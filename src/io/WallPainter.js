@@ -239,9 +239,11 @@ function _drawDot(s, color) {
 }
 
 function _drawDoorArc(s1, s2, door) {
-  // Puntos del hueco en pantalla
-  const hA = _lerpScreen(s1, s2, door.t1);
-  const hB = _lerpScreen(s1, s2, door.t2);
+  // hA = bisagra (primer clic), hB = extremo libre
+  const tBis = door.tBisagra ?? door.t1;
+  const tLib = tBis === door.t1 ? door.t2 : door.t1;
+  const hA = _lerpScreen(s1, s2, tBis);
+  const hB = _lerpScreen(s1, s2, tLib);
   const radiusPx = Math.hypot(hB.x - hA.x, hB.y - hA.y);
   if (radiusPx < 3) return;
 
@@ -286,8 +288,11 @@ function _drawDoorArc(s1, s2, door) {
 
 // Preview de un arco en un lado (side: 1=izquierda, -1=derecha), semitransparente
 function _drawDoorArcPreview(s1, s2, d, side) {
-  const hA = _lerpScreen(s1, s2, d.t1);
-  const hB = _lerpScreen(s1, s2, d.t2);
+  // hA = bisagra (primer clic del usuario)
+  const tBis = d.tBisagra ?? d.t1;
+  const tLib = tBis === d.t1 ? d.t2 : d.t1;
+  const hA = _lerpScreen(s1, s2, tBis);
+  const hB = _lerpScreen(s1, s2, tLib);
   const radiusPx = Math.hypot(hB.x - hA.x, hB.y - hA.y);
   if (radiusPx < 3) return;
   const wallAngle = Math.atan2(s2.y - s1.y, s2.x - s1.x);
@@ -442,17 +447,19 @@ function _doorClick(wx, wz) {
       _doorPt1 = hit.pt; _doorSeg = hit.segIdx; _doorT1 = hit.t;
       return;
     }
-    let t1 = _doorT1, t2 = hit.t;
-    if (t1 > t2) [t1, t2] = [t2, t1];
+    const tBisagra = _doorT1, tLibre = hit.t;
+    const t1 = Math.min(tBisagra, tLibre);
+    const t2 = Math.max(tBisagra, tLibre);
     const seg = _segs[_doorSeg];
     const gapLen = seg.len * (t2 - t1);
     if (gapLen < 0.2 || gapLen > seg.len * 0.95) {
       _doorPt1 = null; _doorSeg = null; _doorT1 = null;
       return;
     }
-    const pA = _segPt(seg, t1);
-    const pB = _segPt(seg, t2);
-    _doorPending = { segIdx: _doorSeg, t1, t2, pA, pB, seg };
+    // pA = bisagra (primer clic), pB = extremo libre (segundo clic)
+    const pA = _segPt(seg, tBisagra);
+    const pB = _segPt(seg, tLibre);
+    _doorPending = { segIdx: _doorSeg, t1, t2, tBisagra, pA, pB, seg };
     _doorPt1 = null; _doorSeg = null; _doorT1 = null;
     _showTooltip('3er clic: elige el lado de apertura', _cursorScreen.x, _cursorScreen.y);
   }
@@ -489,8 +496,15 @@ function _transform() {
         if (!isHueco) {
           _buildWallMesh(pA, pB, seg.color);
         } else {
-          const door = doorsOnSeg.find(d => d.t1 === tA || d.t2 === tB || (tA >= d.t1 && tB <= d.t2));
-          _buildDoorArcMesh(pA, pB, seg, door?.side ?? 1);
+          const door = doorsOnSeg.find(d => tA >= d.t1 - 0.001 && tB <= d.t2 + 0.001);
+          // pBisagra: el extremo del hueco que fue el 1er clic
+          const pBisagra = door?.tBisagra !== undefined
+            ? _segPt(seg, door.tBisagra)
+            : pA;
+          const pLibre = door?.tBisagra !== undefined
+            ? _segPt(seg, door.tBisagra === door.t1 ? door.t2 : door.t1)
+            : pB;
+          _buildDoorArcMesh(pBisagra, pLibre, seg, door?.side ?? 1);
         }
       }
     }
