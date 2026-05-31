@@ -228,21 +228,19 @@ function _drawDot(s, color) {
   _ctx.restore();
 }
 
-function _drawDoorArc(s1, s2, door) {
-  // hA = bisagra (primer clic), hB = extremo libre
-  const tBis = door.tBisagra ?? door.t1;
-  const tLib = tBis === door.t1 ? door.t2 : door.t1;
-  const hA = _lerpScreen(s1, s2, tBis);
-  const hB = _lerpScreen(s1, s2, tLib);
+// Función unificada: dibuja arco de puerta dado bisagra y libre en pantalla
+// alpha=1 para puerta confirmada, alpha<1 para preview
+function _drawDoorArcScreen(hA, hB, side, alpha = 1) {
   const radiusPx = Math.hypot(hB.x - hA.x, hB.y - hA.y);
   if (radiusPx < 3) return;
 
-  // Ángulo desde la bisagra hacia el extremo libre
   const wallAngle = Math.atan2(hB.y - hA.y, hB.x - hA.x);
+  const perpAngle = wallAngle - (Math.PI / 2) * side;
 
   _ctx.save();
-  _ctx.strokeStyle = '#1a1a2c';
-  _ctx.lineWidth   = 1.8;
+  _ctx.globalAlpha = alpha;
+  _ctx.strokeStyle = alpha < 1 ? '#2563eb' : '#1a1a2c';
+  _ctx.lineWidth   = alpha < 1 ? 1.5 : 1.8;
   _ctx.lineCap     = 'round';
   _ctx.setLineDash([]);
 
@@ -255,17 +253,13 @@ function _drawDoorArc(s1, s2, door) {
   _ctx.stroke();
   _ctx.restore();
 
-  // Hoja de puerta y arco usando el side guardado
-  const side      = door.side ?? 1;
-  const perpAngle = wallAngle - (Math.PI / 2) * side;
-  const leafX = hA.x + Math.cos(perpAngle) * radiusPx;
-  const leafY = hA.y + Math.sin(perpAngle) * radiusPx;
+  // Hoja de puerta
   _ctx.beginPath();
   _ctx.moveTo(hA.x, hA.y);
-  _ctx.lineTo(leafX, leafY);
+  _ctx.lineTo(hA.x + Math.cos(perpAngle) * radiusPx, hA.y + Math.sin(perpAngle) * radiusPx);
   _ctx.stroke();
 
-  // Arco de apertura 90°
+  // Arco 90°
   _ctx.beginPath();
   if (side === 1) {
     _ctx.arc(hA.x, hA.y, radiusPx, perpAngle, wallAngle, false);
@@ -277,54 +271,16 @@ function _drawDoorArc(s1, s2, door) {
   _ctx.restore();
 }
 
-// Preview de un arco en un lado (side: 1=izquierda, -1=derecha), semitransparente
-function _drawDoorArcPreview(s1, s2, d, side) {
-  // hA = bisagra (primer clic del usuario)
-  const tBis = d.tBisagra ?? d.t1;
-  const tLib = tBis === d.t1 ? d.t2 : d.t1;
+function _drawDoorArc(s1, s2, door) {
+  const hA = _lerpScreen(s1, s2, door.tBisagra);
+  const hB = _lerpScreen(s1, s2, door.tBisagra === door.t1 ? door.t2 : door.t1);
+  _drawDoorArcScreen(hA, hB, door.side ?? 1, 1);
+}
+
+function _drawDoorArcPreview(s1, s2, tBis, tLib, side) {
   const hA = _lerpScreen(s1, s2, tBis);
   const hB = _lerpScreen(s1, s2, tLib);
-  const radiusPx = Math.hypot(hB.x - hA.x, hB.y - hA.y);
-  if (radiusPx < 3) return;
-  // Ángulo desde la bisagra hacia el extremo libre
-  const wallAngle = Math.atan2(hB.y - hA.y, hB.x - hA.x);
-  const perpAngle = wallAngle - (Math.PI / 2) * side; // izq o der
-
-  _ctx.save();
-  _ctx.globalAlpha = 0.35;
-  _ctx.strokeStyle = '#2563eb';
-  _ctx.lineWidth = 1.5;
-  _ctx.lineCap = 'round';
-  _ctx.setLineDash([]);
-
-  // Hoja
-  _ctx.beginPath();
-  _ctx.moveTo(hA.x, hA.y);
-  _ctx.lineTo(hA.x + Math.cos(perpAngle) * radiusPx, hA.y + Math.sin(perpAngle) * radiusPx);
-  _ctx.stroke();
-
-  // Arco 90°
-  const arcStart = perpAngle;
-  const arcEnd   = wallAngle;
-  _ctx.beginPath();
-  if (side === 1) {
-    _ctx.arc(hA.x, hA.y, radiusPx, arcStart, arcEnd, false);
-  } else {
-    _ctx.arc(hA.x, hA.y, radiusPx, arcEnd, arcStart, false);
-  }
-  _ctx.stroke();
-
-  // Etiqueta del lado
-  const midAngle = (arcStart + arcEnd) / 2;
-  const lx = hA.x + Math.cos(midAngle) * radiusPx * 0.6;
-  const ly = hA.y + Math.sin(midAngle) * radiusPx * 0.6;
-  _ctx.globalAlpha = 0.7;
-  _ctx.fillStyle = '#2563eb';
-  _ctx.font = '10px JetBrains Mono, monospace';
-  _ctx.textAlign = 'center';
-  _ctx.fillText(side === 1 ? 'izq' : 'der', lx, ly);
-
-  _ctx.restore();
+  _drawDoorArcScreen(hA, hB, side, 0.4);
 }
 
 /* ─── Guía de dibujo (preview mientras se arrastra) ─────────────────────── */
@@ -757,8 +713,7 @@ function _onPointerMove(e) {
         // Preview arco dinámico en el lado actual del cursor
         const ss1 = _worldToScreen(seg.p1.x, seg.p1.z);
         const ss2 = _worldToScreen(seg.p2.x, seg.p2.z);
-        const fakeD = { t1: Math.min(tBis,tLib), t2: Math.max(tBis,tLib), tBisagra: tBis, side };
-        _drawDoorArcPreview(ss1, ss2, fakeD, side);
+        _drawDoorArcPreview(ss1, ss2, tBis, tLib, side);
         _showTooltip(`Puerta: ${gapLen.toFixed(2)} m`, e.clientX, e.clientY);
       } else if (_doorPt1) {
         _showTooltip('Mismo segmento', e.clientX, e.clientY);
