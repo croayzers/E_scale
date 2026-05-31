@@ -188,6 +188,14 @@ function _drawGuide(p1s, p2s, isRect, snapPt) {
 }
 
 /* ─── Tooltip ────────────────────────────────────────────────────────────── */
+function _showConfirmToast(msg) {
+  const el = document.createElement('div');
+  el.textContent = '✓ ' + msg;
+  el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;font-family:"JetBrains Mono",monospace;font-size:12px;padding:8px 20px;border-radius:20px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.3);opacity:1;transition:opacity 0.4s';
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 400); }, 1800);
+}
+
 function _showTooltip(text, sx, sy) {
   const el = document.getElementById('wall-painter-tooltip');
   if (!el) return;
@@ -506,7 +514,8 @@ function _onWheel(e) {
 function _onContextMenu(e) {
   if (!_active) return;
   e.preventDefault(); e.stopPropagation();
-  if (_drawing) _cancelDrawing();
+  if (_drawing) { _cancelDrawing(); return; }
+  if (_tool === 'line' || _tool === 'rect') _setTool('select');
 }
 
 /* ─── Input distancia directa ────────────────────────────────────────────── */
@@ -586,15 +595,20 @@ function _initListeners() {
   document.getElementById('wp-tool-rect')?.addEventListener('click', () => _setTool('rect'));
   document.getElementById('wp-undo')?.addEventListener('click', _undoLast);
   document.getElementById('wp-clear')?.addEventListener('click', _clearAll);
-  document.getElementById('wp-transform')?.addEventListener('click', () => { _transform(); deactivate(); });
+  document.getElementById('wp-transform')?.addEventListener('click', () => {
+    _transform();
+    _showConfirmToast('Plano generado en 3D');
+    deactivate();
+  });
   document.getElementById('wp-finish-2d')?.addEventListener('click', () => {
     const prev = _wallHeight;
     _wallHeight = 0.05;
     _transform();
     _wallHeight = prev;
+    _showConfirmToast('Plano generado en 2D');
     deactivate();
   });
-  document.getElementById('wp-cancel')?.addEventListener('click', () => { _clearAll(); deactivate(); });
+  document.getElementById('wp-cancel')?.addEventListener('click', () => deactivate());
 
   document.getElementById('wp-wall-height')?.addEventListener('input', e => {
     _wallHeight = parseFloat(e.target.value) || 2.5;
