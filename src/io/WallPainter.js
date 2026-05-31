@@ -43,9 +43,11 @@ let _doors  = [];  // [{segIdx, t1, t2}]  — hueco sobre el segmento
 let _meshes = [];  // THREE.Mesh[] creados al transformar
 let _labels = [];  // {el, seg} para etiquetas
 
-// Modo puerta: primer punto ya marcado
-let _doorPt1  = null;  // {x, z} en mundo, sobre el segmento
-let _doorSeg  = null;  // índice de _segs del segmento seleccionado
+// Modo puerta: estado de los 3 clics
+let _doorPt1     = null;  // {x,z} — 1er punto sobre el segmento
+let _doorSeg     = null;  // índice segmento
+let _doorT1      = null;
+let _doorPending = null;  // {segIdx,t1,t2,pA,pB,seg} — esperando 3er clic para elegir lado
 
 // Menú contextual (click en seg)
 let _ctxSeg   = null;
@@ -194,6 +196,15 @@ function _redrawCanvas() {
     _ctx.restore();
   }
 
+  // Preview ambos arcos cuando se espera el 3er clic de puerta
+  if (_doorPending) {
+    const d = _doorPending;
+    const s1 = _worldToScreen(d.seg.p1.x, d.seg.p1.z);
+    const s2 = _worldToScreen(d.seg.p2.x, d.seg.p2.z);
+    _drawDoorArcPreview(s1, s2, d,  1); // izquierda
+    _drawDoorArcPreview(s1, s2, d, -1); // derecha
+  }
+
   // Guía de trazo activa
   if (_guideState) {
     const { p1s, p2s, isRect, snapPt } = _guideState;
@@ -267,6 +278,52 @@ function _drawDoorArc(s1, s2, door) {
   _ctx.restore();
 }
 
+// Preview de un arco en un lado (side: 1=izquierda, -1=derecha), semitransparente
+function _drawDoorArcPreview(s1, s2, d, side) {
+  const hA = _lerpScreen(s1, s2, d.t1);
+  const hB = _lerpScreen(s1, s2, d.t2);
+  const radiusPx = Math.hypot(hB.x - hA.x, hB.y - hA.y);
+  if (radiusPx < 3) return;
+  const wallAngle = Math.atan2(s2.y - s1.y, s2.x - s1.x);
+  const perpAngle = wallAngle - (Math.PI / 2) * side; // izq o der
+
+  _ctx.save();
+  _ctx.globalAlpha = 0.35;
+  _ctx.strokeStyle = '#2563eb';
+  _ctx.lineWidth = 1.5;
+  _ctx.lineCap = 'round';
+  _ctx.setLineDash([]);
+
+  // Hoja
+  _ctx.beginPath();
+  _ctx.moveTo(hA.x, hA.y);
+  _ctx.lineTo(hA.x + Math.cos(perpAngle) * radiusPx, hA.y + Math.sin(perpAngle) * radiusPx);
+  _ctx.stroke();
+
+  // Arco 90°
+  const arcStart = perpAngle;
+  const arcEnd   = wallAngle;
+  _ctx.beginPath();
+  if (side === 1) {
+    _ctx.arc(hA.x, hA.y, radiusPx, arcStart, arcEnd, false);
+  } else {
+    _ctx.arc(hA.x, hA.y, radiusPx, arcEnd, arcStart, false);
+  }
+  _ctx.stroke();
+
+  // Etiqueta del lado
+  const midAngle = (arcStart + arcEnd) / 2;
+  const lx = hA.x + Math.cos(midAngle) * radiusPx * 0.6;
+  const ly = hA.y + Math.sin(midAngle) * radiusPx * 0.6;
+  _ctx.globalAlpha = 0.7;
+  _ctx.fillStyle = '#2563eb';
+  _ctx.font = '10px JetBrains Mono, monospace';
+  _ctx.textAlign = 'center';
+  _ctx.fillText(side === 1 ? 'izq' : 'der', lx, ly);
+
+  _ctx.restore();
+}
+
 /* ─── Guía de dibujo (preview mientras se arrastra) ─────────────────────── */
 function _drawGuide(p1s, p2s, isRect, snapPt) {
   _ctx.save();
@@ -335,24 +392,32 @@ function _addSeg(p1, p2) {
   _labels.push({ el: labelEl, seg });
 }
 
-/* ─── Añadir puerta (2 clics) ────────────────────────────────────────────── */
+/* ─── Añadir puerta (3 clics) ────────────────────────────────────────────── */
 function _doorClick(wx, wz) {
+  // Estado 3: elegir lado (clic libre en la escena)
+  if (_doorPending) {
+    const d = _doorPending;
+    // Determinar de qué lado del segmento está el clic
+    const side = _sideOfSeg(d.seg, wx, wz); // 1 = izquierda, -1 = derecha
+    _doors.push({ segIdx: d.segIdx, t1: d.t1, t2: d.t2, side });
+    _doorPending = null;
+    _hideTooltip();
+    return;
+  }
+
   const hit = _findClosestSegPoint(wx, wz);
   if (!hit) return;
 
   if (!_doorPt1) {
-    // Primer clic: guardar punto y segmento
+    // Estado 1: primer punto sobre el segmento
     _doorPt1 = hit.pt;
     _doorSeg  = hit.segIdx;
     _doorT1   = hit.t;
-    _showTooltip('Marca el segundo extremo de la puerta', _cursorScreen.x, _cursorScreen.y);
+    _showTooltip('2° punto: marca el otro extremo del hueco', _cursorScreen.x, _cursorScreen.y);
   } else {
-    // Segundo clic: validar que está en el mismo segmento
+    // Estado 2: segundo punto → validar y pasar a elegir lado
     if (hit.segIdx !== _doorSeg) {
-      // Segmento diferente → reiniciar
-      _doorPt1 = hit.pt;
-      _doorSeg  = hit.segIdx;
-      _doorT1   = hit.t;
+      _doorPt1 = hit.pt; _doorSeg = hit.segIdx; _doorT1 = hit.t;
       return;
     }
     let t1 = _doorT1, t2 = hit.t;
@@ -363,12 +428,20 @@ function _doorClick(wx, wz) {
       _doorPt1 = null; _doorSeg = null; _doorT1 = null;
       return;
     }
-    _doors.push({ segIdx: _doorSeg, t1, t2 });
+    const pA = _segPt(seg, t1);
+    const pB = _segPt(seg, t2);
+    _doorPending = { segIdx: _doorSeg, t1, t2, pA, pB, seg };
     _doorPt1 = null; _doorSeg = null; _doorT1 = null;
-    _hideTooltip();
+    _showTooltip('3er clic: elige el lado de apertura', _cursorScreen.x, _cursorScreen.y);
   }
 }
-let _doorT1 = null;
+
+// Devuelve 1 si el punto (wx,wz) está a la izquierda del segmento (p1→p2), -1 a la derecha
+function _sideOfSeg(seg, wx, wz) {
+  const dx = seg.p2.x - seg.p1.x, dz = seg.p2.z - seg.p1.z;
+  const cross = dx * (wz - seg.p1.z) - dz * (wx - seg.p1.x);
+  return cross >= 0 ? 1 : -1;
+}
 
 /* ─── Transformar: generar 3D ────────────────────────────────────────────── */
 function _transform() {
@@ -400,8 +473,8 @@ function _transform() {
         if (!isHueco) {
           _buildWallMesh(pA, pB, seg.color);
         } else {
-          // Arco de puerta en el suelo (plano XZ, y = 0)
-          _buildDoorArcMesh(pA, pB, seg);
+          const door = doorsOnSeg.find(d => d.t1 === tA || d.t2 === tB || (tA >= d.t1 && tB <= d.t2));
+          _buildDoorArcMesh(pA, pB, seg, door?.side ?? 1);
         }
       }
     }
@@ -432,15 +505,15 @@ function _buildWallMesh(p1, p2, color) {
   _meshes.push(mesh);
 }
 
-function _buildDoorArcMesh(pA, pB, seg) {
+function _buildDoorArcMesh(pA, pB, seg, side = 1) {
   // Dirección unitaria de la pared (de p1 a p2)
   const wallDx = seg.p2.x - seg.p1.x;
   const wallDz = seg.p2.z - seg.p1.z;
   const wallLen = Math.sqrt(wallDx*wallDx + wallDz*wallDz);
   const ux = wallDx / wallLen, uz = wallDz / wallLen;
 
-  // Perpendicular izquierda: igual que el arco 2D (wallAngle - PI/2)
-  const nx = uz, nz = -ux;
+  // Perpendicular: side=1 → izquierda (uz,-ux), side=-1 → derecha (-uz,ux)
+  const nx = uz * side, nz = -ux * side;
 
   const doorWidth = Math.hypot(pB.x - pA.x, pB.z - pA.z);
   const ARC_SEGS  = 32;
@@ -758,7 +831,7 @@ function _cancelDrawing() {
   _drawing  = false;
   _p1 = null; _p1Screen = null;
   _guideState = null;
-  _doorPt1 = null; _doorSeg = null; _doorT1 = null;
+  _doorPt1 = null; _doorSeg = null; _doorT1 = null; _doorPending = null;
   _hideTooltip(); _hideDistInput();
 }
 
