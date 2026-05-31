@@ -755,6 +755,14 @@ async function savePending() {
 
   pending.email = cleanEmail(AppState.company.authEmail || document.getElementById('company-email')?.value || pending.email);
   pending.name = cleanText(document.getElementById('company-name')?.value || pending.name);
+
+  // Banner si falta nombre
+  const missingBanner = document.getElementById('company-readiness-hint');
+  if (!pending.name) {
+    if (missingBanner) { missingBanner.textContent = 'Falta el nombre de empresa'; missingBanner.classList.remove('hidden'); }
+    return;
+  }
+  if (missingBanner) missingBanner.classList.add('hidden');
   pending.cliente = cleanText(document.getElementById('company-cliente')?.value || pending.cliente);
   pending.venue = cleanText(document.getElementById('company-venue')?.value || pending.venue);
 
