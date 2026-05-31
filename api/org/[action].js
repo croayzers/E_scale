@@ -141,8 +141,15 @@ module.exports = async function handler(req, res) {
   try {
     const accessToken = readBearerToken(req);
     if (!accessToken) return json(res, 401, { ok: false, reason: 'auth_required' });
-    const access = await resolveAuthenticatedContext(accessToken, {});
-    if (!access?.authenticated || !access.organization?.id) return json(res, 403, { ok: false, reason: 'org_required' });
+    let access;
+    try {
+      access = await resolveAuthenticatedContext(accessToken, {});
+    } catch (authErr) {
+      console.error('[org] resolveAuthenticatedContext error:', authErr?.message || authErr);
+      return json(res, 500, { ok: false, reason: 'auth_error', message: authErr?.message });
+    }
+    if (!access?.authenticated) return json(res, 401, { ok: false, reason: 'auth_required' });
+    if (!access.organization?.id) return json(res, 403, { ok: false, reason: 'org_required', message: 'El usuario no pertenece a ninguna organización aún.' });
 
     if (action === 'invite')  return await handleInvite(req, res, access);
     if (action === 'members') return await handleMembers(req, res, access);

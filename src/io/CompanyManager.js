@@ -1114,6 +1114,15 @@ async function _loadTeamData() {
       fetch('/api/org/invite', { headers: { Authorization: authHeader } })
     ]);
 
+    if (membersRes.status === 403) {
+      const data = await membersRes.json().catch(() => ({}));
+      if (data.reason === 'org_required') {
+        document.getElementById('company-members-list').innerHTML =
+          '<div class="company-member-loading">Guarda primero los datos de empresa para gestionar el equipo.</div>';
+        return;
+      }
+    }
+
     if (membersRes.ok) {
       const { members, currentUserId } = await membersRes.json();
       _renderMembers(members || [], currentUserId);
