@@ -14,7 +14,7 @@ import { AppState }      from '../core/AppState.js';
 
 /* ─── Constantes ──────────────────────────────────────────────────────────── */
 const WALL_THICKNESS = 0.10;   // 10 cm
-const WALL_COLOR     = 0xd4cfc8;
+const WALL_COLOR     = 0x1a1a2c;
 const SNAP_ANGLE_DEG = 45;
 const SNAP_THRESHOLD = 12;     // px — distancia mínima al punto origen para snap
 
@@ -232,11 +232,22 @@ function _openCtxMenu(wallData, sx, sy) {
   _ctxWall = wallData;
   const menu = document.getElementById('wall-ctx-menu');
   if (!menu) return;
+
   const toggleBtn = document.getElementById('wall-ctx-toggle-label');
   if (toggleBtn) toggleBtn.textContent = wallData.labelVisible ? 'Ocultar medida' : 'Mostrar medida';
+
+  // Sincronizar el color picker con el color actual de la pared
+  const colorPicker = document.getElementById('wall-ctx-color');
+  if (colorPicker) {
+    const hex = '#' + wallData.mesh.material.color.getHexString();
+    colorPicker.value = hex;
+  }
+
+  // Posicionar sin salirse de la pantalla
   menu.style.display = 'block';
-  menu.style.left    = `${sx}px`;
-  menu.style.top     = `${sy}px`;
+  const menuW = 180, menuH = 130;
+  menu.style.left = `${Math.min(sx, window.innerWidth  - menuW)}px`;
+  menu.style.top  = `${Math.min(sy, window.innerHeight - menuH)}px`;
 }
 function _closeCtxMenu() {
   const menu = document.getElementById('wall-ctx-menu');
@@ -451,6 +462,11 @@ function activate() {
   });
 
   // Menú contextual
+  document.getElementById('wall-ctx-color')?.addEventListener('input', e => {
+    if (!_ctxWall) return;
+    _ctxWall.mesh.material.color.set(e.target.value);
+  });
+
   document.getElementById('wall-ctx-toggle-label')?.addEventListener('click', () => {
     if (!_ctxWall) return;
     _ctxWall.labelVisible = !_ctxWall.labelVisible;
