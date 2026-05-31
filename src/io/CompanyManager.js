@@ -558,7 +558,7 @@ function syncModalUI() {
       : '';
   }
   document.getElementById('company-venue').value = pending.venue || '';
-  document.getElementById('company-venue-name').value = pending.venueName || '';
+  document.getElementById('company-venue-name').value = pending.venueName || '[Lugar del evento]';
 
   const primary = colorFor(pending, 'colorPrimary');
   const secondary = colorFor(pending, 'colorSecondary');
