@@ -69,17 +69,7 @@ async function handleInvite(req, res, access) {
     const invitation  = await createOrgInvitation(orgId, email, invitedRole, access.user?.id, inviterName);
     if (!invitation) return json(res, 200, { ok: false, reason: 'duplicate', msg: 'Ya existe una invitación pendiente para ese email' });
     const appUrl = env('ESCALE_PUBLIC_APP_URL') || 'https://escale.app';
-    try {
-      await sendEmail({
-        to: [email],
-        subject: `${inviterName} te invita a E-scale`,
-        html: inviteEmailHtml({ inviterName, orgName, invitedEmail: email, role: invitedRole, appUrl }),
-        text: `${inviterName} te ha invitado a ${orgName} en E-scale. Accede con ${email} en ${appUrl}`
-      });
-    } catch (emailErr) {
-      console.warn('[org/invite] Email no enviado:', emailErr.message);
-    }
-    return json(res, 200, { ok: true, invitation });
+    return json(res, 200, { ok: true, invitation, appUrl });
   }
 
   return methodNotAllowed(req, res, ['GET', 'POST', 'DELETE']);

@@ -1195,10 +1195,9 @@ function _renderInvitations(invitations, authHeader) {
 }
 
 async function _sendInvitation() {
-  const emailEl    = document.getElementById('company-invite-email');
-  const roleEl     = document.getElementById('company-invite-role');
-  const feedback   = document.getElementById('company-invite-feedback');
-  const email = emailEl?.value?.trim();
+  const emailEl = document.getElementById('company-invite-email');
+  const roleEl  = document.getElementById('company-invite-role');
+  const email   = emailEl?.value?.trim();
   if (!email || !email.includes('@')) {
     _showInviteFeedback('Introduce un email válido', 'error');
     return;
@@ -1207,26 +1206,105 @@ async function _sendInvitation() {
   const authHeader = await _getAuthHeader();
   if (!authHeader) { _showInviteFeedback('Accede con tu cuenta primero', 'error'); return; }
 
-  _showInviteFeedback('Enviando…', 'info');
+  _showInviteFeedback('Preparando invitación…', 'info');
   try {
-    const res = await fetch('/api/org/invite', {
+    const res  = await fetch('/api/org/invite', {
       method: 'POST',
       headers: { Authorization: authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, invitedRole: roleEl?.value || 'editor' })
     });
     const data = await res.json();
-    if (data.ok) {
-      _showInviteFeedback(`Invitación enviada a ${email}`, 'success');
-      if (emailEl) emailEl.value = '';
-      _loadTeamData();
-    } else if (data.reason === 'duplicate') {
+
+    if (!data.ok && data.reason === 'duplicate') {
       _showInviteFeedback('Ya existe una invitación pendiente para ese email', 'info');
-    } else {
-      _showInviteFeedback('Error al enviar la invitación', 'error');
+      return;
     }
+    if (!data.ok) {
+      _showInviteFeedback('Error al preparar la invitación', 'error');
+      return;
+    }
+
+    // Invitación registrada — abrir cliente de correo del usuario
+    const appUrl     = data.appUrl || 'https://escale.app';
+    const orgName    = AppState.company?.name || 'nuestra empresa';
+    const inviterName = AppState.company?.authDisplayName || AppState.company?.authEmail || 'Un compañero';
+    const roleLabel  = { admin: 'Administrador', editor: 'Editor', viewer: 'Visualizador' }[roleEl?.value] || 'Editor';
+
+    const subject = encodeURIComponent(`${inviterName} te invita a unirte a ${orgName} en E-scale`);
+    const body    = encodeURIComponent(
+      `Hola,\n\n` +
+      `${inviterName} te ha invitado a colaborar en ${orgName} usando E-scale, el planificador de espacios en 3D.\n\n` +
+      `Accede con este correo (${email}) en el siguiente enlace y se te asignará el acceso automáticamente:\n\n` +
+      `${appUrl}\n\n` +
+      `Tu rol será: ${roleLabel}\n\n` +
+      `— E-scale`
+    );
+
+    // Mostrar las dos opciones: Gmail y Outlook (web)
+    _showMailOptions(email, subject, body);
+
+    if (emailEl) emailEl.value = '';
+    _loadTeamData();
   } catch {
     _showInviteFeedback('Error de red', 'error');
   }
+}
+
+function _showMailOptions(email, subject, body) {
+  const gmailUrl   = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}&su=${subject}&body=${body}`;
+  const outlookUrl = `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(email)}&subject=${subject}&body=${body}`;
+  const mailtoUrl  = `mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`;
+
+  // Crear mini-popover bajo el botón
+  const existing = document.getElementById('invite-mail-picker');
+  if (existing) existing.remove();
+
+  const picker = document.createElement('div');
+  picker.id = 'invite-mail-picker';
+  picker.style.cssText = `
+    position:fixed;z-index:9999;
+    background:#fff;border:1px solid rgba(0,0,0,0.12);border-radius:10px;
+    box-shadow:0 8px 24px -8px rgba(0,0,0,0.22);
+    padding:6px;display:flex;flex-direction:column;gap:4px;min-width:180px;
+  `;
+
+  const btn = document.getElementById('company-invite-btn');
+  if (btn) {
+    const r = btn.getBoundingClientRect();
+    picker.style.top  = `${r.bottom + 6}px`;
+    picker.style.left = `${r.left}px`;
+  }
+
+  const items = [
+    { label: '📧 Gmail',   url: gmailUrl,   target: '_blank' },
+    { label: '📧 Outlook', url: outlookUrl, target: '_blank' },
+    { label: '✉️ Correo predeterminado', url: mailtoUrl, target: '_self' },
+  ];
+
+  items.forEach(({ label, url, target }) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = target;
+    a.rel = 'noopener';
+    a.textContent = label;
+    a.style.cssText = `
+      display:block;padding:8px 12px;border-radius:7px;
+      font-size:13px;color:#111;text-decoration:none;
+      transition:background 120ms;cursor:pointer;
+    `;
+    a.onmouseenter = () => a.style.background = 'rgba(0,0,0,0.05)';
+    a.onmouseleave = () => a.style.background = '';
+    a.onclick = () => picker.remove();
+    picker.appendChild(a);
+  });
+
+  document.body.appendChild(picker);
+
+  // Cerrar al hacer clic fuera
+  setTimeout(() => {
+    const close = (e) => { if (!picker.contains(e.target)) { picker.remove(); document.removeEventListener('mousedown', close); } };
+    document.addEventListener('mousedown', close);
+  }, 0);
 }
 
 function _showInviteFeedback(msg, kind) {
